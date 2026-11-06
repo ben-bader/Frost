@@ -1,0 +1,32 @@
+{
+  "name": "@frostjs/cli",
+  "version": "0.1.0",
+  "description": "Unified CLI toolchain for Frost (dev, build, start, routes)",
+  "type": "module",
+  "bin": {
+    "frost": "./dist/bin.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@frostjs/core": "workspace:*",
+    "@frostjs/router": "workspace:*",
+    "@frostjs/server": "workspace:*",
+    "@frostjs/adapter-node": "workspace:*",
+    "@frostjs/vite": "workspace:*",
+    "vite": "^6.2.0"
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\""
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

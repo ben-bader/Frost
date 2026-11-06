@@ -1,0 +1,24 @@
+{
+  "name": "@frostjs/router",
+  "version": "0.1.0",
+  "description": "File-based route discovery, URL matching, and parameter decoding for Frost",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@frostjs/core": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\""
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

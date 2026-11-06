@@ -1,0 +1,33 @@
+{
+  "name": "@frostjs/react",
+  "version": "0.1.0",
+  "description": "React integration, SSR/hydration orchestration, and hooks for Frost",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js"
+    }
+  },
+  "dependencies": {
+    "@frostjs/core": "workspace:*",
+    "@frostjs/router": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\""
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
