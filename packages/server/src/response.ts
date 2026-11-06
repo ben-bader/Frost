@@ -30,3 +30,4 @@ export function html(content: string, init?: ResponseInit): Response {
     headers,
   });
 }
+

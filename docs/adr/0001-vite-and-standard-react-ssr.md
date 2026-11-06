@@ -31,3 +31,4 @@ Frost adopts:
 - **Negative:**
   - Does not provide zero-client-JS component splitting in v1 (all components in a route bundle hydrate on the client unless marked client-only or statically rendered).
   - Boundary between server-only data logic and client UI must be explicitly managed via Loaders/Actions and `.server.ts` conventions rather than component-level async server functions.
+

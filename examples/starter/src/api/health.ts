@@ -10,3 +10,4 @@ export function GET(request: Request, context: FrostRequestContext): Response {
     requestId: context.requestId,
   });
 }
+

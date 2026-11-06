@@ -15,3 +15,4 @@ export function createRequestContext(req?: Request, overrides?: Partial<FrostReq
     userAgent: overrides?.userAgent ?? req?.headers.get("user-agent") ?? undefined,
   };
 }
+

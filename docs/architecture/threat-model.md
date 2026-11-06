@@ -36,3 +36,4 @@ This document identifies security boundaries, threat vectors, mitigations, and n
 
 - Frost does not replace database-level Row Level Security (RLS) or application authorization layers; developers must check user permissions inside loaders and actions.
 - Frost does not ship a custom cryptography library; all hashing and session token generation rely on Node's standard `node:crypto` or Web Crypto API.
+

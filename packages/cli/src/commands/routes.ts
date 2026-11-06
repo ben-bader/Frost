@@ -29,3 +29,4 @@ export async function routesCommand(rootDir = process.cwd()): Promise<void> {
   }
   console.log(`\nTotal: ${routes.length} route(s)\n`);
 }
+

@@ -24,3 +24,4 @@ Accidental inclusion of server code (database clients, private encryption keys, 
   - Clear error diagnostics indicating the exact file import chain that caused the violation.
 - **Negative:**
   - Developers must be disciplined with file naming (`.server.ts`) or export structures when writing shared and backend utilities.
+

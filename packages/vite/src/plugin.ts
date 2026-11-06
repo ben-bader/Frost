@@ -7,6 +7,7 @@ import {
   VIRTUAL_ROUTES_ID,
   RESOLVED_VIRTUAL_ROUTES_ID,
   generateRoutesModuleCode,
+  generateClientEntryCode,
 } from "./virtual.js";
 import { validateModuleBoundary } from "./boundary.js";
 
@@ -19,6 +20,12 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
   return {
     name: "frost:vite-plugin",
     enforce: "pre",
+
+    config() {
+      return {
+        appType: "custom",
+      };
+    },
 
     configResolved(resolvedViteConfig) {
       rootDir = resolvedViteConfig.root;
@@ -38,6 +45,9 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
       if (id === VIRTUAL_ROUTES_ID) {
         return RESOLVED_VIRTUAL_ROUTES_ID;
       }
+      if (id.startsWith("/@frost/client") || id.startsWith("@frost/client")) {
+        return id;
+      }
       return null;
     },
 
@@ -49,6 +59,16 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
           rootDir,
         });
         return generateRoutesModuleCode(cachedRoutes);
+      }
+      if (id.startsWith("/@frost/client") || id.startsWith("@frost/client")) {
+        const queryIndex = id.indexOf("?");
+        if (queryIndex !== -1) {
+          const searchParams = new URLSearchParams(id.slice(queryIndex));
+          const file = searchParams.get("file");
+          if (file) {
+            return generateClientEntryCode(file, rootDir);
+          }
+        }
       }
       return null;
     },
@@ -68,6 +88,11 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
             return next();
           }
 
+          // Vite's internal SPA middleware rewrites / to /index.html
+          if (req.url === "/index.html" || req.url.startsWith("/index.html?")) {
+            req.url = req.url.replace(/^\/index\.html/, "/") || "/";
+          }
+
           try {
             // Re-discover routes on demand in dev for instant file-based route HMR
             cachedRoutes = discoverRoutes({
@@ -82,12 +107,17 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
               loadModule: async (route) => {
                 return (await server.ssrLoadModule(route.filePath)) as any;
               },
-              getAssetsForRoute: () => {
-                // In Vite dev, Vite's client script is injected automatically
-                return {
-                  scripts: ["/@vite/client"],
-                  css: [],
-                };
+              getAssetsForRoute: (route) => {
+                if (route.kind === "page") {
+                  return {
+                    scripts: [
+                      "/@vite/client",
+                      `/@frost/client?file=${encodeURIComponent(route.filePath)}`,
+                    ],
+                    css: [],
+                  };
+                }
+                return { scripts: [], css: [] };
               },
             });
 
@@ -118,3 +148,4 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
     },
   };
 }
+

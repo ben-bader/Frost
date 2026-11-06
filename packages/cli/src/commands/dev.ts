@@ -16,6 +16,7 @@ export async function devCommand(options: DevCommandOptions = {}): Promise<void>
 
   const server = await createServer({
     root: rootDir,
+    appType: "custom",
     server: {
       port,
       host,
@@ -26,3 +27,4 @@ export async function devCommand(options: DevCommandOptions = {}): Promise<void>
   await server.listen();
   console.log(`\n❄️  Frost development server running at http://${host}:${port}/\n`);
 }
+

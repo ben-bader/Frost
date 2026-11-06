@@ -73,3 +73,4 @@ frost/
 ## Documentation
 
 Full architectural specification: [docs/spec/FROST_SPECIFICATION.md](docs/spec/FROST_SPECIFICATION.md).
+

@@ -44,3 +44,4 @@ describe("Boundary enforcement in Vite plugin", () => {
     }).not.toThrow();
   });
 });
+

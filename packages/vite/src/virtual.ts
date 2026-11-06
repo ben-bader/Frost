@@ -1,3 +1,4 @@
+import * as path from "node:path";
 import type { DiscoveredRoute } from "@frostjs/router";
 
 export const VIRTUAL_ROUTES_ID = "virtual:frost/routes";
@@ -38,10 +39,19 @@ export default routes;
 `;
 }
 
-export function generateClientEntryCode(pageFilePath: string): string {
-  const normalizedFilePath = pageFilePath.replace(/\\/g, "/");
+export function generateClientEntryCode(pageFilePath: string, rootDir?: string): string {
+  let importPath = pageFilePath.replace(/\\/g, "/");
+  if (rootDir) {
+    const rel = path.relative(rootDir, pageFilePath).replace(/\\/g, "/");
+    importPath = rel.startsWith("/") ? rel : `/${rel}`;
+  } else if (!importPath.startsWith("/") && !/^[a-zA-Z]:/.test(importPath)) {
+    importPath = `/${importPath}`;
+  } else if (/^[a-zA-Z]:/.test(importPath)) {
+    importPath = `/@fs/${importPath}`;
+  }
+
   return `
-import PageModule from "${normalizedFilePath}";
+import PageModule from "${importPath}";
 import { hydrateApp } from "@frostjs/react/client";
 
 hydrateApp(PageModule.default || PageModule);

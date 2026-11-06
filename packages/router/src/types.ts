@@ -15,3 +15,4 @@ export interface RouteMatch<TRoute = DiscoveredRoute> {
   params: Record<string, string>;
   pathname: string;
 }
+

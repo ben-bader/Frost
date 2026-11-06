@@ -9,3 +9,4 @@ export function applySecurityHeaders(headers: Headers): void {
     headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   }
 }
+

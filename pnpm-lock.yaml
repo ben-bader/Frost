@@ -272,6 +272,12 @@ importers:
 
   packages/core: {}
 
+  packages/data:
+    dependencies:
+      '@frostjs/core':
+        specifier: workspace:*
+        version: link:../core
+
   packages/react:
     dependencies:
       '@frostjs/core':

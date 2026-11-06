@@ -3,12 +3,16 @@
  * and stripping trailing slashes (except for root "/").
  */
 export function normalizePathname(pathname: string): string {
-  if (!pathname || pathname === "/") {
+  if (!pathname || pathname === "/" || pathname === "/index.html") {
     return "/";
   }
 
+  // Remove /index.html suffix if present
+  let normalized = pathname.replace(/\/index\.html$/, "");
+  if (!normalized) return "/";
+
   // Ensure leading slash
-  let normalized = pathname.startsWith("/") ? pathname : `/${pathname}`;
+  normalized = normalized.startsWith("/") ? normalized : `/${normalized}`;
 
   // Replace multiple sequential slashes with a single slash
   normalized = normalized.replace(/\/+/g, "/");
@@ -78,3 +82,4 @@ export function filePathToPattern(relativePath: string): {
     score,
   };
 }
+

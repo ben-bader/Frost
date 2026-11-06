@@ -24,3 +24,4 @@ Frameworks that tie themselves tightly to proprietary cloud runtimes create vend
   - Development and production parity: local `frost preview` runs the exact same Node.js adapter as production.
 - **Negative:**
   - Adapters for Edge/Cloudflare Workers or AWS Lambda will be delivered as separate standalone packages following this exact same contract in subsequent phases.
+

@@ -52,3 +52,4 @@ export async function startCommand(options: StartCommandOptions = {}): Promise<v
     console.log(`\n🚀 Frost production server running at http://${host}:${port}/\n`);
   });
 }
+

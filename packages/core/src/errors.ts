@@ -50,3 +50,4 @@ export class FrostError extends Error {
     return output;
   }
 }
+

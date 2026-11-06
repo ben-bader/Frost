@@ -1307,3 +1307,4 @@ Its competitive advantage should not be the number of features it contains.
 Its advantage should be that developers can understand what the framework is doing, predict the consequences of their code, debug production behavior and move between deployment environments without relying on hidden infrastructure assumptions.
 
 The initial objective is not to outperform every competing framework in every benchmark. It is to deliver a smaller, dependable, well-documented foundation that can grow without compromising its core principles.
+

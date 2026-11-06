@@ -91,3 +91,4 @@ export interface ApiRouteModule {
   HEAD?: (request: Request, context: FrostRequestContext) => Promise<Response> | Response;
   OPTIONS?: (request: Request, context: FrostRequestContext) => Promise<Response> | Response;
 }
+

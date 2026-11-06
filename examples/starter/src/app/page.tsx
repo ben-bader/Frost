@@ -49,3 +49,4 @@ export default function HomePage({ data }: Route.ComponentProps<HomeLoaderData>)
     </div>
   );
 }
+

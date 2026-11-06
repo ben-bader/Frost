@@ -28,3 +28,4 @@ Implicit caching and heuristic rendering decisions create difficult bugs in full
   - Transparent debugging via the Cache Inspector and Rendering Ledger.
 - **Negative:**
   - Developers must intentionally define cache keys and TTLs for high-traffic public pages instead of relying on automatic framework heuristics.
+

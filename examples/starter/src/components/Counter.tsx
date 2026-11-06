@@ -22,3 +22,4 @@ export function Counter({ initialCount = 0 }: CounterProps) {
     </div>
   );
 }
+
