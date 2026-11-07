@@ -118,13 +118,13 @@ pnpm --dir examples/starter start
 
 The starter app ships two routes:
 
-- `/` — Demo: what Frost is, live runtime info, the real commands to run it, and the starter's file tree.
-- `/playground` — Playground: a plain GET form drives the route loader; the page shows the request console, loader data, and a hydrated client island.
+- `/` — Demo: a hero-only landing page (headline, CTAs, dot cue) with the shared header.
+- `/playground` — Playground: a client-side counter and an error-log dialog that opens automatically once per visit.
 
 ### What's in this starter
 
-- `/` demo page and `/playground` playground — loaders and components live in each route file (`src/app/page.tsx`, `src/app/playground/page.tsx`).
-- Shared chrome: `src/components/` (`Header`, `Footer`, `Panel`, `CopyButton`, `ClientIsland`, `HydrationFlag`).
+- `/` demo page and `/playground` playground — route components live in `src/app/page.tsx` and `src/app/playground/page.tsx`; add a `loader` export in a route file when a page needs server data.
+- Shared chrome and client islands: `src/components/` (`Header`, `Counter`, `ErrorDialog`) — anything using `useState`/`useEffect` hydrates on the client.
 - Design tokens and the only stylesheet: `src/styles/theme.css`.
 - Framework config: `frost.config.ts`; scripts in `package.json` (`dev`, `build`, `start`, `test`).
 
@@ -139,7 +139,7 @@ Because the stylesheet link is in the initial HTML, there is no flash of unstyle
 
 ## SSR and hydration
 
-Frost supports SSR by rendering route content on the server and serializing route data for the browser. During hydration, the client reconnects to the same route payload instead of re-running server logic. The `/playground` route demonstrates this live: its loader reads the form's query params on the server, and the client island flips from `server-rendered` to `hydrated` on mount.
+Frost supports SSR by rendering route content on the server and serializing route data for the browser. During hydration, the client reconnects to the same route payload instead of re-running server logic. The `/playground` counter demonstrates this: it renders `0` on the server and becomes interactive only after hydration.
 
 ## Routing and data loading
 

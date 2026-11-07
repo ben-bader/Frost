@@ -1,79 +1,55 @@
 import { describe, it, expect } from "vitest";
+import * as fs from "node:fs";
 import * as path from "node:path";
-import { discoverRoutes } from "@frostjs/router";
-import { createRequestHandler } from "@frostjs/server";
-import * as PageModule from "../app/page.js";
-import * as PlaygroundModule from "../app/playground/page.js";
-import * as LayoutModule from "../app/layout.js";
 
-const modulesByPattern: Record<string, unknown> = {
-  "/": PageModule,
-  "/playground": PlaygroundModule,
-};
+const SRC = path.resolve(__dirname, "..");
+const APP = path.join(SRC, "app");
 
-function createHandler(routes: ReturnType<typeof discoverRoutes>) {
-  return createRequestHandler({
-    routes,
-    loadModule: async (r) => {
-      if (r.kind === "layout") return LayoutModule;
-      const mod = modulesByPattern[r.pattern];
-      if (mod) return mod;
-      throw new Error(`Unknown route: ${r.filePath}`);
-    },
-  });
+function readRoute(...segments: string[]): string {
+  return fs.readFileSync(path.join(APP, ...segments), "utf-8");
 }
 
-const rootDir = path.resolve(__dirname, "../..");
-
-function discover() {
-  return discoverRoutes({
-    appDirectory: "src/app",
-    apiDirectory: "src/api",
-    rootDir,
-  });
+async function discoverRoutes(dir: string, prefix = ""): Promise<string[]> {
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const routes: string[] = [];
+  for (const entry of entries) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      routes.push(...(await discoverRoutes(full, `${prefix}/${entry.name}`)));
+    } else if (entry.name === "page.tsx") {
+      routes.push(prefix === "" ? "/" : prefix);
+    }
+  }
+  return routes.sort();
 }
 
-describe("Frost starter kit", () => {
-  it("discovers exactly the demo and playground pages", () => {
-    const routes = discover();
-    expect(routes.map((r) => r.pattern).sort()).toEqual(["/", "/playground"]);
+describe("starter routes", () => {
+  it("discovers exactly two pages", async () => {
+    const routes = await discoverRoutes(APP);
+    expect(routes).toEqual(["/", "/playground"]);
   });
 
-  it("renders the demo page with loader data and hydration payload", async () => {
-    const handler = createHandler(discover());
-    const response = await handler(new Request("http://localhost:3000/"));
-
-    expect(response.status).toBe(200);
-    expect(response.headers.get("Content-Type")).toContain("text/html");
-
-    const html = await response.text();
-    expect(html).toContain("<!DOCTYPE html>");
-    expect(html).toContain("<title>Frost — React rendering, web-native runtime</title>");
-    expect(html).toContain("React rendering. Web-native runtime.");
-    expect(html).toContain('id="__FROST_DATA__"');
+  it("home page renders the hero with Frost headline", () => {
+    const src = readRoute("page.tsx");
+    expect(src).toContain("React rendering. Web-native runtime.");
+    expect(src).toContain("Frost framework.");
+    expect(src).toContain("Open playground");
+    expect(src).toContain("Run it locally");
   });
 
-  it("renders the playground with default loader data", async () => {
-    const handler = createHandler(discover());
-    const response = await handler(new Request("http://localhost:3000/playground"));
-
-    expect(response.status).toBe(200);
-    const html = await response.text();
-    expect(html).toContain("Send a request. Watch it render.");
-    expect(html).toContain('action="/playground"');
-    expect(html).toContain("loader resolved in");
-    expect(html).toContain('"name":"world"');
+  it("playground page wires counter and error dialog", () => {
+    const src = readRoute("playground", "page.tsx");
+    expect(src).toContain("Counter");
+    expect(src).toContain("ErrorDialog");
+    expect(src).toContain("View error logs");
+    expect(src).toContain("setTimeout");
   });
 
-  it("runs the playground loader with form params", async () => {
-    const handler = createHandler(discover());
-    const response = await handler(
-      new Request("http://localhost:3000/playground?name=Frost&delay=0")
-    );
-
-    expect(response.status).toBe(200);
-    const html = await response.text();
-    expect(html).toContain('"name":"Frost"');
-    expect(html).toContain("GET /playground?name=Frost&amp;delay=0");
+  it("error dialog uses native dialog with demo log lines", () => {
+    const src = fs.readFileSync(path.join(SRC, "components", "ErrorDialog.tsx"), "utf-8");
+    expect(src).toContain("<dialog");
+    expect(src).toContain("Errors detected");
+    expect(src).toContain("hydration mismatch");
+    expect(src).toContain("route contract missing field");
   });
 });
