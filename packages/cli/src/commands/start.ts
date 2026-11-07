@@ -11,6 +11,10 @@ export interface StartCommandOptions {
 }
 
 export async function startCommand(options: StartCommandOptions = {}): Promise<void> {
+  // Production server: default NODE_ENV so server-rendered error
+  // fallbacks and framework diagnostics behave correctly.
+  process.env.NODE_ENV ??= "production";
+
   const rootDir = options.rootDir ?? process.cwd();
   const config = resolveConfig();
   const port = options.port ?? config.server.port;

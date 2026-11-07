@@ -1,4 +1,5 @@
 import type { Plugin, ViteDevServer } from "vite";
+import type { EnvironmentModuleNode } from "vite";
 import { resolveConfig, type FrostConfig } from "@frostjs/core";
 import { discoverRoutes, type DiscoveredRoute } from "@frostjs/router";
 import { createRequestHandler } from "@frostjs/server";
@@ -37,9 +38,11 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
       });
     },
 
-    resolveId(id, importer) {
-      // 1. Boundary enforcement
-      validateModuleBoundary(id, importer, isClientBuild);
+    resolveId(id, importer, options) {
+      // 1. Boundary enforcement — only for client-side resolution. In dev
+      //    the same plugin serves both environments; SSR transforms pass
+      //    ssr: true and must be allowed to import .server modules.
+      validateModuleBoundary(id, importer, isClientBuild && options?.ssr !== true);
 
       // 2. Virtual route module
       if (id === VIRTUAL_ROUTES_ID) {
@@ -65,8 +68,17 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
         if (queryIndex !== -1) {
           const searchParams = new URLSearchParams(id.slice(queryIndex));
           const file = searchParams.get("file");
+          const layoutsRaw = searchParams.get("layouts");
+          let layouts: string[] = [];
+          if (layoutsRaw) {
+            try {
+              layouts = JSON.parse(layoutsRaw);
+            } catch {
+              layouts = [];
+            }
+          }
           if (file) {
-            return generateClientEntryCode(file, rootDir);
+            return generateClientEntryCode(file, layouts, rootDir);
           }
         }
       }
@@ -74,6 +86,18 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
     },
 
     configureServer(server: ViteDevServer) {
+      // Pre-middleware (runs before Vite's internal middlewares): serves
+      // compiled route stylesheets as text/css so the SSR document can
+      // reference them with a real render-blocking <link> instead of
+      // waiting for client-side JS injection after hydration.
+      server.middlewares.use((req, res, next) => {
+        if (req.url?.startsWith("/@frost/css")) {
+          void serveDevStylesheet(server, req, res);
+          return;
+        }
+        next();
+      });
+
       // Return middleware that executes after Vite's internal static asset middleware
       return () => {
         server.middlewares.use(async (req, res, next) => {
@@ -109,12 +133,18 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
               },
               getAssetsForRoute: (route) => {
                 if (route.kind === "page") {
+                  const layoutsQuery =
+                    route.layouts && route.layouts.length > 0
+                      ? `&layouts=${encodeURIComponent(JSON.stringify(route.layouts))}`
+                      : "";
+                  const entryFiles = [route.filePath, ...(route.layouts ?? [])];
                   return {
                     scripts: [
-                      "/@vite/client",
-                      `/@frost/client?file=${encodeURIComponent(route.filePath)}`,
+                      `/@frost/client?file=${encodeURIComponent(route.filePath)}${layoutsQuery}`,
                     ],
-                    css: [],
+                    css: collectRouteCss(server, entryFiles).map(
+                      (cssUrl) => `/@frost/css?url=${encodeURIComponent(cssUrl)}`
+                    ),
                   };
                 }
                 return { scripts: [], css: [] };
@@ -149,3 +179,109 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
   };
 }
 
+const CSS_FILE_RE = /\.(css|less|sass|scss|styl|stylus|pcss|postcss)$/i;
+
+/**
+ * Walks the SSR module graph from the route entry files and returns the
+ * served URLs of every stylesheet reachable through static imports.
+ * CSS modules are leaf nodes: their `@import`ed stylesheets are already
+ * inlined into the compiled CSS output by Vite/PostCSS.
+ */
+function collectRouteCss(server: ViteDevServer, entryFiles: string[]): string[] {
+  const ssrGraph = server.environments?.ssr?.moduleGraph;
+  if (!ssrGraph) {
+    return [];
+  }
+
+  const cssUrls: string[] = [];
+  const seenCss = new Set<string>();
+  const seenModules = new Set<EnvironmentModuleNode>();
+
+  const isCssModule = (mod: EnvironmentModuleNode): boolean => {
+    if (mod.type === "css") return true;
+    const urlPath = mod.url.split("?")[0] ?? mod.url;
+    if (CSS_FILE_RE.test(urlPath)) return true;
+    return mod.file ? CSS_FILE_RE.test(mod.file) : false;
+  };
+
+  const visitModule = (mod: EnvironmentModuleNode): void => {
+    if (seenModules.has(mod)) return;
+    seenModules.add(mod);
+
+    if (isCssModule(mod)) {
+      // Skip modules with query suffixes (?inline, ?raw, ?url) — they are
+      // consumed as strings/assets by JS, not rendered as document styles.
+      if (!mod.url.includes("?") && !seenCss.has(mod.url)) {
+        seenCss.add(mod.url);
+        cssUrls.push(mod.url);
+      }
+      return;
+    }
+
+    for (const child of mod.importedModules) {
+      if (child.file) {
+        const modules = ssrGraph.getModulesByFile(child.file.replace(/\\/g, "/"));
+        if (modules) {
+          for (const m of modules) visitModule(m);
+        }
+      } else {
+        const childUrl = child.url.split("?")[0] ?? child.url;
+        const resolved = ssrGraph.urlToModuleMap.get(childUrl);
+        if (resolved) visitModule(resolved);
+      }
+    }
+  };
+
+  for (const file of entryFiles) {
+    const modules =
+      ssrGraph.getModulesByFile(file.replace(/\\/g, "/")) ??
+      ssrGraph.getModulesByFile(file);
+    if (!modules) continue;
+    for (const mod of modules) visitModule(mod);
+  }
+
+  return cssUrls;
+}
+
+/**
+ * Serves the fully compiled CSS for a dev module URL as text/css.
+ * Vite's dev pipeline wraps CSS in a JS module for HMR; this endpoint
+ * extracts the compiled stylesheet so it can be referenced from the
+ * SSR document head as a normal render-blocking stylesheet.
+ */
+async function serveDevStylesheet(
+  server: ViteDevServer,
+  req: import("node:http").IncomingMessage,
+  res: import("node:http").ServerResponse
+): Promise<void> {
+  const rawUrl = req.url ?? "";
+  const urlParam = new URL(rawUrl, "http://frost.local").searchParams.get("url");
+
+  const fail = (status: number, body: string) => {
+    res.statusCode = status;
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.end(body);
+  };
+
+  if (!urlParam || !urlParam.startsWith("/")) {
+    fail(400, "Missing or invalid ?url= parameter");
+    return;
+  }
+
+  try {
+    const result = await server.transformRequest(urlParam);
+    const code = result?.code ?? "";
+    const match = code.match(/__vite__css\s*=\s*("(?:[^"\\]|\\.)*")/);
+    if (!match) {
+      fail(404, `Compiled CSS not available for ${urlParam}`);
+      return;
+    }
+    const css = JSON.parse(match[1]!) as string;
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "text/css; charset=utf-8");
+    res.setHeader("Cache-Control", "no-cache");
+    res.end(css);
+  } catch (err) {
+    fail(500, err instanceof Error ? err.message : "Failed to compile CSS");
+  }
+}

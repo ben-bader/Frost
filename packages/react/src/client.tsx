@@ -1,10 +1,12 @@
-import type { ComponentType } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { hydrateRoot } from "react-dom/client";
-import { FrostProvider, type FrostClientState } from "./context.js";
+import { FrostProvider, isFrostClientState, type FrostClientState } from "./context.js";
+import { FrostErrorBoundary } from "./error-boundary.js";
 
 declare global {
   interface Window {
-    __FROST_DATA__?: FrostClientState;
+    __FROST_DATA__?: any;
+    __FROST_STATE__?: FrostClientState;
   }
 }
 
@@ -17,29 +19,56 @@ export function getClientState(): FrostClientState {
     };
   }
 
-  if (window.__FROST_DATA__) {
+  const currentPath = window.location.pathname || "/";
+
+  // 1. Check if parsed state was already cached on window and still belongs to the current route.
+  if (isFrostClientState(window.__FROST_STATE__) && window.__FROST_STATE__.pathname === currentPath) {
+    return window.__FROST_STATE__;
+  }
+  if (isFrostClientState(window.__FROST_DATA__) && window.__FROST_DATA__.pathname === currentPath) {
     return window.__FROST_DATA__;
   }
 
+  // 2. Parse from the embedded JSON script element.
+  // Note: avoid named property collisions on window where window.__FROST_DATA__ is the HTMLScriptElement itself.
   const script = document.getElementById("__FROST_DATA__");
   if (script && script.textContent) {
     try {
       const parsed = JSON.parse(script.textContent) as FrostClientState;
-      window.__FROST_DATA__ = parsed;
-      return parsed;
+      if (parsed && parsed.pathname === currentPath) {
+        window.__FROST_STATE__ = parsed;
+        try {
+          window.__FROST_DATA__ = parsed;
+        } catch {
+          // window.__FROST_DATA__ may be read-only if DOM property is non-configurable.
+        }
+        return parsed;
+      }
     } catch (err) {
-      console.error("[Frost] Failed to parse hydration data:", err);
+      console.error("[Frost] Failed to parse hydration data from #__FROST_DATA__ script:", err);
     }
   }
 
-  return {
-    pathname: window.location.pathname,
+  // 3. Fallback when running without SSR payload or stale request state.
+  const fallbackState: FrostClientState = {
+    pathname: currentPath,
     params: {},
     loaderData: null,
   };
+  window.__FROST_STATE__ = fallbackState;
+  return fallbackState;
 }
 
-export function hydrateApp(Component: ComponentType<{ data: unknown; params: Record<string, string> }>): void {
+export type RouteComponent = ComponentType<{
+  data: unknown;
+  params: Record<string, string>;
+  children?: ReactNode;
+}>;
+
+export function hydrateApp(
+  Component: RouteComponent,
+  layouts: RouteComponent[] = []
+): void {
   const state = getClientState();
   const rootElement = document.getElementById("__frost");
 
@@ -48,10 +77,26 @@ export function hydrateApp(Component: ComponentType<{ data: unknown; params: Rec
     return;
   }
 
+  // Build component tree from page up through layout hierarchy to match SSR structure
+  let appTree: ReactNode = <Component data={state.loaderData} params={state.params} />;
+
+  if (Array.isArray(layouts) && layouts.length > 0) {
+    for (let i = layouts.length - 1; i >= 0; i--) {
+      const LayoutComp = layouts[i];
+      if (LayoutComp) {
+        appTree = (
+          <LayoutComp data={state.loaderData} params={state.params}>
+            {appTree}
+          </LayoutComp>
+        );
+      }
+    }
+  }
+
   hydrateRoot(
     rootElement,
     <FrostProvider value={state}>
-      <Component data={state.loaderData} params={state.params} />
+      <FrostErrorBoundary>{appTree}</FrostErrorBoundary>
     </FrostProvider>
   );
 }

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useFrostContext } from "./context.js";
+import { useFrostContext, type FrostClientState } from "./context.js";
 
 export interface FrostDocumentProps {
   children?: ReactNode;
@@ -8,9 +8,14 @@ export interface FrostDocumentProps {
 
 export function FrostDocument({ children, title }: FrostDocumentProps): React.JSX.Element {
   const ctx = useFrostContext();
+  const clientState: FrostClientState = ctx ?? {
+    pathname: typeof window !== "undefined" ? window.location.pathname : "/",
+    params: {},
+    loaderData: null,
+  };
 
-  // Safely serialize initial data for client hydration without XSS vulnerabilities
-  const serializedState = JSON.stringify(ctx).replace(/</g, "\\u003c");
+  // Safely serialize initial data for client hydration without XSS vulnerabilities.
+  const serializedState = JSON.stringify(clientState).replace(/</g, "\\u003c");
 
   return (
     <html lang="en">
@@ -20,6 +25,16 @@ export function FrostDocument({ children, title }: FrostDocumentProps): React.JS
         <link rel="icon" type="image/png" href="/favicon.png" />
         <link rel="alternate icon" href="/favicon.ico" />
         {title && <title>{title}</title>}
+        {ctx.assets?.preloads?.map((preload) => (
+          <link
+            key={preload.href}
+            rel="preload"
+            href={preload.href}
+            as={preload.as}
+            type={preload.type}
+            crossOrigin={preload.crossOrigin ? "anonymous" : undefined}
+          />
+        ))}
         {ctx.assets?.css?.map((href) => (
           <link key={href} rel="stylesheet" href={href} />
         ))}

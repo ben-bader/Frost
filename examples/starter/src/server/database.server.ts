@@ -25,3 +25,4 @@ export async function queryPrivilegedRecords(): Promise<Omit<DatabaseRecord, "se
   // Strips server secrets before returning to loader
   return mockDatabase.map(({ secretHash, ...publicFields }) => publicFields);
 }
+

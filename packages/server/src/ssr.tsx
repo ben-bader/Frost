@@ -1,6 +1,6 @@
 import { renderToString } from "react-dom/server";
-import { FrostDocument, FrostProvider, type FrostClientState } from "@frostjs/react";
-import type { RouteModule, FrostRequestContext } from "@frostjs/core";
+import { FrostDocument, FrostProvider, FrostErrorBoundary, type FrostClientState } from "@frostjs/react";
+import type { FrostAssets, RouteModule, FrostRequestContext } from "@frostjs/core";
 import { html } from "./response.js";
 
 export interface SsrRenderOptions {
@@ -10,10 +10,7 @@ export interface SsrRenderOptions {
   pathname: string;
   request: Request;
   context: FrostRequestContext;
-  assets?: {
-    scripts: string[];
-    css: string[];
-  };
+  assets?: FrostAssets;
 }
 
 export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Response> {
@@ -103,7 +100,9 @@ export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Resp
   const appHtml = renderToString(
     <FrostProvider value={clientState}>
       <FrostDocument title={title}>
-        {renderedContent}
+        <FrostErrorBoundary>
+          {renderedContent}
+        </FrostErrorBoundary>
       </FrostDocument>
     </FrostProvider>
   );

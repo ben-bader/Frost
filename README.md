@@ -1,76 +1,185 @@
 # Frost
 
-> **A React-based full-stack framework with explicit execution, visible caching, and host independence.**  
-> Primary goal: Build a shippable, open, predictable alternative to Next.js.
+Frost is a React-first full-stack framework built around explicit execution, server/client separation, and a predictable runtime model. It aims to make SSR, hydration, routing, and data loading understandable without hidden framework magic.
 
----
+## What Frost is
 
-## Core Promise
+Frost is designed for apps where developers should be able to answer these questions quickly:
 
-A developer should be able to answer these questions without guessing:
+- Where does this code run?
+- When is this route rendered?
+- Which data came from the server versus the browser?
+- How does hydration reconnect state?
+- What is the runtime boundary between client and server code?
 
-- **Where does this code execute?**
-- **When is this page rendered?**
-- **Where did this data come from?**
-- **Is this response cached?**
-- **Who can access this server function?**
-- **What will be included in the browser bundle?**
-- **Why did this page rebuild?**
-- **What happens if the application runs on another host?**
-- **Which framework version and configuration are supported?**
+The framework is intentionally small and explicit, using standard React concepts layered on top of a server runtime, route contracts, and package-level boundaries.
 
----
+## Design philosophy
 
-## Architectural Principles
+- Explicit execution: server, client, and shared modules are treated as distinct scopes.
+- Visible data flow: loaders and route data are part of the app contract instead of implicit framework behavior.
+- React compatibility: the framework works with standard React SSR and client hydration patterns.
+- Host independence: the core runtime is not tied to a single deployment target.
+- Clear debugging: route errors, source traces, and hydration mismatches are surfaced in a useful way.
 
-1. **Explicit execution:** Server code, browser code, and universal code follow clear, enforceable boundaries.
-2. **Visible caching:** Opt-in by default. Explicit TTLs, cache keys, and tag-based invalidation.
-3. **React compatibility:** Standard React DOM SSR and hydration without custom component runtimes.
-4. **Host independence:** Fully supported on standard Node.js LTS, with no proprietary vendor lock-in.
-5. **Debuggable infrastructure:** Inspectable routes, cache decisions, rendering ledgers, and dependency graphs.
-6. **Secure defaults:** Server secrets never cross into client bundles; backend operations validate independently of UI state.
-7. **Measurable performance:** Vite-powered fast builds, route code splitting, and reproducible benchmarks.
+## Architecture
 
----
-
-## Monorepo Layout
+The repository is organized as a monorepo of framework packages and example apps.
 
 ```text
 frost/
+├── apps/
+├── docs/
+├── examples/
+│   └── starter/
 ├── packages/
-│   ├── core/           # Framework configuration, contracts, context, shared errors
-│   ├── react/          # React SSR / hydration orchestration, error boundaries, hooks
-│   ├── router/         # Route discovery, trie matcher, layouts, navigation
-│   ├── server/         # Request lifecycle, middleware, HTTP abstractions, security
-│   ├── data/           # Loaders, actions, request memoization, typed server functions
-│   ├── cache/          # Cache policies, memory & distributed adapters, tag invalidation
-│   ├── build/          # Build coordinator, manifest generation, entrypoints
-│   ├── vite/           # Vite plugin integration, boundary enforcement, HMR
-│   ├── cli/            # frost CLI (dev, build, start, preview, routes, inspect)
-│   ├── adapter-node/   # Production Node.js HTTP server adapter
-│   ├── testing/        # Test utilities, request simulation, hydration assertions
-│   └── devtools/       # Route inspector, cache inspector, rendering ledger UI
-├── examples/           # Validated sample applications
-├── docs/               # Architecture documents and ADRs
-└── tests/              # End-to-end and cross-package integration tests
+│   ├── adapter-node/
+│   ├── cli/
+│   ├── core/
+│   ├── data/
+│   ├── react/
+│   ├── router/
+│   ├── server/
+│   └── vite/
+├── package.json
+├── pnpm-lock.yaml
+├── pnpm-workspace.yaml
+└── README.md
 ```
 
----
+The main building blocks are:
 
-## Roadmap
+- `@frostjs/core`: shared framework contracts and runtime primitives.
+- `@frostjs/router`: route discovery and matching.
+- `@frostjs/server`: server request lifecycle and response generation.
+- `@frostjs/react`: React SSR and hydration helpers.
+- `@frostjs/data`: data loaders/actions and request-level execution.
+- `@frostjs/vite`: Vite integration and framework runtime behavior.
+- `@frostjs/adapter-node`: Node.js hosting adapter.
 
-- **Phase 0:** Architecture freeze (ADRs, contract definitions, threat model)
-- **Phase 1:** Minimal vertical slice (CLI, Vite SSR/hydration, file route, loader, Node server)
-- **Phase 2:** Routing & Data (nested layouts, dynamic params, actions, generated types)
-- **Phase 3:** Explicit Caching (memoization, route caching, tag invalidation, inspector)
-- **Phase 4:** Security & Boundaries (server/client AST boundary validation, secret leaks)
-- **Phase 5:** Build & Deployment (production manifest, static export, Node.js adapter)
-- **Phase 6:** Developer Experience (CLI diagnostics, DevTools, testing helpers)
-- **Phase 7-9:** Real-world validation, beta, and stable 1.0 release
+## Installation
 
----
+This repo uses pnpm workspaces.
 
-## Documentation
+```bash
+git clone <repo-url>
+cd frost
+pnpm install
+```
 
-Full architectural specification: [docs/spec/FROST_SPECIFICATION.md](docs/spec/FROST_SPECIFICATION.md).
+## Quick start
+
+Run the starter app:
+
+```bash
+pnpm --dir examples/starter dev
+```
+
+Then open:
+
+```text
+http://localhost:3000
+```
+
+## Development commands
+
+From the repo root:
+
+```bash
+pnpm test
+pnpm typecheck
+pnpm build
+```
+
+Starter-specific commands:
+
+```bash
+pnpm --dir examples/starter dev
+pnpm --dir examples/starter build
+pnpm --dir examples/starter start
+```
+
+## Production build and deployment
+
+The framework packages can be built with the workspace build script:
+
+```bash
+pnpm build
+```
+
+The starter app can also be production-built and started with its local scripts.
+
+```bash
+pnpm --dir examples/starter build
+pnpm --dir examples/starter start
+```
+
+## Routes
+
+The starter app ships three routes:
+
+- `/` — Overview: what Frost is, the real architecture stack, capabilities, and live runtime info.
+- `/examples` — Consolidated framework demos in tabs: SSR, hydration, data & API, and server/client boundaries.
+- `/playground` — Interactive playground and error lab: counter, data loading, and a deliberate render error.
+
+## CSS and font loading
+
+Stylesheets are discovered per route and emitted as real `<link rel="stylesheet">` tags in the server-rendered `<head>` — before first paint and independent of hydration.
+
+- **Development:** the Vite plugin walks each route's module graph (page + layout chain) for CSS imports and serves the compiled CSS through `/@frost/css?url=...`. Vite HMR continues to work normally.
+- **Production:** `frost build` produces a client bundle per route plus a manifest. The server resolves each route's CSS and JS from the manifest and renders hashed asset URLs. Font files emitted by `@fontsource` are referenced from the stylesheet and the primary weights are preloaded with `crossorigin`.
+
+Because the stylesheet link is in the initial HTML, there is no flash of unstyled content and no layout shift from late-loading CSS.
+
+## SSR and hydration
+
+Frost supports SSR by rendering route content on the server and serializing route data for the browser. During hydration, the client reconnects to the same route payload instead of re-running server logic. The `/examples` and `/playground` routes demonstrate this behavior live in the starter app.
+
+## Routing and data loading
+
+Routes are discovered from the application source tree, and loaders provide route data before page rendering. The router and server packages cooperate to match URL patterns and execute the correct request lifecycle.
+
+A typical route looks like this:
+
+```tsx
+export async function loader({ request }: Route.LoaderArgs) {
+  return { message: "hello from the server" };
+}
+
+export default function Page({ data }: Route.ComponentProps<{ message: string }>) {
+  return <div>{data.message}</div>;
+}
+```
+
+## Server/client boundaries
+
+One of Frost's central guarantees is that server-only code stays server-only. The framework aims to keep modules with server-only behavior out of client bundles and make those boundaries explicit to developers.
+
+## Error handling
+
+`@frostjs/react` ships a `FrostErrorBoundary` that captures render errors with route, phase, component stack, and source location when available. In development it renders a diagnostic dialog with the error type, message, source file/line, expandable stack traces, copy-message/copy-report actions, and dismiss/retry recovery. In production it falls back to a safe message without leaking filesystem paths or internals.
+
+Note: React error boundaries catch render errors only — not event-handler or asynchronous errors. The playground's error lab demonstrates the boundary with a component that throws during render.
+
+## Current limits
+
+This repository is still evolving. Some areas are intentionally minimal or experimental, including the playground shell and developer diagnostics. The goal is to keep the framework behavior real and demonstrable without claiming unsupported production features.
+
+## Contribution workflow
+
+1. Create a focused branch.
+2. Update or add tests alongside behavioral changes.
+3. Run the project test suite and type checks.
+4. Keep examples aligned with the actual framework runtime.
+5. Document any API or routing changes in the package or docs.
+
+## Tailwind CSS
+
+Tailwind is a valid fit for Frost applications, but the repo is intentionally keeping the framework integration lightweight and consistent with the existing Vite-based build pipeline. Use the framework's Vite integration and confirm SSR/hydration remain stable when adding CSS tooling.
+
+## Docs and references
+
+- `examples/starter/` — live starter/playground app
+- `packages/` — framework implementation
+- `docs/` — design and architecture notes
 

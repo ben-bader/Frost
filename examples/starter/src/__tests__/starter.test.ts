@@ -3,89 +3,101 @@ import * as path from "node:path";
 import { discoverRoutes } from "@frostjs/router";
 import { createRequestHandler } from "@frostjs/server";
 import * as PageModule from "../app/page.js";
+import * as ExamplesModule from "../app/examples/page.js";
+import * as PlaygroundModule from "../app/playground/page.js";
 import * as ApiHealthModule from "../api/health.js";
-import * as SsrPageModule from "../app/examples/ssr/page.js";
 import * as LayoutModule from "../app/layout.js";
+
+const modulesByPattern: Record<string, unknown> = {
+  "/": PageModule,
+  "/examples": ExamplesModule,
+  "/playground": PlaygroundModule,
+  "/api/health": ApiHealthModule,
+};
+
+function createHandler(routes: ReturnType<typeof discoverRoutes>) {
+  return createRequestHandler({
+    routes,
+    loadModule: async (r) => {
+      if (r.kind === "layout") return LayoutModule;
+      const mod = modulesByPattern[r.pattern];
+      if (mod) return mod;
+      throw new Error(`Unknown route: ${r.filePath}`);
+    },
+  });
+}
 
 describe("Starter Application Playground Suite", () => {
   const rootDir = path.resolve(__dirname, "../..");
 
-  it("discovers all 8 playground routes and api endpoints", () => {
+  it("discovers the three page routes and API routes", () => {
     const routes = discoverRoutes({
       appDirectory: "src/app",
       apiDirectory: "src/api",
       rootDir,
     });
 
-    expect(routes.length).toBe(8);
-
-    const patterns = routes.map((r) => r.pattern);
-    expect(patterns).toContain("/");
-    expect(patterns).toContain("/examples/ssr");
-    expect(patterns).toContain("/examples/hydration");
-    expect(patterns).toContain("/examples/counter");
-    expect(patterns).toContain("/examples/api");
-    expect(patterns).toContain("/examples/boundaries");
-    expect(patterns).toContain("/api/health");
-    expect(patterns).toContain("/api/echo");
+    const patterns = routes.map((r) => r.pattern).sort();
+    expect(patterns).toEqual([
+      "/",
+      "/api/echo",
+      "/api/health",
+      "/api/records",
+      "/examples",
+      "/playground",
+    ]);
   });
 
-  it("executes the server loader and renders Overview page with layout and hydration payload", async () => {
+  it("renders the Overview page with loader data and hydration payload", async () => {
     const routes = discoverRoutes({
       appDirectory: "src/app",
       apiDirectory: "src/api",
       rootDir,
     });
+    const handler = createHandler(routes);
 
-    const handler = createRequestHandler({
-      routes,
-      loadModule: async (r) => {
-        if (r.kind === "layout") return LayoutModule;
-        if (r.pattern === "/") return PageModule;
-        if (r.pattern === "/api/health") return ApiHealthModule;
-        throw new Error(`Unknown route: ${r.filePath}`);
-      },
-    });
-
-    const request = new Request("http://localhost:3000/");
-    const response = await handler(request);
+    const response = await handler(new Request("http://localhost:3000/"));
 
     expect(response.status).toBe(200);
     expect(response.headers.get("Content-Type")).toContain("text/html");
 
     const html = await response.text();
     expect(html).toContain("<!DOCTYPE html>");
-    expect(html).toContain("<title>Frost Framework — Developer Playground</title>");
-    expect(html).toContain("Welcome to Frost");
-    expect(html).toContain("Live Server Telemetry");
-    expect(html).toContain("Core Architectural Promises");
+    expect(html).toContain("<title>Frost — React full-stack framework</title>");
+    expect(html).toContain("Server-rendered React");
     expect(html).toContain('id="__FROST_DATA__"');
   });
 
-  it("renders the SSR demonstration route with server timestamp and node version", async () => {
+  it("renders the Examples page", async () => {
     const routes = discoverRoutes({
       appDirectory: "src/app",
       apiDirectory: "src/api",
       rootDir,
     });
+    const handler = createHandler(routes);
 
-    const handler = createRequestHandler({
-      routes,
-      loadModule: async (r) => {
-        if (r.kind === "layout") return LayoutModule;
-        if (r.pattern === "/examples/ssr") return SsrPageModule;
-        return PageModule;
-      },
-    });
-
-    const request = new Request("http://localhost:3000/examples/ssr");
-    const response = await handler(request);
+    const response = await handler(new Request("http://localhost:3000/examples"));
 
     expect(response.status).toBe(200);
     const html = await response.text();
-    expect(html).toContain("Server-Side Rendering (SSR) Demonstration");
-    expect(html).toContain("Server Execution Context");
-    expect(html).toContain("SSR Verification Check");
+    expect(html).toContain("Runtime behaviors, running live.");
+    expect(html).toContain("Loader output");
+  });
+
+  it("renders the Playground page", async () => {
+    const routes = discoverRoutes({
+      appDirectory: "src/app",
+      apiDirectory: "src/api",
+      rootDir,
+    });
+    const handler = createHandler(routes);
+
+    const response = await handler(new Request("http://localhost:3000/playground"));
+
+    expect(response.status).toBe(200);
+    const html = await response.text();
+    expect(html).toContain("Poke the runtime.");
+    expect(html).toContain("Trigger render error");
   });
 
   it("dispatches requests to the /api/health endpoint", async () => {
@@ -94,17 +106,9 @@ describe("Starter Application Playground Suite", () => {
       apiDirectory: "src/api",
       rootDir,
     });
+    const handler = createHandler(routes);
 
-    const handler = createRequestHandler({
-      routes,
-      loadModule: async (r) => {
-        if (r.kind === "api") return ApiHealthModule;
-        return PageModule;
-      },
-    });
-
-    const request = new Request("http://localhost:3000/api/health", { method: "GET" });
-    const response = await handler(request);
+    const response = await handler(new Request("http://localhost:3000/api/health", { method: "GET" }));
 
     expect(response.status).toBe(200);
     expect(response.headers.get("Content-Type")).toContain("application/json");

@@ -13,7 +13,6 @@ export function generateRoutesModuleCode(routes: DiscoveredRoute[]): string {
 
   routes.forEach((route, index) => {
     const varName = `route_${index}`;
-    // Replace backslashes for JS import path
     const normalizedFilePath = route.filePath.replace(/\\/g, "/");
     imports.push(`import * as ${varName} from "${normalizedFilePath}";`);
     routeEntries.push(`  {
@@ -24,6 +23,7 @@ export function generateRoutesModuleCode(routes: DiscoveredRoute[]): string {
     isDynamic: ${route.isDynamic},
     isCatchAll: ${route.isCatchAll},
     score: ${route.score},
+    layouts: ${JSON.stringify(route.layouts || [])},
     module: ${varName}
   }`);
   });
@@ -39,21 +39,42 @@ export default routes;
 `;
 }
 
-export function generateClientEntryCode(pageFilePath: string, rootDir?: string): string {
-  let importPath = pageFilePath.replace(/\\/g, "/");
-  if (rootDir) {
-    const rel = path.relative(rootDir, pageFilePath).replace(/\\/g, "/");
-    importPath = rel.startsWith("/") ? rel : `/${rel}`;
-  } else if (!importPath.startsWith("/") && !/^[a-zA-Z]:/.test(importPath)) {
-    importPath = `/${importPath}`;
-  } else if (/^[a-zA-Z]:/.test(importPath)) {
-    importPath = `/@fs/${importPath}`;
+export function generateClientEntryCode(
+  pageFilePath: string,
+  layoutFilePaths: string[] = [],
+  rootDir?: string
+): string {
+  function toImportPath(filePath: string): string {
+    let importPath = filePath.replace(/\\/g, "/");
+    if (rootDir) {
+      const rel = path.relative(rootDir, filePath).replace(/\\/g, "/");
+      importPath = rel.startsWith("/") ? rel : `/${rel}`;
+    } else if (!importPath.startsWith("/") && !/^[a-zA-Z]:/.test(importPath)) {
+      importPath = `/${importPath}`;
+    } else if (/^[a-zA-Z]:/.test(importPath)) {
+      importPath = `/@fs/${importPath}`;
+    }
+    return importPath;
   }
 
+  const pageImportPath = toImportPath(pageFilePath);
+  const layoutImports = layoutFilePaths.map((layoutPath, index) => {
+    const importPath = toImportPath(layoutPath);
+    return `import Layout_${index} from "${importPath}";`;
+  });
+
+  const layoutArray = layoutFilePaths
+    .map((_, index) => `Layout_${index}.default || Layout_${index}`)
+    .join(", ");
+
   return `
-import PageModule from "${importPath}";
+import PageModule from "${pageImportPath}";
+${layoutImports.join("\n")}
 import { hydrateApp } from "@frostjs/react/client";
 
-hydrateApp(PageModule.default || PageModule);
+const PageComponent = PageModule.default || PageModule;
+const layoutComponents = [${layoutArray}];
+
+hydrateApp(PageComponent, layoutComponents);
 `;
 }

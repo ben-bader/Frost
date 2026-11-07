@@ -11,79 +11,46 @@ export function HydrationInspector(): React.JSX.Element {
     setHydrationTime(new Date().toLocaleTimeString());
   }, []);
 
+  const serialized = JSON.stringify(
+    { pathname: ctx.pathname, params: ctx.params, loaderData: ctx.loaderData },
+    null,
+    2
+  );
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-      {/* Hydration Status Badge */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          background: isHydrated ? "rgba(16, 185, 129, 0.12)" : "rgba(245, 158, 11, 0.12)",
-          border: `1px solid ${isHydrated ? "rgba(16, 185, 129, 0.3)" : "rgba(245, 158, 11, 0.3)"}`,
-          borderRadius: "10px",
-          padding: "16px 20px",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-5)" }}>
+      <div className="surface surface--interactive" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "var(--space-4)", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
           <span
             style={{
-              width: "12px",
-              height: "12px",
+              width: 8,
+              height: 8,
               borderRadius: "50%",
-              background: isHydrated ? "var(--accent-emerald)" : "var(--accent-amber)",
-              boxShadow: isHydrated ? "0 0 8px var(--accent-emerald)" : "none",
+              background: isHydrated ? "var(--status-success)" : "var(--status-warning)",
+              boxShadow: isHydrated ? "0 0 10px rgba(94,232,200,0.8)" : "none",
+              flex: "none",
             }}
           />
           <div>
-            <div style={{ fontWeight: 600, color: isHydrated ? "var(--accent-emerald)" : "var(--accent-amber)" }}>
-              {isHydrated ? "Client Hydration Complete" : "SSR Initializing..."}
+            <div style={{ fontSize: "0.88rem", fontWeight: 600, color: isHydrated ? "var(--status-success)" : "var(--status-warning)" }}>
+              {isHydrated ? "Hydration complete" : "Hydration pending"}
             </div>
-            <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>
-              {isHydrated
-                ? `React 19 hydrateRoot executed successfully at ${hydrationTime}.`
-                : "Awaiting client script execution."}
+            <div className="body" style={{ fontSize: "0.78rem" }}>
+              {isHydrated ? `React hydrateRoot finished at ${hydrationTime}.` : "Waiting for the client entry module."}
             </div>
           </div>
         </div>
-
-        <span
-          style={{
-            fontSize: "0.75rem",
-            background: isHydrated ? "rgba(16, 185, 129, 0.2)" : "rgba(245, 158, 11, 0.2)",
-            color: isHydrated ? "var(--accent-emerald)" : "var(--accent-amber)",
-            padding: "4px 10px",
-            borderRadius: "6px",
-            fontWeight: 700,
-          }}
-        >
-          {isHydrated ? "HYDRATED" : "PENDING"}
+        <span className={`pill ${isHydrated ? "pill--success" : "pill--warning"}`}>
+          {isHydrated ? "hydrated" : "pending"}
         </span>
       </div>
 
-      {/* Hydration Payload Inspector */}
-      <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-subtle)", borderRadius: "10px", padding: "20px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-          <h3 style={{ fontSize: "0.95rem", fontWeight: 600, color: "var(--text-primary)" }}>
-            Serialized Hydration State (__FROST_DATA__)
-          </h3>
-          <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-            Read from <code>&lt;script id=&quot;__FROST_DATA__&quot;&gt;</code>
-          </span>
+      <div className="surface">
+        <div className="surface__head">
+          <h3 className="h3">Serialized route state</h3>
+          <span className="meta">__FROST_DATA__</span>
         </div>
-        <pre
-          style={{
-            background: "var(--bg-primary)",
-            padding: "16px",
-            borderRadius: "8px",
-            fontSize: "0.82rem",
-            color: "var(--accent-cyan)",
-            overflowX: "auto",
-            lineHeight: "1.5",
-          }}
-        >
-          {JSON.stringify(ctx, null, 2)}
-        </pre>
+        <pre className="code-block code-block--wrap" style={{ maxHeight: 260 }}>{serialized}</pre>
       </div>
     </div>
   );

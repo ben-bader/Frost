@@ -28,3 +28,4 @@ export function GET(): Response {
     hint: "Send a POST request with JSON payload to test mutation reflection.",
   });
 }
+

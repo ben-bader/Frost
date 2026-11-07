@@ -8,6 +8,7 @@ import {
 import {
   createRequestContext,
   type FrostRequestContext,
+  type FrostAssets,
   type RouteModule,
   type ApiRouteModule,
 } from "@frostjs/core";
@@ -24,7 +25,7 @@ export interface LoadedRoute<T = RouteModule | ApiRouteModule> {
 export interface RequestHandlerOptions {
   routes: DiscoveredRoute[];
   loadModule: (route: DiscoveredRoute) => Promise<RouteModule | ApiRouteModule>;
-  getAssetsForRoute?: (route: DiscoveredRoute) => { scripts: string[]; css: string[] };
+  getAssetsForRoute?: (route: DiscoveredRoute) => FrostAssets | Promise<FrostAssets>;
 }
 
 export function createRequestHandler(options: RequestHandlerOptions) {
@@ -111,7 +112,7 @@ export function createRequestHandler(options: RequestHandlerOptions) {
             }
           }
 
-          const assets = getAssetsForRoute?.(pageMatch.route);
+          const assets = await getAssetsForRoute?.(pageMatch.route);
           response = await renderRouteToHtml({
             routeModule: mod,
             layoutModules,

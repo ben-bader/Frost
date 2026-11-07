@@ -1,14 +1,22 @@
 import { createContext, useContext, type ReactNode } from "react";
+import type { FrostAssets } from "@frostjs/core";
 
 export interface FrostClientState {
   pathname: string;
   params: Record<string, string>;
   loaderData: unknown;
   error?: { message: string; stack?: string };
-  assets?: {
-    scripts: string[];
-    css: string[];
-  };
+  assets?: FrostAssets;
+}
+
+export function isFrostClientState(val: unknown): val is FrostClientState {
+  return (
+    typeof val === "object" &&
+    val !== null &&
+    !("nodeType" in val) &&
+    typeof (val as any).pathname === "string" &&
+    "loaderData" in val
+  );
 }
 
 const FROST_CONTEXT_KEY = Symbol.for("__FROST_APP_CONTEXT__");
@@ -21,6 +29,26 @@ export interface FrostProviderProps {
   children: ReactNode;
 }
 
+function getFreshWindowState(): FrostClientState | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const currentPath = window.location.pathname || "/";
+
+  const candidateState = (window as any).__FROST_STATE__;
+  if (isFrostClientState(candidateState) && candidateState.pathname === currentPath) {
+    return candidateState;
+  }
+
+  const candidateData = (window as any).__FROST_DATA__;
+  if (isFrostClientState(candidateData) && candidateData.pathname === currentPath) {
+    return candidateData;
+  }
+
+  return null;
+}
+
 export function FrostProvider({ value, children }: FrostProviderProps): React.JSX.Element {
   return <FrostContext.Provider value={value}>{children}</FrostContext.Provider>;
 }
@@ -31,9 +59,10 @@ export function useFrostContext(): FrostClientState {
     return ctx;
   }
 
-  // Graceful fallback for client-side or nested rendering
-  if (typeof window !== "undefined" && (window as any).__FROST_DATA__) {
-    return (window as any).__FROST_DATA__;
+  // Graceful fallback for client-side or nested rendering without leaking stale route state across requests.
+  const freshWindowState = getFreshWindowState();
+  if (freshWindowState) {
+    return freshWindowState;
   }
 
   return {

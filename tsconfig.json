@@ -1,0 +1,14 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/core" },
+    { "path": "packages/router" },
+    { "path": "packages/data" },
+    { "path": "packages/server" },
+    { "path": "packages/react" },
+    { "path": "packages/vite" },
+    { "path": "packages/adapter-node" },
+    { "path": "packages/cli" },
+    { "path": "examples/starter" }
+  ]
+}

@@ -8,6 +8,19 @@ export interface RenderingConfig {
   cacheTags?: string[];
 }
 
+export interface FrostAssetPreload {
+  href: string;
+  as: string;
+  type?: string;
+  crossOrigin?: boolean;
+}
+
+export interface FrostAssets {
+  scripts: string[];
+  css: string[];
+  preloads?: FrostAssetPreload[];
+}
+
 export interface FrostRequestContext {
   readonly requestId: string;
   readonly startTime: number;
