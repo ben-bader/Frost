@@ -58,3 +58,4 @@ export function createServerFn<TInput, TOutput>(
 
   return serverFunction as ServerFn<TInput, TOutput>;
 }
+

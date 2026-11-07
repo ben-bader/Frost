@@ -5,6 +5,7 @@ import { html } from "./response.js";
 
 export interface SsrRenderOptions {
   routeModule: RouteModule;
+  layoutModules?: RouteModule[];
   params: Record<string, string>;
   pathname: string;
   request: Request;
@@ -75,6 +76,23 @@ export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Resp
     );
   }
 
+  let renderedContent: React.ReactNode = <Component data={loaderData} params={params} />;
+
+  // Wrap with layouts from leaf to root
+  if (options.layoutModules && options.layoutModules.length > 0) {
+    for (let i = options.layoutModules.length - 1; i >= 0; i--) {
+      const layoutMod = options.layoutModules[i];
+      const LayoutComp = layoutMod?.default;
+      if (LayoutComp) {
+        renderedContent = (
+          <LayoutComp data={loaderData} params={params}>
+            {renderedContent}
+          </LayoutComp>
+        );
+      }
+    }
+  }
+
   const clientState: FrostClientState = {
     pathname,
     params,
@@ -85,7 +103,7 @@ export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Resp
   const appHtml = renderToString(
     <FrostProvider value={clientState}>
       <FrostDocument title={title}>
-        <Component data={loaderData} params={params} />
+        {renderedContent}
       </FrostDocument>
     </FrostProvider>
   );

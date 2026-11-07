@@ -11,7 +11,10 @@ export interface FrostClientState {
   };
 }
 
-const FrostContext = createContext<FrostClientState | null>(null);
+const FROST_CONTEXT_KEY = Symbol.for("__FROST_APP_CONTEXT__");
+
+const FrostContext: React.Context<FrostClientState | null> =
+  ((globalThis as any)[FROST_CONTEXT_KEY] ||= createContext<FrostClientState | null>(null));
 
 export interface FrostProviderProps {
   value: FrostClientState;
@@ -24,12 +27,20 @@ export function FrostProvider({ value, children }: FrostProviderProps): React.JS
 
 export function useFrostContext(): FrostClientState {
   const ctx = useContext(FrostContext);
-  if (!ctx) {
-    throw new Error(
-      "Frost hooks must be used within a <FrostProvider>. Ensure your component is rendered inside a Frost route."
-    );
+  if (ctx) {
+    return ctx;
   }
-  return ctx;
+
+  // Graceful fallback for client-side or nested rendering
+  if (typeof window !== "undefined" && (window as any).__FROST_DATA__) {
+    return (window as any).__FROST_DATA__;
+  }
+
+  return {
+    pathname: typeof window !== "undefined" ? window.location.pathname : "/",
+    params: {},
+    loaderData: null,
+  };
 }
 
 export function useLoaderData<T = unknown>(): T {
@@ -43,6 +54,9 @@ export function useRouteParams<T = Record<string, string>>(): T {
 }
 
 export function usePathname(): string {
+  if (typeof window !== "undefined" && window.location.pathname) {
+    return window.location.pathname;
+  }
   const ctx = useFrostContext();
-  return ctx.pathname;
+  return ctx.pathname || "/";
 }

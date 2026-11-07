@@ -34,6 +34,7 @@ export namespace Route {
   export interface ComponentProps<TData = any, TParams = Record<string, string>> {
     data: TData;
     params: TParams;
+    children?: ReactNode;
     error?: Error;
   }
 

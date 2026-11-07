@@ -15,6 +15,9 @@ export function discoverRoutes(options: DiscoverOptions): DiscoveredRoute[] {
   const routes: DiscoveredRoute[] = [];
 
   // 1. Discover app pages and layouts
+  const layoutsByDir = new Map<string, string>();
+  const pageRoutes: DiscoveredRoute[] = [];
+
   if (fs.existsSync(appDir)) {
     scanDirectory(appDir, "", (relPath, fullPath) => {
       const filename = path.basename(relPath);
@@ -26,19 +29,50 @@ export function discoverRoutes(options: DiscoverOptions): DiscoveredRoute[] {
         kind = "layout";
       }
 
-      if (kind) {
+      if (kind === "layout") {
+        const dir = path.dirname(relPath).replace(/\\/g, "/");
+        const normalizedDir = dir === "." ? "" : dir;
+        layoutsByDir.set(normalizedDir, fullPath);
+      } else if (kind === "page") {
         const { pattern, isDynamic, isCatchAll, score } = filePathToPattern(relPath);
-        routes.push({
+        pageRoutes.push({
           id: relPath.replace(/\\/g, "/"),
           pattern,
           filePath: fullPath,
-          kind,
+          kind: "page",
           isDynamic,
           isCatchAll,
           score,
         });
       }
     });
+
+    // Compute layout chain for each page from root to leaf
+    for (const page of pageRoutes) {
+      const dir = path.dirname(page.id).replace(/\\/g, "/");
+      const normalizedDir = dir === "." ? "" : dir;
+      const segments = normalizedDir ? normalizedDir.split("/") : [];
+      const layoutChain: string[] = [];
+
+      // Check root layout
+      const rootLayout = layoutsByDir.get("");
+      if (rootLayout) {
+        layoutChain.push(rootLayout);
+      }
+
+      // Check nested directory layouts
+      let current = "";
+      for (const seg of segments) {
+        current = current ? `${current}/${seg}` : seg;
+        const nestedLayout = layoutsByDir.get(current);
+        if (nestedLayout && !layoutChain.includes(nestedLayout)) {
+          layoutChain.push(nestedLayout);
+        }
+      }
+
+      page.layouts = layoutChain;
+      routes.push(page);
+    }
   }
 
   // 2. Discover api endpoints

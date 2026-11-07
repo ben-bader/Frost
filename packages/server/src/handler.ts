@@ -14,7 +14,7 @@ import {
 import { renderRouteToHtml } from "./ssr.js";
 import { dispatchApiRoute } from "./api.js";
 import { applySecurityHeaders } from "./security.js";
-import { html } from "./response.js";
+import { html, json } from "./response.js";
 
 export interface LoadedRoute<T = RouteModule | ApiRouteModule> {
   discovered: DiscoveredRoute;
@@ -72,9 +72,49 @@ export function createRequestHandler(options: RequestHandlerOptions) {
       if (pageMatch) {
         try {
           const mod = (await loadModule(pageMatch.route)) as RouteModule;
+
+          // Handle page route actions on mutation methods (POST, PUT, DELETE, PATCH)
+          if (request.method !== "GET" && request.method !== "HEAD" && mod.action) {
+            const actionResult = await mod.action({
+              request,
+              params: pageMatch.params,
+              url,
+              context,
+            });
+            if (actionResult instanceof Response) {
+              applySecurityHeaders(actionResult.headers);
+              return actionResult;
+            }
+            return json(actionResult);
+          }
+
+          const layoutModules: RouteModule[] = [];
+
+          if (pageMatch.route.layouts) {
+            for (const layoutPath of pageMatch.route.layouts) {
+              try {
+                const layoutMod = (await loadModule({
+                  id: layoutPath,
+                  pattern: "",
+                  filePath: layoutPath,
+                  kind: "layout",
+                  isDynamic: false,
+                  isCatchAll: false,
+                  score: 0,
+                })) as RouteModule;
+                if (layoutMod) {
+                  layoutModules.push(layoutMod);
+                }
+              } catch (layoutErr) {
+                console.warn(`[Frost] Could not load layout at ${layoutPath}:`, layoutErr);
+              }
+            }
+          }
+
           const assets = getAssetsForRoute?.(pageMatch.route);
           response = await renderRouteToHtml({
             routeModule: mod,
+            layoutModules,
             params: pageMatch.params,
             pathname,
             request,

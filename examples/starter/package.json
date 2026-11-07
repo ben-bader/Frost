@@ -9,13 +9,15 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fontsource/poppins": "^5.3.0",
+    "@frostjs/adapter-node": "workspace:*",
+    "@frostjs/cli": "workspace:*",
     "@frostjs/core": "workspace:*",
+    "@frostjs/data": "workspace:*",
     "@frostjs/react": "workspace:*",
     "@frostjs/router": "workspace:*",
     "@frostjs/server": "workspace:*",
-    "@frostjs/adapter-node": "workspace:*",
     "@frostjs/vite": "workspace:*",
-    "@frostjs/cli": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
@@ -26,4 +28,3 @@
     "vite": "^6.2.0"
   }
 }
-

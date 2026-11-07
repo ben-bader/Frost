@@ -8,6 +8,7 @@ export interface DiscoveredRoute {
   isDynamic: boolean;
   isCatchAll: boolean;
   score: number;
+  layouts?: string[];
 }
 
 export interface RouteMatch<TRoute = DiscoveredRoute> {

@@ -1,4 +1,4 @@
-import { defineConfig } from "@frostjs/core";
+import { defineConfig } from "@frostjs/vite";
 
 export default defineConfig({
   appDirectory: "src/app",
@@ -9,4 +9,3 @@ export default defineConfig({
     host: "localhost",
   },
 });
-
