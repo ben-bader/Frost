@@ -69,6 +69,7 @@ export namespace Route {
     };
     meta?: Array<Record<string, string>>;
     links?: Array<Record<string, string>>;
+    scripts?: Array<{ src?: string; content?: string; type?: string; async?: boolean }>;
   }
 }
 

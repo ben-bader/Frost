@@ -3,6 +3,8 @@ import type { Route } from "@frostjs/core";
 import { useLoaderData } from "@frostjs/react";
 import { HydrationInspector } from "../../components/HydrationInspector.js";
 import { ApiClientDemo } from "../../components/ApiClientDemo.js";
+import { CopyButton } from "../../components/CopyButton.js";
+import { siteHead } from "../head.js";
 
 export interface BoundaryRecord {
   id: string;
@@ -49,8 +51,9 @@ export async function loader({ url }: Route.LoaderArgs): Promise<ExamplesLoaderD
 }
 
 export const metadata: Route.Metadata = {
-  title: "Examples — Frost Framework",
+  title: "Examples — Frost",
   description: "Live demonstrations of SSR, hydration, API routes, and server/client boundaries.",
+  ...siteHead,
 };
 
 const tabs = ["SSR", "Hydration", "Data & API", "Boundaries"] as const;
@@ -61,17 +64,16 @@ export default function ExamplesPage({ data }: Route.ComponentProps<ExamplesLoad
   const [activeTab, setActiveTab] = useState<ExampleTab>("SSR");
 
   return (
-    <div style={{ display: "flex", flexDirection: "column" }}>
-      <div style={{ paddingTop: "var(--space-6)", marginBottom: "var(--space-8)" }}>
-        <div className="meta" style={{ marginBottom: "var(--space-2)" }}>Examples</div>
-        <h1 className="h1">Runtime behaviors, running live.</h1>
-        <p className="lede" style={{ marginTop: "var(--space-4)", fontSize: "0.95rem" }}>
+    <div className="wrap">
+      <div className="page-head">
+        <h1 className="page-title">Runtime behaviors, running live.</h1>
+        <p className="page-lede">
           Each tab exercises a real part of the Frost runtime — server loaders,
           client hydration, HTTP endpoints, and module boundaries.
         </p>
       </div>
 
-      <div className="tabs" role="tablist">
+      <div className="tabs" role="tablist" aria-label="Examples">
         {tabs.map((tab) => (
           <button
             key={tab}
@@ -95,37 +97,7 @@ export default function ExamplesPage({ data }: Route.ComponentProps<ExamplesLoad
   );
 }
 
-function SsrPanel({ data }: { data: ExamplesLoaderData }): React.JSX.Element {
-  return (
-    <div className="grid-split">
-      <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-5)" }}>
-        <div className="surface">
-          <div className="surface__head">
-            <h3 className="h3">Loader output</h3>
-            <span className="pill pill--accent">server</span>
-          </div>
-          <div className="kv">
-            <div className="kv__row"><span className="kv__key">serverTime</span><span className="kv__value kv__value--mono">{data.serverTime}</span></div>
-            <div className="kv__row"><span className="kv__key">nodeVersion</span><span className="kv__value kv__value--mono">{data.nodeVersion}</span></div>
-            <div className="kv__row"><span className="kv__key">recordsSource</span><span className="kv__value">{data.recordsSource}</span></div>
-          </div>
-        </div>
-
-        <div className="surface">
-          <h3 className="h3" style={{ marginBottom: "var(--space-3)" }}>Render lifecycle</h3>
-          <ol style={{ paddingLeft: "1.2em", display: "flex", flexDirection: "column", gap: "var(--space-2)", fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: 1.7 }}>
-            <li>Router matches the URL to <span className="code-inline">/examples</span>.</li>
-            <li>The route <span className="code-inline">loader</span> executes on the server with the request context.</li>
-            <li>Loader data is serialized into <span className="code-inline">#__FROST_DATA__</span> in the document.</li>
-            <li>React renders the page to an HTML string on the server.</li>
-            <li>The browser receives styled, complete HTML before any JavaScript runs.</li>
-          </ol>
-        </div>
-      </div>
-
-      <div className="surface surface--code">
-        <div className="meta" style={{ marginBottom: "var(--space-3)" }}>src/app/examples/page.tsx</div>
-        <pre className="code-block">{`export async function loader({ url }) {
+const SSR_SOURCE = `export async function loader({ url }) {
   return {
     serverTime: new Date().toISOString(),
     nodeVersion: process.version,
@@ -137,7 +109,85 @@ export default function ExamplesPage({ data }) {
   // data was computed on the server
   // and serialized into the HTML
   return <RuntimeDemo {...data} />;
-}`}</pre>
+}`;
+
+const HYDRATION_SOURCE = `const state = getClientState(); // parses #__FROST_DATA__
+hydrateRoot(rootElement, (
+  <FrostProvider value={state}>
+    <FrostErrorBoundary>{appTree}</FrostErrorBoundary>
+  </FrostProvider>
+));`;
+
+const BOUNDARY_SOURCE = `FS1004: Server-only module imported into client bundle.
+  Importer: src/components/UserCard.tsx
+  Target:   src/server/database.server.ts
+
+Hint: move privileged operations into a server
+loader or route action, and pass only public
+data to the client component.`;
+
+function CodePanel({ filename, code }: { filename: string; code: string }): React.JSX.Element {
+  return (
+    <div className="code-panel">
+      <div className="code-panel__bar">
+        <span>{filename}</span>
+        <CopyButton text={code} label="Copy code" />
+      </div>
+      <div className="code-panel__body">
+        <pre className="code-block--wrap"><code>{code}</code></pre>
+      </div>
+    </div>
+  );
+}
+
+function SsrPanel({ data }: { data: ExamplesLoaderData }): React.JSX.Element {
+  return (
+    <div className="demo-grid">
+      <div>
+        <div className="panel">
+          <div className="panel__head">
+            <div>
+              <div className="panel__title">Loader output</div>
+              <div className="panel__note">produced on the server for this request</div>
+            </div>
+            <span className="tag">server</span>
+          </div>
+          <div className="kv">
+            <div className="kv__row"><span className="kv__key">serverTime</span><span className="kv__value">{data.serverTime}</span></div>
+            <div className="kv__row"><span className="kv__key">nodeVersion</span><span className="kv__value">{data.nodeVersion}</span></div>
+            <div className="kv__row"><span className="kv__key">recordsSource</span><span className="kv__value">{data.recordsSource}</span></div>
+          </div>
+        </div>
+
+        <div className="panel">
+          <div className="panel__title" style={{ marginBottom: "var(--space-4)" }}>Render lifecycle</div>
+          <ol className="explain">
+            <li>
+              <span className="explain__num">1</span>
+              <div><div className="explain__title">Route match</div><p className="explain__desc">The router resolves <span className="mono">/examples</span> to this module.</p></div>
+            </li>
+            <li>
+              <span className="explain__num">2</span>
+              <div><div className="explain__title">Loader</div><p className="explain__desc">Runs on the server with the request context.</p></div>
+            </li>
+            <li>
+              <span className="explain__num">3</span>
+              <div><div className="explain__title">Serialize</div><p className="explain__desc">Loader data is embedded in <span className="mono">#__FROST_DATA__</span>.</p></div>
+            </li>
+            <li>
+              <span className="explain__num">4</span>
+              <div><div className="explain__title">Render</div><p className="explain__desc">React renders the page to an HTML string.</p></div>
+            </li>
+            <li>
+              <span className="explain__num">5</span>
+              <div><div className="explain__title">Paint</div><p className="explain__desc">The browser shows complete, styled HTML before JavaScript runs.</p></div>
+            </li>
+          </ol>
+        </div>
+      </div>
+
+      <div>
+        <CodePanel filename="src/app/examples/page.tsx" code={SSR_SOURCE} />
       </div>
     </div>
   );
@@ -145,25 +195,31 @@ export default function ExamplesPage({ data }) {
 
 function HydrationPanel(): React.JSX.Element {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-5)" }}>
+    <div>
       <HydrationInspector />
-      <div className="surface">
-        <h3 className="h3" style={{ marginBottom: "var(--space-3)" }}>How hydration works here</h3>
-        <ol style={{ paddingLeft: "1.2em", display: "flex", flexDirection: "column", gap: "var(--space-2)", fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: 1.7 }}>
-          <li>The server embeds route state as JSON in a script tag.</li>
-          <li>The client entry module imports the same page and layout modules.</li>
-          <li><span className="code-inline">hydrateRoot</span> reuses the server-rendered DOM instead of replacing it.</li>
-          <li>Event handlers attach and React state becomes live — the DOM is never rebuilt.</li>
+      <div className="panel">
+        <div className="panel__title" style={{ marginBottom: "var(--space-4)" }}>How hydration works here</div>
+        <ol className="explain">
+          <li>
+            <span className="explain__num">1</span>
+            <div><div className="explain__title">Embedded state</div><p className="explain__desc">The server embeds route state as JSON in a script tag.</p></div>
+          </li>
+          <li>
+            <span className="explain__num">2</span>
+            <div><div className="explain__title">Same modules</div><p className="explain__desc">The client entry imports the same page and layout modules.</p></div>
+          </li>
+          <li>
+            <span className="explain__num">3</span>
+            <div><div className="explain__title">hydrateRoot</div><p className="explain__desc">Reuses the server-rendered DOM instead of replacing it.</p></div>
+          </li>
+          <li>
+            <span className="explain__num">4</span>
+            <div><div className="explain__title">Live state</div><p className="explain__desc">Event handlers attach and React state becomes live — the DOM is never rebuilt.</p></div>
+          </li>
         </ol>
       </div>
-      <div className="surface surface--code">
-        <div className="meta" style={{ marginBottom: "var(--space-3)" }}>packages/react/src/client.tsx</div>
-        <pre className="code-block">{`const state = getClientState(); // parses #__FROST_DATA__
-hydrateRoot(rootElement, (
-  <FrostProvider value={state}>
-    <FrostErrorBoundary>{appTree}</FrostErrorBoundary>
-  </FrostProvider>
-));`}</pre>
+      <div style={{ marginTop: "var(--space-6)" }}>
+        <CodePanel filename="packages/react/src/client.tsx" code={HYDRATION_SOURCE} />
       </div>
     </div>
   );
@@ -171,17 +227,17 @@ hydrateRoot(rootElement, (
 
 function ApiPanel(): React.JSX.Element {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-5)" }}>
+    <div>
       <ApiClientDemo />
-      <div className="surface">
-        <h3 className="h3" style={{ marginBottom: "var(--space-3)" }}>Available endpoints</h3>
+      <div className="panel">
+        <div className="panel__title" style={{ marginBottom: "var(--space-4)" }}>Available endpoints</div>
         <div className="kv">
-          <div className="kv__row"><span className="kv__key">GET</span><span className="kv__value kv__value--mono">/api/health</span></div>
-          <div className="kv__row"><span className="kv__key">POST</span><span className="kv__value kv__value--mono">/api/echo</span></div>
-          <div className="kv__row"><span className="kv__key">GET</span><span className="kv__value kv__value--mono">/api/records</span></div>
+          <div className="kv__row"><span className="kv__key">GET</span><span className="kv__value">/api/health</span></div>
+          <div className="kv__row"><span className="kv__key">POST</span><span className="kv__value">/api/echo</span></div>
+          <div className="kv__row"><span className="kv__key">GET</span><span className="kv__value">/api/records</span></div>
         </div>
-        <p className="body" style={{ fontSize: "0.8rem", marginTop: "var(--space-4)" }}>
-          API routes live in <span className="code-inline">src/api/</span> and dispatch
+        <p className="body-sm" style={{ marginTop: "var(--space-4)" }}>
+          API routes live in <span className="mono">src/api/</span> and dispatch
           through the same request handler as pages. The DELETE request above
           intentionally returns 405 to show error states.
         </p>
@@ -192,57 +248,40 @@ function ApiPanel(): React.JSX.Element {
 
 function BoundariesPanel({ data }: { data: ExamplesLoaderData }): React.JSX.Element {
   return (
-    <div className="grid-split">
-      <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-5)" }}>
-        <div className="surface">
-          <div className="surface__head">
-            <h3 className="h3">Privileged records</h3>
-            <span className="pill pill--accent">{data.recordsSource}</span>
+    <div className="demo-grid">
+      <div>
+        <div className="panel">
+          <div className="panel__head">
+            <div>
+              <div className="panel__title">Privileged records</div>
+              <div className="panel__note">{data.recordsSource}</div>
+            </div>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+          <div>
             {data.records.map((record) => (
-              <div
-                key={record.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: "var(--space-4)",
-                  padding: "var(--space-3) var(--space-4)",
-                  background: "var(--surface-secondary)",
-                  border: "1px solid var(--border-subtle)",
-                  borderRadius: "var(--radius-medium)",
-                }}
-              >
+              <div key={record.id} className="record-row">
                 <div>
-                  <div style={{ fontSize: "0.85rem", fontWeight: 600 }}>{record.name}</div>
-                  <div className="meta" style={{ marginTop: 2 }}>{record.id}</div>
+                  <div className="record-row__name">{record.name}</div>
+                  <div className="record-row__id">{record.id}</div>
                 </div>
-                <span className={`pill ${record.isPrivileged ? "pill--danger" : "pill--success"}`}>{record.role}</span>
+                <span className="tag">{record.role}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="surface">
-          <h3 className="h3" style={{ marginBottom: "var(--space-3)" }}>The boundary</h3>
-          <p className="body" style={{ fontSize: "0.85rem" }}>
-            <span className="code-inline">database.server.ts</span> strips secret fields
+        <div className="panel">
+          <div className="panel__title" style={{ marginBottom: "var(--space-3)" }}>The boundary</div>
+          <p className="body-sm">
+            <span className="mono">database.server.ts</span> strips secret fields
             before data leaves the server. If a client component tried to import it
             directly, the Vite plugin rejects the build with error FS1004.
           </p>
         </div>
       </div>
 
-      <div className="surface surface--code">
-        <div className="meta" style={{ marginBottom: "var(--space-3)" }}>FS1004 — boundary violation</div>
-        <pre className="code-block code-block--wrap">{`FS1004: Server-only module imported into client bundle.
-  Importer: src/components/UserCard.tsx
-  Target:   src/server/database.server.ts
-
-Hint: move privileged operations into a server
-loader or route action, and pass only public
-data to the client component.`}</pre>
+      <div>
+        <CodePanel filename="FS1004 — boundary violation" code={BOUNDARY_SOURCE} />
       </div>
     </div>
   );

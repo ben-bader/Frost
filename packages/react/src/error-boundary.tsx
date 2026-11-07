@@ -132,22 +132,22 @@ export function FrostErrorFallback({ error, componentStack, route, onReset }: Fr
 
   const btn = (extra?: React.CSSProperties): React.CSSProperties => ({
     fontFamily: "var(--font-mono, ui-monospace, monospace)",
-    fontSize: "0.72rem",
-    fontWeight: 600,
-    letterSpacing: "0.02em",
+    fontSize: "0.75rem",
+    fontWeight: 500,
     padding: "6px 12px",
-    borderRadius: "6px",
-    border: "1px solid rgba(255,143,143,0.3)",
-    background: "rgba(255,120,120,0.08)",
-    color: "#ffb4b4",
+    borderRadius: "var(--radius-control, 2px)",
+    border: "1px solid var(--ice-200, #cbdae6)",
+    background: "transparent",
+    color: "var(--ink, #0b1a2a)",
     cursor: "pointer",
+    transition: "background 150ms ease-out, color 150ms ease-out",
     ...extra,
   });
 
   const metaRow = (label: string, value: ReactNode) => (
-    <div style={{ display: "flex", gap: "12px", padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-      <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.64rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "#7d9a94", width: 76, flex: "none", paddingTop: 2 }}>{label}</span>
-      <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.76rem", color: "#e9f6f2", wordBreak: "break-word" }}>{value ?? "—"}</span>
+    <div style={{ display: "flex", gap: "12px", padding: "5px 0", borderBottom: "1px solid var(--ice-200, #cbdae6)" }}>
+      <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.68rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--slate-500, #5b7083)", width: 76, flex: "none", paddingTop: 2 }}>{label}</span>
+      <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.78rem", color: "var(--ink, #0b1a2a)", wordBreak: "break-word" }}>{value ?? "—"}</span>
     </div>
   );
 
@@ -163,9 +163,7 @@ export function FrostErrorFallback({ error, componentStack, route, onReset }: Fr
         display: "grid",
         placeItems: "center",
         padding: "20px",
-        background: "rgba(2, 10, 9, 0.72)",
-        backdropFilter: "blur(6px)",
-        WebkitBackdropFilter: "blur(6px)",
+        background: "rgb(8 18 28 / 0.5)",
       }}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onReset();
@@ -178,22 +176,21 @@ export function FrostErrorFallback({ error, componentStack, route, onReset }: Fr
           width: "min(680px, 100%)",
           maxHeight: "min(78vh, 720px)",
           overflowY: "auto",
-          background: "#0a1c1a",
-          border: "1px solid rgba(255, 143, 143, 0.28)",
-          borderRadius: "var(--radius-dialog, 14px)",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.55)",
+          background: "var(--snow, #f7fafc)",
+          border: "1px solid var(--danger, #b3403e)",
+          borderRadius: "var(--radius-max, 4px)",
           outline: "none",
         }}
       >
         {/* Header */}
-        <div style={{ padding: "18px 20px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ padding: "18px 20px 14px", borderBottom: "1px solid var(--ice-200, #cbdae6)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
-            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.64rem", letterSpacing: "0.14em", textTransform: "uppercase", color: "#ff9d9d", fontWeight: 700 }}>
+            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.68rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--danger, #b3403e)", fontWeight: 600 }}>
               Frost runtime error
             </span>
-            <span className="pill pill--danger" style={{ fontSize: "0.6rem" }}>{production ? "production" : "development"}</span>
+            <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.68rem", color: "var(--slate-500, #5b7083)" }}>{production ? "production" : "development"}</span>
           </div>
-          <div style={{ fontSize: "1.05rem", fontWeight: 600, color: "#f4e3e3", letterSpacing: "-0.01em" }}>
+          <div style={{ fontSize: "1.05rem", fontWeight: 500, color: "var(--ink, #0b1a2a)", letterSpacing: "-0.01em" }}>
             {error.name}: {error.message}
           </div>
         </div>
@@ -213,8 +210,8 @@ export function FrostErrorFallback({ error, componentStack, route, onReset }: Fr
 
           {/* Message */}
           <div>
-            <div style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.64rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#7d9a94", marginBottom: 6 }}>Message</div>
-            <div style={{ fontSize: "0.85rem", lineHeight: 1.6, color: "#f0d9d9", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{error.message}</div>
+            <div style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.68rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--slate-500, #5b7083)", marginBottom: 6 }}>Message</div>
+            <div style={{ fontSize: "0.85rem", lineHeight: 1.6, color: "var(--slate-700, #2c3e50)", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{error.message}</div>
           </div>
 
           {/* Expandable stacks */}
@@ -224,7 +221,7 @@ export function FrostErrorFallback({ error, componentStack, route, onReset }: Fr
                 {stackOpen ? "Hide stack trace" : "Show stack trace"}
               </button>
               {stackOpen && (
-                <pre style={{ background: "#05120f", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "8px", padding: "12px 14px", fontSize: "0.72rem", lineHeight: 1.6, color: "#9fd8cb", overflowX: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word", maxHeight: 220 }}>
+                <pre style={{ background: "var(--ice-50, #eef4f8)", border: "1px solid var(--ice-200, #cbdae6)", borderRadius: "var(--radius-control, 2px)", padding: "12px 14px", fontSize: "0.75rem", lineHeight: 1.6, color: "var(--slate-700, #2c3e50)", overflowX: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word", maxHeight: 220 }}>
                   {error.stack}
                 </pre>
               )}
@@ -237,7 +234,7 @@ export function FrostErrorFallback({ error, componentStack, route, onReset }: Fr
                 {componentsOpen ? "Hide component stack" : "Show component stack"}
               </button>
               {componentsOpen && (
-                <pre style={{ background: "#05120f", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "8px", padding: "12px 14px", fontSize: "0.72rem", lineHeight: 1.6, color: "#9fd8cb", overflowX: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word", maxHeight: 220 }}>
+                <pre style={{ background: "var(--ice-50, #eef4f8)", border: "1px solid var(--ice-200, #cbdae6)", borderRadius: "var(--radius-control, 2px)", padding: "12px 14px", fontSize: "0.75rem", lineHeight: 1.6, color: "var(--slate-700, #2c3e50)", overflowX: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word", maxHeight: 220 }}>
                   {componentStack}
                 </pre>
               )}
@@ -255,12 +252,12 @@ export function FrostErrorFallback({ error, componentStack, route, onReset }: Fr
             <button
               type="button"
               onClick={onReset}
-              style={{ ...btn({ background: "#ff6b6b", borderColor: "transparent", color: "#2b0808" }) }}
+              style={btn({ background: "var(--danger, #b3403e)", borderColor: "transparent", color: "var(--snow, #f7fafc)" })}
             >
               Dismiss
             </button>
           </div>
-          <div style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.64rem", color: "#5d7a74" }}>
+          <div style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "0.68rem", color: "var(--slate-500, #5b7083)" }}>
             Esc or backdrop click to dismiss. Error boundaries catch render errors — not event-handler or async errors.
           </div>
         </div>

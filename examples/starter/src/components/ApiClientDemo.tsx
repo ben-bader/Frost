@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { CopyButton } from "./CopyButton.js";
 
 interface ApiResult {
   method: string;
@@ -60,27 +61,24 @@ export function ApiClientDemo(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const responseJson = result?.body != null ? JSON.stringify(result.body, null, 2) : "";
+
   return (
-    <div className="surface">
-      <div className="surface__head">
+    <section className="panel" aria-labelledby="api-title">
+      <div className="panel__head">
         <div>
-          <h3 className="h3">API client</h3>
-          <p className="body" style={{ fontSize: "0.8rem", marginTop: 2 }}>
-            Real requests against the Frost API runtime.
-          </p>
+          <h2 className="panel__title" id="api-title">API client</h2>
+          <p className="panel__note">Real requests against the Frost API runtime.</p>
         </div>
-        {result?.status !== null && result?.status !== undefined && (
-          <span className={`pill ${result.status < 400 ? "pill--success" : "pill--danger"}`}>{result.status}</span>
-        )}
+        {result?.status !== null && result?.status !== undefined && <span className="tag">{result.status}</span>}
       </div>
 
-      <div className="btn-row" style={{ marginBottom: "var(--space-4)" }}>
+      <div className="endpoint-row">
         {endpoints.map((ep) => (
           <button
             key={ep.label}
             type="button"
-            className={`btn${loading === ep.label ? " btn--primary" : ""}`}
-            style={{ height: 32, fontSize: "0.74rem", fontFamily: "var(--font-mono)" }}
+            className={`endpoint-btn${loading === ep.label ? " endpoint-btn--active" : ""}`}
             disabled={loading !== null}
             onClick={() => call(ep.method, ep.url, "body" in ep ? ep.body : undefined, ep.label)}
           >
@@ -94,29 +92,37 @@ export function ApiClientDemo(): React.JSX.Element {
           <div className="kv" style={{ marginBottom: "var(--space-4)" }}>
             <div className="kv__row">
               <span className="kv__key">Request</span>
-              <span className="kv__value kv__value--mono">{result.method} {result.endpoint}</span>
+              <span className="kv__value">{result.method} {result.endpoint}</span>
             </div>
             <div className="kv__row">
               <span className="kv__key">Status</span>
-              <span className="kv__value kv__value--mono">{result.status ?? "network error"}</span>
+              <span className="kv__value">{result.status ?? "network error"}</span>
             </div>
             <div className="kv__row">
               <span className="kv__key">Duration</span>
-              <span className="kv__value kv__value--mono">{result.latencyMs != null ? `${result.latencyMs} ms` : "—"}</span>
+              <span className="kv__value">{result.latencyMs != null ? `${result.latencyMs} ms` : "—"}</span>
             </div>
             {result.method === "POST" && (
               <div className="kv__row">
                 <span className="kv__key">Body</span>
-                <span className="kv__value kv__value--mono">{JSON.stringify({ user: "developer", framework: "frost" })}</span>
+                <span className="kv__value">{JSON.stringify({ user: "developer", framework: "frost" })}</span>
               </div>
             )}
           </div>
           {result.error && (
-            <div className="pill pill--danger" style={{ marginBottom: "var(--space-3)", display: "flex", width: "fit-content" }}>{result.error}</div>
+            <p className="mono text-danger" style={{ marginBottom: "var(--space-3)" }}>{result.error}</p>
           )}
-          <pre className="code-block code-block--wrap" style={{ maxHeight: 280 }}>{JSON.stringify(result.body, null, 2)}</pre>
+          <div className="code-panel">
+            <div className="code-panel__bar">
+              <span>response</span>
+              <CopyButton text={responseJson} label="Copy response" />
+            </div>
+            <div className="code-panel__body">
+              <pre className="code-block--wrap"><code>{responseJson}</code></pre>
+            </div>
+          </div>
         </>
       )}
-    </div>
+    </section>
   );
 }

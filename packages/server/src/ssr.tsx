@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { renderToString } from "react-dom/server";
 import { FrostDocument, FrostProvider, FrostErrorBoundary, type FrostClientState } from "@frostjs/react";
 import type { FrostAssets, RouteModule, FrostRequestContext } from "@frostjs/core";
@@ -51,6 +52,7 @@ export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Resp
 
   // 2. Resolve metadata if present
   let title: string | undefined;
+  let head: ReactNode;
   if (routeModule.metadata) {
     try {
       const url = new URL(request.url);
@@ -59,6 +61,41 @@ export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Resp
           ? await routeModule.metadata({ data: loaderData, params, url })
           : routeModule.metadata;
       title = meta.title;
+
+      const nodes: ReactNode[] = [];
+      if (meta.description) {
+        nodes.push(<meta key="description" name="description" content={meta.description} />);
+      }
+      if (meta.canonical) {
+        nodes.push(<link key="canonical" rel="canonical" href={meta.canonical} />);
+      }
+      if (meta.openGraph) {
+        const og = meta.openGraph;
+        if (og.title) nodes.push(<meta key="og:title" property="og:title" content={og.title} />);
+        if (og.description) nodes.push(<meta key="og:description" property="og:description" content={og.description} />);
+        if (og.image) nodes.push(<meta key="og:image" property="og:image" content={og.image} />);
+        if (og.type) nodes.push(<meta key="og:type" property="og:type" content={og.type} />);
+      }
+      meta.meta?.forEach((m, i) => {
+        nodes.push(<meta key={`meta-${i}`} {...m} />);
+      });
+      meta.links?.forEach((l, i) => {
+        nodes.push(<link key={`link-${i}`} {...l} />);
+      });
+      meta.scripts?.forEach((s, i) => {
+        if (s.src) {
+          nodes.push(<script key={`script-${i}`} src={s.src} type={s.type} async={s.async} />);
+        } else if (s.content) {
+          nodes.push(
+            <script
+              key={`script-${i}`}
+              type={s.type ?? "text/javascript"}
+              dangerouslySetInnerHTML={{ __html: s.content }}
+            />
+          );
+        }
+      });
+      if (nodes.length > 0) head = <>{nodes}</>;
     } catch (err) {
       console.warn(`[Frost] Error resolving metadata for route ${pathname}:`, err);
     }
@@ -99,7 +136,7 @@ export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Resp
 
   const appHtml = renderToString(
     <FrostProvider value={clientState}>
-      <FrostDocument title={title}>
+      <FrostDocument title={title} head={head}>
         <FrostErrorBoundary>
           {renderedContent}
         </FrostErrorBoundary>

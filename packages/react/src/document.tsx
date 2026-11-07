@@ -4,9 +4,10 @@ import { useFrostContext, type FrostClientState } from "./context.js";
 export interface FrostDocumentProps {
   children?: ReactNode;
   title?: string;
+  head?: ReactNode;
 }
 
-export function FrostDocument({ children, title }: FrostDocumentProps): React.JSX.Element {
+export function FrostDocument({ children, title, head }: FrostDocumentProps): React.JSX.Element {
   const ctx = useFrostContext();
   const clientState: FrostClientState = ctx ?? {
     pathname: typeof window !== "undefined" ? window.location.pathname : "/",
@@ -38,6 +39,7 @@ export function FrostDocument({ children, title }: FrostDocumentProps): React.JS
         {ctx.assets?.css?.map((href) => (
           <link key={href} rel="stylesheet" href={href} />
         ))}
+        {head}
       </head>
       <body>
         <div id="__frost">{children}</div>

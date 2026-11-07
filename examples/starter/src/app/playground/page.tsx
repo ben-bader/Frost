@@ -2,15 +2,28 @@ import React, { useState } from "react";
 import type { Route } from "@frostjs/core";
 import { FrostErrorBoundary, FrostErrorFallback } from "@frostjs/react";
 import { Counter } from "../../components/Counter.js";
+import { CopyButton } from "../../components/CopyButton.js";
+import { siteHead } from "../head.js";
 
 export const metadata: Route.Metadata = {
-  title: "Playground — Frost Framework",
+  title: "Playground — Frost",
   description: "Interactive runtime demos and the Frost error lab.",
+  ...siteHead,
 };
 
 function BrokenExample(): React.JSX.Element {
   throw new Error("Frost example rendering failed intentionally.");
 }
+
+const ERROR_SOURCE = `function BrokenExample() {
+  throw new Error(
+    "Frost example rendering failed intentionally."
+  );
+}
+
+<FrostErrorBoundary>
+  {crashArmed ? <BrokenExample /> : <Stable />}
+</FrostErrorBoundary>`;
 
 interface RecordsState {
   loading: boolean;
@@ -34,26 +47,26 @@ function RecordsLoader(): React.JSX.Element {
   };
 
   return (
-    <div className="surface">
-      <div className="surface__head">
+    <section className="panel" aria-labelledby="records-title">
+      <div className="panel__head">
         <div>
-          <h3 className="h3">Client data loading</h3>
-          <p className="body" style={{ fontSize: "0.8rem", marginTop: 2 }}>
-            Fetches <span className="code-inline">/api/records</span> from the browser after hydration.
+          <h2 className="panel__title" id="records-title">Client data loading</h2>
+          <p className="panel__note">
+            Fetches <span className="mono">/api/records</span> from the browser after hydration.
           </p>
         </div>
-        {state.status !== null && <span className={`pill ${state.status < 400 ? "pill--success" : "pill--danger"}`}>{state.status}</span>}
+        {state.status !== null && <span className="tag">{state.status}</span>}
       </div>
       <div className="btn-row" style={{ marginBottom: state.body || state.error ? "var(--space-4)" : 0 }}>
-        <button type="button" className="btn btn--primary" onClick={load} disabled={state.loading}>
+        <button type="button" className="btn btn--primary btn--small" onClick={load} disabled={state.loading}>
           {state.loading ? "Loading…" : "Load records"}
         </button>
       </div>
-      {state.error && <div className="pill pill--danger" style={{ display: "flex", width: "fit-content", marginBottom: "var(--space-3)" }}>{state.error}</div>}
+      {state.error && <p className="mono text-danger" style={{ marginBottom: "var(--space-3)" }}>{state.error}</p>}
       {state.body !== null && (
-        <pre className="code-block code-block--wrap" style={{ maxHeight: 240 }}>{JSON.stringify(state.body, null, 2)}</pre>
+        <pre className="code-block--wrap" style={{ background: "var(--ice-50)", border: "var(--rule)", borderRadius: "var(--radius-control)", padding: "var(--space-4)", overflowX: "auto", maxHeight: 240 }}>{JSON.stringify(state.body, null, 2)}</pre>
       )}
-    </div>
+    </section>
   );
 }
 
@@ -61,29 +74,32 @@ export default function PlaygroundPage(): React.JSX.Element {
   const [crashArmed, setCrashArmed] = useState(false);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column" }}>
-      <div style={{ paddingTop: "var(--space-6)", marginBottom: "var(--space-8)" }}>
-        <div className="meta" style={{ marginBottom: "var(--space-2)" }}>Playground</div>
-        <h1 className="h1">Poke the runtime.</h1>
-        <p className="lede" style={{ marginTop: "var(--space-4)", fontSize: "0.95rem" }}>
+    <div className="wrap">
+      <div className="page-head">
+        <h1 className="page-title">Poke the runtime.</h1>
+        <p className="page-lede">
           Interactive demos and a deliberate render failure — the error boundary
           catches it and shows the diagnostic dialog.
         </p>
       </div>
 
-      <div className="grid-split">
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-5)" }}>
+      <div className="demo-grid">
+        <div>
           <Counter initialCount={7} />
           <RecordsLoader />
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-5)" }}>
-          <div className="surface surface--code">
-            <div className="meta" style={{ marginBottom: "var(--space-3)" }}>Error lab</div>
-            <p className="body" style={{ fontSize: "0.82rem", marginBottom: "var(--space-4)" }}>
-              <span className="code-inline">BrokenExample</span> throws during render.
-              The boundary below isolates the failure — dismissing it restores this panel.
-            </p>
+        <div>
+          <section className="panel" aria-labelledby="error-title">
+            <div className="panel__head">
+              <div>
+                <h2 className="panel__title" id="error-title">Error lab</h2>
+                <p className="panel__note">
+                  <span className="mono">BrokenExample</span> throws during render.
+                  The boundary isolates the failure — dismissing it restores this panel.
+                </p>
+              </div>
+            </div>
             <FrostErrorBoundary
               fallback={(error, reset) => (
                 <FrostErrorFallback
@@ -98,38 +114,24 @@ export default function PlaygroundPage(): React.JSX.Element {
               {crashArmed ? (
                 <BrokenExample />
               ) : (
-                <div
-                  style={{
-                    border: "1px dashed var(--status-danger-line)",
-                    borderRadius: "var(--radius-medium)",
-                    padding: "var(--space-6)",
-                    textAlign: "center",
-                    background: "var(--status-danger-soft)",
-                  }}
-                >
-                  <div className="meta" style={{ marginBottom: "var(--space-3)", color: "var(--status-danger)" }}>armed component</div>
-                  <p className="body" style={{ fontSize: "0.82rem", marginBottom: "var(--space-4)" }}>
+                <div className="error-lab-target">
+                  <p className="body-sm" style={{ marginBottom: "var(--space-5)" }}>
                     Render is stable. Trigger the failure to see the diagnostic overlay.
                   </p>
-                  <button type="button" className="btn btn--danger" onClick={() => setCrashArmed(true)}>
+                  <button type="button" className="btn btn--small" onClick={() => setCrashArmed(true)}>
                     Trigger render error
                   </button>
                 </div>
               )}
             </FrostErrorBoundary>
-          </div>
+          </section>
 
-          <div className="surface">
-            <div className="meta" style={{ marginBottom: "var(--space-3)" }}>Source</div>
-            <pre className="code-block code-block--wrap">{`function BrokenExample() {
-  throw new Error(
-    "Frost example rendering failed intentionally."
-  );
-}
-
-<FrostErrorBoundary>
-  {crashArmed ? <BrokenExample /> : <Stable />}
-</FrostErrorBoundary>`}</pre>
+          <div className="panel">
+            <div className="panel__head">
+              <div className="panel__title">Source</div>
+              <CopyButton text={ERROR_SOURCE} label="Copy code" />
+            </div>
+            <pre className="code-block--wrap" style={{ background: "var(--ice-50)", border: "var(--rule)", borderRadius: "var(--radius-control)", padding: "var(--space-4)", overflowX: "auto" }}>{ERROR_SOURCE}</pre>
           </div>
         </div>
       </div>

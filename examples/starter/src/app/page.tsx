@@ -1,6 +1,9 @@
 ﻿import React from "react";
 import type { Route } from "@frostjs/core";
 import { useLoaderData, usePathname } from "@frostjs/react";
+import { FrostMotif } from "../components/FrostMotif.js";
+import { CopyButton } from "../components/CopyButton.js";
+import { siteHead } from "./head.js";
 
 export interface OverviewLoaderData {
   serverTime: string;
@@ -19,116 +22,193 @@ export async function loader(): Promise<OverviewLoaderData> {
 }
 
 export const metadata: Route.Metadata = {
-  title: "Frost — React full-stack framework",
-  description: "Server-rendered React with explicit loaders, hydration, and runtime boundaries.",
+  title: "Frost — React rendering, web-native runtime",
+  description: "Frost keeps execution explicit: server loaders, client hydration, route contracts, and runtime boundaries stay visible, testable, and predictable.",
+  ...siteHead,
 };
 
-const architecture = [
-  { name: "HTTP request", desc: "node:http", accent: false },
-  { name: "Frost Router", desc: "@frostjs/router", accent: false },
-  { name: "Loaders & actions", desc: "@frostjs/data", accent: false },
-  { name: "Frost Runtime", desc: "@frostjs/server", accent: true },
-  { name: "React SSR + hydration", desc: "@frostjs/react", accent: false },
-  { name: "Platform adapter", desc: "@frostjs/adapter-node", accent: false },
+const installCommand = "npm create frost@latest";
+
+const indexTopics = [
+  { title: "React app", desc: "Components render on the server, then hydrate in the browser.", href: "/examples" },
+  { title: "Router", desc: "File-based routes with typed contracts.", href: "/examples" },
+  { title: "Loaders", desc: "Data is fetched per route, before render, on the server.", href: "/examples" },
+  { title: "Runtime", desc: "One request lifecycle: match, load, render, respond.", href: "/playground" },
+  { title: "SSR + hydration", desc: "Complete HTML first; the client takes over where you ask.", href: "/examples" },
+  { title: "Adapter", desc: "Web-standard Request/Response, hosted by the Node adapter.", href: "/playground" },
 ];
 
-const capabilities = [
-  {
-    name: "Server-side rendering",
-    desc: "Route loaders run on the server and the document is rendered to HTML before it reaches the browser. No client-side bootstrapping is required to see content.",
-  },
-  {
-    name: "Hydration",
-    desc: "The serialized route state is embedded in the document and reconnected to the same React tree on the client, preserving DOM and state instead of re-rendering.",
-  },
-  {
-    name: "File-based routing",
-    desc: "Pages, layouts, and API endpoints are discovered from the source tree. Route patterns, params, and layout chains are resolved by the router package.",
-  },
-  {
-    name: "Data loading",
-    desc: "Loaders execute before render with access to the request, params, URL, and request context. Actions handle mutations on the same route contract.",
-  },
-  {
-    name: "Server/client boundaries",
-    desc: ".server modules and Node builtins are rejected from client bundles at build time, keeping privileged code out of the browser.",
-  },
-  {
-    name: "Platform adapters",
-    desc: "The runtime speaks Web-standard Request/Response, so hosting is delegated to adapters such as the Node adapter without framework lock-in.",
-  },
-];
+const ROUTE_SOURCE = `import { getRuntimeStats } from "./runtime.server";
+
+export async function loader({ request }) {
+  const stats = await getRuntimeStats(request);
+  return { stats };
+}
+
+export default function Index({ data }) {
+  return (
+    <main>
+      <h1>Server-rendered. Hydrated on demand.</h1>
+      <Runtime stats={data.stats} />
+    </main>
+  );
+}`;
+
+function RouteSource(): React.JSX.Element {
+  // Hand-tokenized snippet: keywords glacier, strings aurora,
+  // comments slate, everything else inherits.
+  return (
+    <pre>
+      <code>
+        <span className="tok-k">import</span> {"{ getRuntimeStats }"} <span className="tok-k">from</span>{" "}
+        <span className="tok-s">"./runtime.server"</span>;
+        {"\n\n"}
+        <span className="tok-k">export async function</span> <span className="tok-f">loader</span>
+        {"({ request }) {\n  "}
+        <span className="tok-k">const</span> stats = <span className="tok-k">await</span>{" "}
+        <span className="tok-f">getRuntimeStats</span>(request);
+        {"\n  "}
+        <span className="tok-k">return</span> {"{ stats }"};
+        {"\n}\n\n"}
+        <span className="tok-k">export default function</span> <span className="tok-f">Index</span>
+        {"({ data }) {\n  "}
+        <span className="tok-k">return</span> (
+        {"\n    "}
+        <span className="tok-f">&lt;main&gt;</span>
+        {"\n      "}
+        <span className="tok-f">&lt;h1&gt;</span>Server-rendered. Hydrated on demand.
+        <span className="tok-f">&lt;/h1&gt;</span>
+        {"\n      "}
+        <span className="tok-f">&lt;Runtime</span> stats={"{data.stats}"} <span className="tok-f">/&gt;</span>
+        {"\n    "}
+        <span className="tok-f">&lt;/main&gt;</span>
+        {"\n  );\n}"}
+      </code>
+    </pre>
+  );
+}
 
 export default function OverviewPage({ data }: Route.ComponentProps<OverviewLoaderData>): React.JSX.Element {
   const pageData = data ?? useLoaderData<OverviewLoaderData>();
   const pathname = usePathname();
 
   return (
-    <div style={{ display: "flex", flexDirection: "column" }}>
+    <div className="wrap">
       {/* Hero */}
-      <section style={{ paddingTop: "var(--space-6)" }}>
-        <div className="meta" style={{ marginBottom: "var(--space-5)" }}>
-          Frost — React full-stack framework
+      <section className="hero" aria-labelledby="hero-title">
+        <div className="hero__copy">
+          <p className="eyebrow">Frost 0.1</p>
+          <h1 className="display" id="hero-title">
+            React rendering, web-native runtime.
+          </h1>
+          <p className="lede">
+            Frost keeps execution explicit. Server loaders, client hydration,
+            route contracts, and runtime boundaries stay visible, testable,
+            and predictable.
+          </p>
+          <div className="actions">
+            <a href="/examples" className="btn btn--primary">Start with examples</a>
+            <a href="#code" className="btn">Read the architecture</a>
+          </div>
+          <p className="install">
+            <code className="install__cmd">{installCommand}</code>
+            <CopyButton text={installCommand} label="Copy install command" />
+          </p>
         </div>
-        <h1 className="display" style={{ maxWidth: "15ch" }}>
-          Server-rendered React, without the magic.
-        </h1>
-        <p className="lede" style={{ marginTop: "var(--space-5)" }}>
-          Frost is a small, explicit runtime for React applications: file-based routes,
-          server loaders, deterministic hydration, and hard server/client boundaries —
-          all visible in the code you write.
-        </p>
-        <div className="btn-row" style={{ marginTop: "var(--space-8)" }}>
-          <a href="/examples" className="btn btn--primary">Explore examples</a>
-          <a href="/playground" className="btn btn--ghost">Open playground</a>
+        <div className="hero__visual">
+          <FrostMotif />
         </div>
       </section>
 
-      {/* Architecture */}
-      <section className="section">
-        <div>
-          <div className="meta" style={{ marginBottom: "var(--space-2)" }}>Architecture</div>
-          <h2 className="h2">Request path, end to end</h2>
+      {/* Runtime strip */}
+      <div className="runtime-strip" aria-label="Runtime status">
+        <span className="runtime-strip__item">
+          <span className="runtime-strip__key">mode</span>
+          <span className="runtime-strip__value">{pageData.environment || "development"}</span>
+        </span>
+        <span className="runtime-strip__item">
+          <span className="runtime-strip__key">server</span>
+          <span className="runtime-strip__value">
+            <span className="status-dot" aria-hidden="true" />online
+          </span>
+        </span>
+        <span className="runtime-strip__item">
+          <span className="runtime-strip__key">render</span>
+          <span className="runtime-strip__value">SSR + hydration</span>
+        </span>
+        <span className="runtime-strip__item">
+          <span className="runtime-strip__key">node</span>
+          <span className="runtime-strip__value">{pageData.nodeVersion || "—"}</span>
+        </span>
+        <span className="runtime-strip__item">
+          <span className="runtime-strip__key">route</span>
+          <span className="runtime-strip__value">{pathname}</span>
+        </span>
+      </div>
+
+      {/* Code */}
+      <section className="sheet-section" id="code" aria-labelledby="code-title">
+        <div className="section-head">
+          <h2 className="section-title" id="code-title">A route is a contract.</h2>
+          <p className="section-sub">
+            The loader runs on the server. The component renders to HTML.
+            The browser hydrates the same tree. Nothing is implicit.
+          </p>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "var(--space-8)", alignItems: "start" }}>
-          <div className="arch">
-            {architecture.map((step, i) => (
-              <div key={step.name} className={`arch__node${step.accent ? " arch__node--accent" : ""}`}>
-                <span className="arch__index">{String(i + 1).padStart(2, "0")}</span>
-                <span className="arch__name">{step.name}</span>
-                <span className="arch__desc">{step.desc}</span>
+        <div className="grid-2">
+          <div className="span-7">
+            <div className="code-panel">
+              <div className="code-panel__bar">
+                <span>routes/index.tsx</span>
+                <CopyButton text={ROUTE_SOURCE} label="Copy code" />
               </div>
-            ))}
-          </div>
-          <div className="surface">
-            <div className="meta" style={{ marginBottom: "var(--space-4)" }}>Runtime</div>
-            <div className="kv">
-              <div className="kv__row"><span className="kv__key">Mode</span><span className="kv__value">{pageData.environment || "development"}</span></div>
-              <div className="kv__row"><span className="kv__key">Node</span><span className="kv__value kv__value--mono">{pageData.nodeVersion || "—"}</span></div>
-              <div className="kv__row"><span className="kv__key">Route</span><span className="kv__value kv__value--mono">{pathname}</span></div>
-              <div className="kv__row"><span className="kv__key">Server time</span><span className="kv__value kv__value--mono">{pageData.serverTime ? pageData.serverTime.slice(11, 19) + " UTC" : "—"}</span></div>
-              <div className="kv__row"><span className="kv__key">Uptime</span><span className="kv__value kv__value--mono">{pageData.uptimeSeconds != null ? `${pageData.uptimeSeconds}s` : "—"}</span></div>
+              <div className="code-panel__body">
+                <RouteSource />
+              </div>
             </div>
-            <p className="body" style={{ marginTop: "var(--space-5)", fontSize: "0.82rem" }}>
-              Every value above is produced by the server loader for this request —
-              the same payload the browser hydrates from.
-            </p>
+          </div>
+          <div className="span-5">
+            <ol className="explain">
+              <li>
+                <span className="explain__num">01</span>
+                <div>
+                  <div className="explain__title">Loaders run on the server.</div>
+                  <p className="explain__desc">Data is requested per route, before render.</p>
+                </div>
+              </li>
+              <li>
+                <span className="explain__num">02</span>
+                <div>
+                  <div className="explain__title">Components render once on the server.</div>
+                  <p className="explain__desc">The HTML arrives complete.</p>
+                </div>
+              </li>
+              <li>
+                <span className="explain__num">03</span>
+                <div>
+                  <div className="explain__title">Hydration is explicit.</div>
+                  <p className="explain__desc">The browser takes over only where you ask.</p>
+                </div>
+              </li>
+            </ol>
           </div>
         </div>
       </section>
 
-      {/* Capabilities */}
-      <section className="section">
-        <div>
-          <div className="meta" style={{ marginBottom: "var(--space-2)" }}>Capabilities</div>
-          <h2 className="h2">What the runtime actually does</h2>
+      {/* Sections index */}
+      <section className="sheet-section" aria-labelledby="index-title">
+        <div className="section-head">
+          <h2 className="section-title" id="index-title">What Frost covers.</h2>
         </div>
-        <div className="cap-list">
-          {capabilities.map((cap) => (
-            <div key={cap.name} className="cap-row">
-              <div className="cap-row__name">{cap.name}</div>
-              <div className="cap-row__desc">{cap.desc}</div>
-            </div>
+        <div className="index-grid">
+          {indexTopics.map((topic) => (
+            <a key={topic.title} href={topic.href} className="index-row">
+              <span>
+                <span className="index-row__title">{topic.title}</span>
+                <span className="index-row__desc">{topic.desc}</span>
+              </span>
+              <span className="index-row__arrow" aria-hidden="true">→</span>
+            </a>
           ))}
         </div>
       </section>
