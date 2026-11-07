@@ -3,7 +3,6 @@ import type { Route } from "@frostjs/core";
 import { useLoaderData, usePathname } from "@frostjs/react";
 import { FrostMotif } from "../components/FrostMotif.js";
 import { CopyButton } from "../components/CopyButton.js";
-import { siteHead } from "./head.js";
 
 export interface OverviewLoaderData {
   serverTime: string;
@@ -23,84 +22,36 @@ export async function loader(): Promise<OverviewLoaderData> {
 
 export const metadata: Route.Metadata = {
   title: "Frost — React rendering, web-native runtime",
-  description: "Frost keeps execution explicit: server loaders, client hydration, route contracts, and runtime boundaries stay visible, testable, and predictable.",
-  ...siteHead,
+  description:
+    "Frost keeps execution explicit: server loaders, client hydration, route contracts, and runtime boundaries stay visible, testable, and predictable.",
 };
 
 const installCommand = "npm create frost@latest";
 
 const indexTopics = [
-  { title: "React App", desc: "Components render on the server, then hydrate in the browser.", href: "/examples" },
+  { title: "React App", desc: "Start from a single entry that renders on server and client.", href: "/examples" },
   { title: "Router", desc: "File-based routes with typed contracts.", href: "/examples" },
-  { title: "Loaders", desc: "Data is fetched per route, before render, on the server.", href: "/examples" },
-  { title: "Runtime", desc: "One request lifecycle: match, load, render, respond.", href: "/playground" },
-  { title: "SSR + Hydration", desc: "Complete HTML first; the client takes over where you ask.", href: "/examples" },
-  { title: "Adapter", desc: "Web-standard Request/Response, hosted by the Node adapter.", href: "/playground" },
+  { title: "Loaders", desc: "Fetch data on the server before render.", href: "/examples" },
+  { title: "Runtime", desc: "Inspect mode, server state, and boundaries at any time.", href: "/playground" },
+  { title: "SSR + Hydration", desc: "Complete HTML first, interactivity where you opt in.", href: "/examples" },
+  { title: "Adapter", desc: "Deploy to Node or any compatible host.", href: "/playground" },
 ];
-
-const ROUTE_SOURCE = `import { getRuntimeStats } from "./runtime.server";
-
-export async function loader({ request }) {
-  const stats = await getRuntimeStats(request);
-  return { stats };
-}
-
-export default function Index({ data }) {
-  return (
-    <main>
-      <h1>Server-rendered. Hydrated on demand.</h1>
-      <Runtime stats={data.stats} />
-    </main>
-  );
-}`;
-
-function RouteSource(): React.JSX.Element {
-  return (
-    <pre>
-      <code>
-        <span className="tok-k">import</span> {"{ getRuntimeStats }"} <span className="tok-k">from</span>{" "}
-        <span className="tok-s">"./runtime.server"</span>;
-        {"\n\n"}
-        <span className="tok-c">// loaders run on the server, before render</span>
-        {"\n"}
-        <span className="tok-k">export async function</span> <span className="tok-f">loader</span>
-        {"({ request }) {\n  "}
-        <span className="tok-k">const</span> stats = <span className="tok-k">await</span>{" "}
-        <span className="tok-f">getRuntimeStats</span>(request);
-        {"\n  "}
-        <span className="tok-k">return</span> {"{ stats }"};
-        {"\n}\n\n"}
-        <span className="tok-k">export default function</span> <span className="tok-f">Index</span>
-        {"({ data }) {\n  "}
-        <span className="tok-k">return</span> (
-        {"\n    "}
-        <span className="tok-f">&lt;main&gt;</span>
-        {"\n      "}
-        <span className="tok-f">&lt;h1&gt;</span>Server-rendered. Hydrated on demand.
-        <span className="tok-f">&lt;/h1&gt;</span>
-        {"\n      "}
-        <span className="tok-f">&lt;Runtime</span> stats={"{data.stats}"} <span className="tok-f">/&gt;</span>
-        {"\n    "}
-        <span className="tok-f">&lt;/main&gt;</span>
-        {"\n  );\n}"}
-      </code>
-    </pre>
-  );
-}
 
 export default function OverviewPage({ data }: Route.ComponentProps<OverviewLoaderData>): React.JSX.Element {
   const pageData = data ?? useLoaderData<OverviewLoaderData>();
   const pathname = usePathname();
+  const route = pathname || "/";
 
   return (
     <>
-      {/* Hero — abyss band */}
-      <section className="band--abyss hero" aria-labelledby="hero-title">
-        <div className="wrap">
+      {/* Hero — base band; console sits inside it as the product surface */}
+      <section className="band band--base" aria-labelledby="hero-title">
+        <div className="wrap hero">
           <div className="hero__grid">
             <div className="hero__copy">
+              <p className="eyebrow">Server-rendered React runtime</p>
               <h1 className="display" id="hero-title">
-                React rendering, web-native runtime.
+                React rendering. Web-native runtime.
               </h1>
               <p className="hero__lede">
                 Frost keeps execution explicit. Server loaders, client hydration,
@@ -108,8 +59,12 @@ export default function OverviewPage({ data }: Route.ComponentProps<OverviewLoad
                 and predictable.
               </p>
               <div className="actions">
-                <a href="/examples" className="btn btn--primary">Start with examples</a>
-                <a href="#code" className="btn btn--secondary">Read the architecture</a>
+                <a href="/examples" className="btn btn--primary">
+                  Start with examples <span aria-hidden="true">→</span>
+                </a>
+                <a href="#how" className="btn btn--secondary">
+                  Read the architecture
+                </a>
               </div>
               <p className="install">
                 <code className="install__cmd">{installCommand}</code>
@@ -120,95 +75,81 @@ export default function OverviewPage({ data }: Route.ComponentProps<OverviewLoad
               <FrostMotif />
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* Runtime strip — trench band, rules above and below */}
-      <section className="band band--trench band--rule-b" aria-label="Runtime status">
-        <div className="wrap" style={{ paddingTop: "var(--space-5)", paddingBottom: "var(--space-5)" }}>
-          <div className="runtime-strip">
-            <span className="runtime-strip__item">
-              <span className="runtime-strip__key">mode</span>
-              <span className="runtime-strip__value">{pageData.environment || "development"}</span>
-            </span>
-            <span className="runtime-strip__item">
-              <span className="runtime-strip__key">server</span>
-              <span className="runtime-strip__value">
-                <span className="status-dot" aria-hidden="true" />online
+          {/* Runtime console — the only bordered panel on the page */}
+          <div className="console" style={{ marginTop: "var(--space-8)" }}>
+            <div className="console__bar">
+              <span>frost dev</span>
+              <span>{route}</span>
+            </div>
+            <div className="console__status">
+              <span className="console__item">
+                <span className="console__key">mode</span>
+                <span className="console__value">{pageData.environment || "development"}</span>
               </span>
-            </span>
-            <span className="runtime-strip__item">
-              <span className="runtime-strip__key">render</span>
-              <span className="runtime-strip__value">SSR + hydration</span>
-            </span>
-            <span className="runtime-strip__item">
-              <span className="runtime-strip__key">node</span>
-              <span className="runtime-strip__value">{pageData.nodeVersion || "—"}</span>
-            </span>
-            <span className="runtime-strip__item">
-              <span className="runtime-strip__key">route</span>
-              <span className="runtime-strip__value">{pathname}</span>
-            </span>
-          </div>
-        </div>
-      </section>
-
-      {/* Code — deep band (top rule comes from the trench band's bottom) */}
-      <section className="band--deep" id="code" aria-labelledby="code-title">
-        <div className="wrap band__inner">
-          <div className="section-head">
-            <h2 className="section-title" id="code-title">A route, start to finish.</h2>
-            <p className="section-sub">
-              The loader runs on the server. The component renders to HTML.
-              The browser hydrates the same tree. Nothing is implicit.
-            </p>
-          </div>
-          <div className="section-grid">
-            <div className="span-7">
-              <div className="code-panel">
-                <div className="code-panel__bar">
-                  <span>routes/index.tsx</span>
-                  <CopyButton text={ROUTE_SOURCE} label="Copy code" />
-                </div>
-                <div className="code-panel__body" tabIndex={0} aria-label="Code example">
-                  <RouteSource />
-                </div>
-              </div>
+              <span className="console__item">
+                <span className="console__key">server</span>
+                <span className="console__value">
+                  <span className="status-dot" aria-hidden="true" />
+                  online
+                </span>
+              </span>
+              <span className="console__item">
+                <span className="console__key">render</span>
+                <span className="console__value">SSR + hydration</span>
+              </span>
+              <span className="console__item">
+                <span className="console__key">node</span>
+                <span className="console__value">{pageData.nodeVersion || "—"}</span>
+              </span>
             </div>
-            <div className="span-4">
-              <ol className="explain">
-                <li>
-                  <span className="explain__num">01</span>
-                  <div>
-                    <div className="explain__title">Loaders run on the server.</div>
-                    <p className="explain__desc">Data is requested per route, before render.</p>
-                  </div>
-                </li>
-                <li>
-                  <span className="explain__num">02</span>
-                  <div>
-                    <div className="explain__title">Components render once on the server.</div>
-                    <p className="explain__desc">The HTML arrives complete.</p>
-                  </div>
-                </li>
-                <li>
-                  <span className="explain__num">03</span>
-                  <div>
-                    <div className="explain__title">Hydration is explicit.</div>
-                    <p className="explain__desc">The browser takes over only where you ask.</p>
-                  </div>
-                </li>
-              </ol>
+            <div className="console__log" tabIndex={0} role="log" aria-label="Request lifecycle log">
+              <span className="ts">[00:00.000]</span>  GET {route.padEnd(24, " ")} request received{"\n"}
+              <span className="ts">[00:00.004]</span>  loader  routes/index        resolved  4ms{"\n"}
+              <span className="ts">[00:00.011]</span>  render  &lt;Index /&gt;           SSR complete{"\n"}
+              <span className="ts">[00:00.012]</span>  html    18.4 kB               streamed{"\n"}
+              <span className="ts">[00:00.140]</span>  hydrate &lt;Runtime /&gt;         client takeover{" "}
+              <span className="ok">✓</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Topics index — abyss band */}
-      <section className="band band--abyss" aria-labelledby="index-title">
+      {/* How it works — lifted band, ruled blocks */}
+      <section className="band band--lift band--rule-b" id="how" aria-labelledby="how-title">
         <div className="wrap band__inner">
           <div className="section-head">
-            <h2 className="section-title" id="index-title">Explore Frost.</h2>
+            <h2 className="section-title" id="how-title">
+              How a request moves through Frost
+            </h2>
+          </div>
+          <div className="steps">
+            <div className="step">
+              <div className="step__num">01</div>
+              <div className="step__title">Loaders run on the server.</div>
+              <p className="step__desc">Data is requested per route, before render.</p>
+            </div>
+            <div className="step">
+              <div className="step__num">02</div>
+              <div className="step__title">Components render once on the server.</div>
+              <p className="step__desc">The HTML arrives complete.</p>
+            </div>
+            <div className="step">
+              <div className="step__num">03</div>
+              <div className="step__title">Hydration is explicit.</div>
+              <p className="step__desc">The browser takes over only where you ask.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Topics index — base band */}
+      <section className="band band--base" aria-labelledby="index-title">
+        <div className="wrap band__inner">
+          <div className="section-head">
+            <h2 className="section-title" id="index-title">
+              Explore Frost
+            </h2>
           </div>
           <div className="index-grid">
             {indexTopics.map((topic) => (
@@ -217,7 +158,9 @@ export default function OverviewPage({ data }: Route.ComponentProps<OverviewLoad
                   <span className="index-row__title">{topic.title}</span>
                   <span className="index-row__desc">{topic.desc}</span>
                 </span>
-                <span className="index-row__arrow" aria-hidden="true">→</span>
+                <span className="index-row__arrow" aria-hidden="true">
+                  →
+                </span>
               </a>
             ))}
           </div>

@@ -22,6 +22,7 @@ function mulberry32(seed: number): () => number {
 interface Seg {
   d: string;
   o: number;
+  node?: [number, number];
 }
 
 function buildSegments(): Seg[] {
@@ -58,7 +59,11 @@ function buildSegments(): Seg[] {
       const mx = (x1 + x2) / 2;
       const my = (y1 + y2) / 2;
       const fade = Math.max(0.06, 0.62 - cornerDist(mx, my) * 0.0011);
-      segs.push({ d: `M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}`, o: fade });
+      segs.push({
+        d: `M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}`,
+        o: fade,
+        node: h < 0.02 ? [x2, y2] : undefined,
+      });
     }
   }
 
@@ -73,7 +78,11 @@ function buildSegments(): Seg[] {
     const y1 = 8 + i * 7;
     const x2 = x1 - Math.cos(aa) * len;
     const y2 = y1 + Math.sin(aa) * len * 0.6;
-    segs.push({ d: `M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}`, o: 0.6 - i * 0.045 });
+    segs.push({
+      d: `M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}`,
+      o: 0.6 - i * 0.045,
+      node: [x2, y2],
+    });
   }
 
   return segs;
@@ -94,9 +103,21 @@ export function FrostMotif(): React.JSX.Element {
           key={i}
           d={s.d}
           pathLength={100}
-          style={{ ["--i" as string]: i, opacity: s.o }}
+          style={{ ["--i" as string]: i, opacity: Math.min(0.14, s.o * 0.24) }}
         />
       ))}
+      {SEGMENTS.map(
+        (s, i) =>
+          s.node && (
+            <circle
+              key={`n${i}`}
+              cx={Number(s.node[0].toFixed(1))}
+              cy={Number(s.node[1].toFixed(1))}
+              r={2}
+              style={{ opacity: Math.min(0.14, s.o * 0.24) }}
+            />
+          ),
+      )}
     </svg>
   );
 }

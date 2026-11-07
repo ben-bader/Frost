@@ -64,7 +64,7 @@ describe("Starter Application Playground Suite", () => {
     const html = await response.text();
     expect(html).toContain("<!DOCTYPE html>");
     expect(html).toContain("<title>Frost — React rendering, web-native runtime</title>");
-    expect(html).toContain("React rendering, web-native runtime.");
+    expect(html).toContain("React rendering. Web-native runtime.");
     expect(html).toContain('id="__FROST_DATA__"');
   });
 

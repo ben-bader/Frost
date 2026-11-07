@@ -1,31 +1,44 @@
 /* ------------------------------------------------------------------ */
-/* Frost — "frozen lake" design system                                 */
-/* One dark theme. Tonal bands, hairline fractures, pale frost accent. */
+/* Frost — flat deep-teal system                                       */
+/* Bands + hairlines. Mint accent. Poppins UI, system mono for data.   */
+/* Palette values are the original Frost tokens, unchanged.            */
 /* ------------------------------------------------------------------ */
 
-/* Fonts: Geist + Geist Mono via Google Fonts (font-display: swap).
-   Preconnect/stylesheet links are injected per-route via Route.Metadata. */
+@import "@fontsource/poppins/400.css";
+@import "@fontsource/poppins/500.css";
+@import "@fontsource/poppins/600.css";
+@import "@fontsource/poppins/700.css";
 
 :root {
   color-scheme: dark;
 
-  --abyss: #06090d;
-  --deep: #0a0f15;
-  --trench: #0f161e;
-  --slab: #151e28;
-  --fracture: #1f2b38;
-  --fracture-strong: #30404f;
+  /* Palette — original values, locked */
+  --brand-accent: #00c9a8;
+  --brand-accent-strong: #14e0bd;
+  --brand-accent-ink: #03231f;
+  --brand-accent-soft: rgba(0, 201, 168, 0.1);
+  --brand-accent-line: rgba(0, 201, 168, 0.32);
 
-  --text-hi: #eaf1f6;
-  --text-body: #b7c5d2;
-  --text-lo: #7f92a4;
+  --background-deep: #020a09;
+  --background-primary: #04100e;
+  --background-secondary: #0a211d;
 
-  --frost: #bfe4f4;
-  --frost-dim: #8fc5dc;
-  --glint: #7fd6e8;
+  /* Derived flat tones (lightness shifts of the palette only) */
+  --band-hover: #0f2a25;
+  --line: rgba(186, 255, 236, 0.09);
+  --line-strong: rgba(186, 255, 236, 0.18);
 
-  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --text-primary: #e9f6f2;
+  --text-secondary: #a8ccc5;
+  --text-muted: #6d948b;
+  --text-inverse: #03231f;
+
+  --status-success: #5ee8c8;
+  --status-warning: #ffd38a;
+  --status-danger: #ff9d9d;
+
+  --font-sans: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "JetBrains Mono", "SF Mono", Consolas, monospace;
 
   --radius: 2px;
 
@@ -45,7 +58,7 @@
   --header-height: 64px;
   --grid-gutter: var(--space-5);
 
-  --rule: 1px solid var(--fracture);
+  --rule: 1px solid var(--line);
   --ease: 150ms ease-out;
 }
 
@@ -67,8 +80,8 @@ html {
 
 body {
   min-height: 100vh;
-  background: var(--abyss);
-  color: var(--text-body);
+  background: var(--background-deep);
+  color: var(--text-secondary);
   font-family: var(--font-sans);
   font-size: 1rem;
   line-height: 1.6;
@@ -87,13 +100,13 @@ button {
 }
 
 :focus-visible {
-  outline: 2px solid var(--frost);
+  outline: 2px solid var(--brand-accent);
   outline-offset: 2px;
 }
 
 ::selection {
-  background: var(--fracture);
-  color: var(--text-hi);
+  background: var(--line-strong);
+  color: var(--text-primary);
 }
 
 /* ------------------------------------------------------------------ */
@@ -122,16 +135,16 @@ button {
   border-top: var(--rule);
 }
 
-.band--abyss {
-  background: var(--abyss);
+.band--base {
+  background: var(--background-deep);
 }
 
-.band--deep {
-  background: var(--deep);
+.band--lift {
+  background: var(--background-primary);
 }
 
-.band--trench {
-  background: var(--trench);
+.band--panel {
+  background: var(--background-secondary);
 }
 
 .band--rule-b {
@@ -163,7 +176,7 @@ button {
   top: 0;
   z-index: 40;
   height: var(--header-height);
-  background: var(--abyss);
+  background: var(--background-deep);
   border-bottom: var(--rule);
 }
 
@@ -181,7 +194,7 @@ button {
   gap: var(--space-3);
   font-weight: 500;
   font-size: 1rem;
-  color: var(--text-hi);
+  color: var(--text-primary);
 }
 
 .brand__mark {
@@ -199,19 +212,19 @@ button {
 
 .nav-link {
   font-size: 0.9rem;
-  color: var(--text-lo);
+  color: var(--text-muted);
   padding-block: var(--space-2);
   transition: color var(--ease);
 }
 
 .nav-link:hover {
-  color: var(--text-hi);
+  color: var(--text-primary);
 }
 
 .nav-link--active {
-  color: var(--text-hi);
+  color: var(--text-primary);
   text-decoration: underline;
-  text-decoration-color: var(--frost);
+  text-decoration-color: var(--brand-accent);
   text-underline-offset: 8px;
 }
 
@@ -224,7 +237,7 @@ button {
 .version {
   font-family: var(--font-mono);
   font-size: 0.8rem;
-  color: var(--text-lo);
+  color: var(--text-muted);
 }
 
 .menu-btn {
@@ -233,13 +246,13 @@ button {
   padding: 0 var(--space-3);
   background: transparent;
   border: none;
-  color: var(--text-lo);
+  color: var(--text-muted);
   font-size: 0.9rem;
   transition: color var(--ease);
 }
 
 .menu-btn:hover {
-  color: var(--text-hi);
+  color: var(--text-primary);
 }
 
 .mobile-nav {
@@ -259,7 +272,7 @@ button {
 
   .mobile-nav {
     display: block;
-    background: var(--abyss);
+    background: var(--background-deep);
     border-bottom: var(--rule);
   }
 
@@ -272,7 +285,7 @@ button {
     display: flex;
     align-items: center;
     min-height: 40px;
-    color: var(--text-body);
+    color: var(--text-secondary);
     border-bottom: var(--rule);
     font-size: 0.95rem;
   }
@@ -282,7 +295,7 @@ button {
   }
 
   .mobile-nav a:hover {
-    color: var(--text-hi);
+    color: var(--text-primary);
   }
 }
 
@@ -335,12 +348,18 @@ button {
   }
 }
 
+.eyebrow {
+  font-size: 0.9rem;
+  color: var(--brand-accent);
+  margin-bottom: var(--space-4);
+}
+
 .display {
-  font-size: clamp(2.5rem, 5.5vw, 4.5rem);
+  font-size: clamp(2.5rem, 5.5vw, 4.25rem);
   font-weight: 500;
   line-height: 1.05;
   letter-spacing: -0.02em;
-  color: var(--text-hi);
+  color: var(--text-primary);
   text-wrap: balance;
 }
 
@@ -348,7 +367,7 @@ button {
   margin-top: var(--space-5);
   font-size: 1.125rem;
   line-height: 1.6;
-  color: var(--text-body);
+  color: var(--text-secondary);
   max-width: 56ch;
 }
 
@@ -371,26 +390,26 @@ button {
   border-radius: var(--radius);
   border: 1px solid transparent;
   background: transparent;
-  color: var(--text-hi);
+  color: var(--text-primary);
   transition: background var(--ease), border-color var(--ease), color var(--ease);
   white-space: nowrap;
 }
 
 .btn--primary {
-  background: var(--frost);
-  color: var(--abyss);
+  background: var(--brand-accent);
+  color: var(--brand-accent-ink);
 }
 
 .btn--primary:hover {
-  background: var(--frost-dim);
+  background: var(--brand-accent-strong);
 }
 
 .btn--secondary {
-  border-color: var(--fracture-strong);
+  border-color: var(--line-strong);
 }
 
 .btn--secondary:hover {
-  background: var(--slab);
+  background: var(--band-hover);
 }
 
 .btn--small {
@@ -418,14 +437,14 @@ button {
   background: transparent;
   border: var(--rule);
   border-radius: var(--radius);
-  color: var(--text-body);
+  color: var(--text-secondary);
   transition: background var(--ease), color var(--ease);
   flex: none;
 }
 
 .icon-btn:hover {
-  background: var(--slab);
-  color: var(--text-hi);
+  background: var(--band-hover);
+  color: var(--text-primary);
 }
 
 .install {
@@ -438,19 +457,19 @@ button {
 }
 
 .install__cmd {
-  background: var(--trench);
+  background: var(--background-secondary);
   border: var(--rule);
   border-radius: var(--radius);
   padding: var(--space-3) var(--space-4);
-  color: var(--text-body);
+  color: var(--text-secondary);
 }
 
-/* Crystalline motif */
+/* Line motif — low-contrast accent traces, hero only */
 .motif {
   width: 100%;
   max-width: 420px;
   height: auto;
-  color: var(--fracture-strong);
+  color: var(--brand-accent);
 }
 
 .motif path {
@@ -459,6 +478,11 @@ button {
   fill: none;
   stroke-dasharray: 100;
   stroke-dashoffset: 0;
+}
+
+.motif circle {
+  fill: currentColor;
+  stroke: none;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -478,34 +502,72 @@ button {
 }
 
 /* ------------------------------------------------------------------ */
-/* Runtime strip                                                       */
+/* Runtime console — the only bordered panel                           */
 /* ------------------------------------------------------------------ */
 
-.runtime-strip {
+.console {
+  border: var(--rule);
+  border-radius: var(--radius);
+  background: var(--background-secondary);
+  overflow: hidden;
+}
+
+.console__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--rule);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.console__status {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-4) var(--space-6);
-  padding-block: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--rule);
   font-family: var(--font-mono);
   font-size: 0.875rem;
 }
 
-.runtime-strip__item {
+.console__item {
   display: flex;
   align-items: baseline;
   gap: var(--space-2);
   min-width: 0;
 }
 
-.runtime-strip__key {
-  color: var(--text-lo);
+.console__key {
+  color: var(--text-muted);
 }
 
-.runtime-strip__value {
-  color: var(--text-hi);
+.console__value {
+  color: var(--text-primary);
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+}
+
+.console__log {
+  padding: var(--space-5);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: var(--text-primary);
+  white-space: pre;
+}
+
+.console__log .ts {
+  color: var(--text-muted);
+}
+
+.console__log .ok {
+  color: var(--brand-accent);
 }
 
 .status-dot {
@@ -513,7 +575,7 @@ button {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--glint);
+  background: var(--brand-accent);
   flex: none;
 }
 
@@ -534,10 +596,10 @@ button {
 }
 
 @media (max-width: 639px) {
-  .runtime-strip {
+  .console__status {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    row-gap: var(--space-4);
+    row-gap: var(--space-3);
   }
 }
 
@@ -583,14 +645,14 @@ button {
   font-weight: 500;
   line-height: 1.25;
   letter-spacing: -0.01em;
-  color: var(--text-hi);
+  color: var(--text-primary);
 }
 
 .section-sub {
   margin-top: var(--space-4);
   font-size: 1rem;
   line-height: 1.6;
-  color: var(--text-lo);
+  color: var(--text-muted);
   max-width: 60ch;
 }
 
@@ -599,14 +661,52 @@ button {
   max-width: 60ch;
 }
 
+/* How-it-works ruled blocks */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-6);
+}
+
+@media (max-width: 1023px) {
+  .steps {
+    grid-template-columns: 1fr;
+    gap: var(--space-5);
+  }
+}
+
+.step {
+  border-left: 1px solid var(--line-strong);
+  padding-left: var(--space-4);
+}
+
+.step__num {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.step__title {
+  font-weight: 500;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  margin-top: var(--space-2);
+}
+
+.step__desc {
+  margin-top: var(--space-1);
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
 /* ------------------------------------------------------------------ */
-/* Code panel                                                          */
+/* Code panel (used by examples/playground)                            */
 /* ------------------------------------------------------------------ */
 
 .code-panel {
-  background: var(--trench);
   border: var(--rule);
   border-radius: var(--radius);
+  background: var(--background-secondary);
   overflow: hidden;
 }
 
@@ -619,7 +719,7 @@ button {
   border-bottom: var(--rule);
   font-family: var(--font-mono);
   font-size: 0.8rem;
-  color: var(--text-lo);
+  color: var(--text-muted);
 }
 
 .code-panel__body {
@@ -632,7 +732,7 @@ button {
   font-family: var(--font-mono);
   font-size: 0.875rem;
   line-height: 1.7;
-  color: var(--text-body);
+  color: var(--text-secondary);
   white-space: pre;
   tab-size: 2;
 }
@@ -643,19 +743,19 @@ button {
 }
 
 .tok-k {
-  color: var(--frost);
+  color: var(--brand-accent);
 }
 
 .tok-s {
-  color: var(--frost-dim);
+  color: var(--brand-accent-strong);
 }
 
 .tok-c {
-  color: var(--text-lo);
+  color: var(--text-muted);
 }
 
 .tok-f {
-  color: var(--text-hi);
+  color: var(--text-primary);
 }
 
 /* ------------------------------------------------------------------ */
@@ -689,20 +789,20 @@ button {
 .explain__num {
   font-family: var(--font-mono);
   font-size: 0.85rem;
-  color: var(--text-lo);
+  color: var(--text-muted);
   padding-top: var(--space-1);
 }
 
 .explain__title {
   font-weight: 500;
-  color: var(--text-hi);
+  color: var(--text-primary);
   font-size: 0.95rem;
 }
 
 .explain__desc {
   margin-top: var(--space-1);
   font-size: 0.9rem;
-  color: var(--text-body);
+  color: var(--text-muted);
 }
 
 /* ------------------------------------------------------------------ */
@@ -739,7 +839,7 @@ button {
 
 .index-row__title {
   font-weight: 500;
-  color: var(--text-hi);
+  color: var(--text-primary);
   font-size: 0.95rem;
   transition: color var(--ease);
 }
@@ -748,23 +848,23 @@ button {
   display: block;
   font-weight: 400;
   font-size: 0.85rem;
-  color: var(--text-lo);
+  color: var(--text-muted);
   margin-top: var(--space-1);
 }
 
 .index-row__arrow {
-  color: var(--text-lo);
+  color: var(--text-muted);
   transition: transform var(--ease), color var(--ease);
   flex: none;
 }
 
 .index-row:hover .index-row__title {
-  color: var(--frost);
+  color: var(--brand-accent);
 }
 
 .index-row:hover .index-row__arrow {
   transform: translateX(4px);
-  color: var(--frost);
+  color: var(--brand-accent);
 }
 
 /* ------------------------------------------------------------------ */
@@ -780,7 +880,7 @@ button {
   font-weight: 500;
   line-height: 1.15;
   letter-spacing: -0.02em;
-  color: var(--text-hi);
+  color: var(--text-primary);
   text-wrap: balance;
 }
 
@@ -788,7 +888,7 @@ button {
   margin-top: var(--space-4);
   font-size: 1.05rem;
   line-height: 1.6;
-  color: var(--text-lo);
+  color: var(--text-muted);
   max-width: 60ch;
 }
 
@@ -813,19 +913,19 @@ button {
 .panel__title {
   font-size: 1.05rem;
   font-weight: 500;
-  color: var(--text-hi);
+  color: var(--text-primary);
 }
 
 .panel__note {
   font-size: 0.85rem;
-  color: var(--text-lo);
+  color: var(--text-muted);
   margin-top: var(--space-1);
 }
 
 .body-sm {
   font-size: 0.875rem;
   line-height: 1.6;
-  color: var(--text-lo);
+  color: var(--text-muted);
 }
 
 .mono {
@@ -854,13 +954,13 @@ button {
 .kv__key {
   font-family: var(--font-mono);
   font-size: 0.78rem;
-  color: var(--text-lo);
+  color: var(--text-muted);
 }
 
 .kv__value {
   font-family: var(--font-mono);
   font-size: 0.8rem;
-  color: var(--text-hi);
+  color: var(--text-primary);
   text-align: right;
   word-break: break-word;
 }
@@ -879,7 +979,7 @@ button {
   padding: var(--space-3) 0;
   font-size: 0.9rem;
   font-weight: 500;
-  color: var(--text-lo);
+  color: var(--text-muted);
   border-bottom: 1px solid transparent;
   margin-bottom: -1px;
   white-space: nowrap;
@@ -887,12 +987,12 @@ button {
 }
 
 .tab:hover {
-  color: var(--text-hi);
+  color: var(--text-primary);
 }
 
 .tab--active {
-  color: var(--text-hi);
-  border-bottom-color: var(--frost);
+  color: var(--text-primary);
+  border-bottom-color: var(--brand-accent);
 }
 
 .tab-panel {
@@ -902,12 +1002,12 @@ button {
 .tag {
   font-family: var(--font-mono);
   font-size: 0.75rem;
-  color: var(--text-lo);
+  color: var(--text-muted);
   white-space: nowrap;
 }
 
 .text-danger {
-  color: var(--frost-dim);
+  color: var(--status-danger);
 }
 
 .demo-grid {
@@ -953,14 +1053,14 @@ button {
 
 .record-row__name {
   font-weight: 500;
-  color: var(--text-hi);
+  color: var(--text-primary);
   font-size: 0.9rem;
 }
 
 .record-row__id {
   font-family: var(--font-mono);
   font-size: 0.75rem;
-  color: var(--text-lo);
+  color: var(--text-muted);
 }
 
 /* Hydration inspector */
@@ -977,17 +1077,17 @@ button {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--fracture-strong);
+  background: var(--line-strong);
   flex: none;
 }
 
 .hydration-status__dot--live {
-  background: var(--glint);
+  background: var(--brand-accent);
 }
 
 .hydration-status__title {
   font-weight: 500;
-  color: var(--text-hi);
+  color: var(--text-primary);
   font-size: 0.95rem;
 }
 
@@ -1007,13 +1107,13 @@ button {
   background: transparent;
   border: var(--rule);
   border-radius: var(--radius);
-  color: var(--text-body);
+  color: var(--text-secondary);
   transition: background var(--ease), color var(--ease);
 }
 
 .endpoint-btn:hover:not(:disabled) {
-  background: var(--slab);
-  color: var(--text-hi);
+  background: var(--band-hover);
+  color: var(--text-primary);
 }
 
 .endpoint-btn:disabled {
@@ -1022,8 +1122,8 @@ button {
 }
 
 .endpoint-btn--active {
-  background: var(--slab);
-  color: var(--text-hi);
+  background: var(--band-hover);
+  color: var(--text-primary);
 }
 
 /* Error lab */
@@ -1038,7 +1138,7 @@ button {
 /* ------------------------------------------------------------------ */
 
 .site-footer {
-  background: var(--deep);
+  background: var(--background-primary);
   border-top: var(--rule);
   padding-block: var(--space-7);
 }
@@ -1050,7 +1150,7 @@ button {
   gap: var(--space-4);
   flex-wrap: wrap;
   font-size: 0.85rem;
-  color: var(--text-lo);
+  color: var(--text-muted);
 }
 
 .site-footer__brand {
@@ -1065,12 +1165,12 @@ button {
 }
 
 .footer-links a {
-  color: var(--text-lo);
+  color: var(--text-muted);
   transition: color var(--ease);
 }
 
 .footer-links a:hover {
-  color: var(--text-hi);
+  color: var(--text-primary);
 }
 
 /* ------------------------------------------------------------------ */

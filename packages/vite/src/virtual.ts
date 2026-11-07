@@ -28,6 +28,29 @@ export function generateRoutesModuleCode(routes: DiscoveredRoute[]): string {
   }`);
   });
 
+  // Layout modules are not routes, but the production handler resolves them
+  // through the same `routes` table by file path. Export them as kind
+  // "layout" entries so `loadModule` can find their compiled modules.
+  const layoutPaths = [
+    ...new Set(routes.flatMap((r) => r.layouts ?? [])),
+  ];
+  layoutPaths.forEach((layoutPath, index) => {
+    const varName = `layout_${index}`;
+    const normalizedLayoutPath = layoutPath.replace(/\\/g, "/");
+    imports.push(`import * as ${varName} from "${normalizedLayoutPath}";`);
+    routeEntries.push(`  {
+    id: ${JSON.stringify(layoutPath)},
+    pattern: "",
+    filePath: ${JSON.stringify(layoutPath)},
+    kind: "layout",
+    isDynamic: false,
+    isCatchAll: false,
+    score: 0,
+    layouts: [],
+    module: ${varName}
+  }`);
+  });
+
   return `
 ${imports.join("\n")}
 

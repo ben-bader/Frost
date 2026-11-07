@@ -3,12 +3,12 @@ import type { Route } from "@frostjs/core";
 import { FrostErrorBoundary, FrostErrorFallback } from "@frostjs/react";
 import { Counter } from "../../components/Counter.js";
 import { CopyButton } from "../../components/CopyButton.js";
-import { siteHead } from "../head.js";
+
 
 export const metadata: Route.Metadata = {
   title: "Playground — Frost",
   description: "Interactive runtime demos and the Frost error lab.",
-  ...siteHead,
+  
 };
 
 function BrokenExample(): React.JSX.Element {
@@ -64,7 +64,7 @@ function RecordsLoader(): React.JSX.Element {
       </div>
       {state.error && <p className="mono text-danger" style={{ marginBottom: "var(--space-3)" }}>{state.error}</p>}
       {state.body !== null && (
-        <pre className="code-block--wrap" style={{ background: "var(--trench)", border: "var(--rule)", borderRadius: "var(--radius)", padding: "var(--space-4)", overflowX: "auto", maxHeight: 240 }}>{JSON.stringify(state.body, null, 2)}</pre>
+        <pre className="code-block--wrap" style={{ background: "var(--background-deep)", border: "var(--rule)", borderRadius: "var(--radius)", padding: "var(--space-4)", overflowX: "auto", maxHeight: 240 }}>{JSON.stringify(state.body, null, 2)}</pre>
       )}
     </section>
   );
@@ -74,7 +74,7 @@ export default function PlaygroundPage(): React.JSX.Element {
   const [crashArmed, setCrashArmed] = useState(false);
 
   return (
-    <section className="band band--deep">
+    <section className="band band--lift">
       <div className="wrap band__inner">
       <div className="page-head">
         <h1 className="page-title">Poke the runtime.</h1>
@@ -132,7 +132,7 @@ export default function PlaygroundPage(): React.JSX.Element {
               <div className="panel__title">Source</div>
               <CopyButton text={ERROR_SOURCE} label="Copy code" />
             </div>
-            <pre className="code-block--wrap" style={{ background: "var(--trench)", border: "var(--rule)", borderRadius: "var(--radius)", padding: "var(--space-4)", overflowX: "auto" }}>{ERROR_SOURCE}</pre>
+            <pre className="code-block--wrap" style={{ background: "var(--background-deep)", border: "var(--rule)", borderRadius: "var(--radius)", padding: "var(--space-4)", overflowX: "auto" }}>{ERROR_SOURCE}</pre>
           </div>
         </div>
       </div>

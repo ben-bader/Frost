@@ -4,7 +4,7 @@ import { useLoaderData } from "@frostjs/react";
 import { HydrationInspector } from "../../components/HydrationInspector.js";
 import { ApiClientDemo } from "../../components/ApiClientDemo.js";
 import { CopyButton } from "../../components/CopyButton.js";
-import { siteHead } from "../head.js";
+
 
 export interface BoundaryRecord {
   id: string;
@@ -53,7 +53,7 @@ export async function loader({ url }: Route.LoaderArgs): Promise<ExamplesLoaderD
 export const metadata: Route.Metadata = {
   title: "Examples — Frost",
   description: "Live demonstrations of SSR, hydration, API routes, and server/client boundaries.",
-  ...siteHead,
+  
 };
 
 const tabs = ["SSR", "Hydration", "Data & API", "Boundaries"] as const;
@@ -64,7 +64,7 @@ export default function ExamplesPage({ data }: Route.ComponentProps<ExamplesLoad
   const [activeTab, setActiveTab] = useState<ExampleTab>("SSR");
 
   return (
-    <section className="band band--deep">
+    <section className="band band--lift">
       <div className="wrap band__inner">
       <div className="page-head">
         <h1 className="page-title">Runtime behaviors, running live.</h1>

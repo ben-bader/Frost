@@ -40,7 +40,7 @@ export function Counter({ initialCount = 0 }: CounterProps): React.JSX.Element {
             fontSize: "3rem",
             fontWeight: 500,
             letterSpacing: "-0.03em",
-            color: "var(--text-hi)",
+            color: "var(--text-primary)",
             fontVariantNumeric: "tabular-nums",
           }}
         >
