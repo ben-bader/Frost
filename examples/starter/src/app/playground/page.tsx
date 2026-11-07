@@ -1,11 +1,13 @@
-// Route: /playground — loader lives here if the page needs server data.
+// Route: /playground — no loader; the page is a client island.
 // Component lives at the bottom of this file; interactive pieces are in
 // src/components/ (Counter, ErrorDialog) and hydrate on the client.
 
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Route } from "@frostjs/core";
+import { TriangleAlert } from "lucide-react";
 import { Counter } from "../../components/Counter.js";
 import { ErrorDialog } from "../../components/ErrorDialog.js";
+import { Button } from "../../components/Button.js";
 
 export const metadata: Route.Metadata = {
   title: "Playground — Frost",
@@ -16,7 +18,7 @@ export default function PlaygroundPage(): React.JSX.Element {
   const [dialogOpen, setDialogOpen] = useState(false);
   const autoOpened = useRef(false);
 
-  // Open the error log once per visit, ~700ms after load.
+  // Open the error report once per visit, ~700ms after load.
   useEffect(() => {
     if (autoOpened.current) return;
     autoOpened.current = true;
@@ -25,18 +27,16 @@ export default function PlaygroundPage(): React.JSX.Element {
   }, []);
 
   return (
-    <section className="pg" aria-labelledby="pg-title">
-      <h1 className="display" id="pg-title" style={{ fontSize: "clamp(2rem, 4vw, 3.25rem)" }}>
-        Playground
-      </h1>
+    <section
+      className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 overflow-y-auto px-6 py-8"
+      aria-labelledby="pg-title"
+    >
+      <h1 className="sr-only" id="pg-title">Playground</h1>
       <Counter />
-      <button
-        type="button"
-        className="btn btn--secondary"
-        onClick={() => setDialogOpen(true)}
-      >
+      <Button variant="ghost" onClick={() => setDialogOpen(true)}>
+        <TriangleAlert size={14} aria-hidden="true" />
         View error logs
-      </button>
+      </Button>
       <ErrorDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
     </section>
   );

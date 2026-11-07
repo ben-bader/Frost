@@ -125,7 +125,7 @@ The starter app ships two routes:
 
 - `/` demo page and `/playground` playground — route components live in `src/app/page.tsx` and `src/app/playground/page.tsx`; add a `loader` export in a route file when a page needs server data.
 - Shared chrome and client islands: `src/components/` (`Header`, `Counter`, `ErrorDialog`) — anything using `useState`/`useEffect` hydrates on the client.
-- Design tokens and the only stylesheet: `src/styles/theme.css`.
+- Design tokens live in the Tailwind `@theme` block and the only stylesheet is `src/styles/app.css` (processed by `@tailwindcss/postcss` via `postcss.config.mjs`).
 - Framework config: `frost.config.ts`; scripts in `package.json` (`dev`, `build`, `start`, `test`).
 
 ## CSS and font loading

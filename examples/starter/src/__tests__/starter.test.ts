@@ -45,11 +45,13 @@ describe("starter routes", () => {
     expect(src).toContain("setTimeout");
   });
 
-  it("error dialog uses native dialog with demo log lines", () => {
-    const src = fs.readFileSync(path.join(SRC, "components", "ErrorDialog.tsx"), "utf-8");
-    expect(src).toContain("<dialog");
-    expect(src).toContain("Errors detected");
-    expect(src).toContain("hydration mismatch");
-    expect(src).toContain("route contract missing field");
+  it("error dialog uses native dialog backed by typed demo data", () => {
+    const dialog = fs.readFileSync(path.join(SRC, "components", "ErrorDialog.tsx"), "utf-8");
+    const data = fs.readFileSync(path.join(SRC, "data", "errors.ts"), "utf-8");
+    expect(dialog).toContain("<dialog");
+    expect(dialog).toContain("Errors detected");
+    expect(data).toContain("HydrationError");
+    expect(data).toContain("missing field");
+    expect(data).toContain("PLAYGROUND_ERRORS");
   });
 });

@@ -1,13 +1,12 @@
-import React from "react";
 import type { Route } from "@frostjs/core";
 import { Header } from "../components/Header.js";
-import "../styles/theme.css";
+import "../styles/app.css";
 
 export default function RootLayout({ children }: Route.ComponentProps): React.JSX.Element {
   return (
-    <div className="site">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <Header />
-      <main className="site-main">{children}</main>
+      <main className="min-h-0 flex-1">{children}</main>
     </div>
   );
 }
