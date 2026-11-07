@@ -17,7 +17,13 @@ export function tryServeStaticFile(
   }
 
   const rawUrl = req.url ?? "/";
-  const pathname = rawUrl.split("?")[0]!;
+  let pathname = rawUrl.split("?")[0]!;
+  // Decode percent-escapes so public assets with spaces/special chars resolve
+  try {
+    pathname = decodeURIComponent(pathname);
+  } catch {
+    // malformed escape — keep the raw path
+  }
 
   // Prevent path traversal attacks
   const safePath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, "");
