@@ -1,28 +1,20 @@
 # Frost starter — design notes
 
-"First frost": a clean ice field where structure comes from hairline rules, not boxes.
+"Frozen lake": one dark theme built from flat tonal bands and hairline fracture rules. No light mode, no toggle.
 
 ## Tokens (`src/styles/theme.css`)
 
-- Surfaces: `--snow` page, `--ice-50/100` subtle fills, `--ice-200` hairlines, `--ice-300` decorative lines.
-- Text: `--ink` headings/primary, `--slate-700` body, `--slate-500` meta.
-- Accent: `--glacier` (links, primary action, focus, code keywords), `--glacier-strong` hover, `--aurora` (live marker, string tokens only).
-- Status: `--danger` for errors.
-- Dark theme via `prefers-color-scheme: dark` + `[data-theme]` override; midnight blue-black, never teal.
-
-## Type
-
-Geist (UI) + Geist Mono (code/data), loaded via Google Fonts with `display=swap`. Display `clamp(2.5rem,5.5vw,4.5rem)` w500; section titles 1.5rem w500; body 1rem/1.6; meta 0.875rem slate. One uppercase eyebrow max per page.
-
-## Shape & space
-
-Radius ≤4px (2px controls). Spacing 4-point scale `--space-1..10` (4→128px). Content `max-width:1120px`, gutter `clamp(16px,4vw,32px)`. Sections separated by 1px `--ice-200` rules — never cards.
+- Bands, deepest → lightest: `--abyss` page/hero, `--deep` sections/footer, `--trench` runtime strip + code surfaces, `--slab` hover/active, `--fracture`/`--fracture-strong` rules and motif strokes.
+- Text: `--text-hi` headings/values, `--text-body` body, `--text-lo` meta/keys.
+- Accent: `--frost` (primary button, links on hover, focus ring, code keywords), `--frost-dim` (hover, strings), `--glint` (server-online marker only).
+- Radius: `--radius: 2px` on buttons/code only; everything else 0.
+- Spacing: 8px base, `--space-1..10` (4→128px). Section bands pad `--space-9` desktop / `--space-8` tablet / `--space-7` mobile.
 
 ## Rules
 
-- No gradients, shadows, glows, or blur. Focus = 2px glacier outline.
-- Accent only on primary button, links, focus, code keywords.
-- One illustration: the crystalline SVG motif (hero only, `aria-hidden`).
-- Status chrome limited to one aurora dot (server online).
-- Sentence case, short concrete copy, verbs over adjectives.
-- Everything SSR-rendered; JS only enhances (theme, copy, menu).
+- Structure = full-bleed bands (`--abyss`/`--deep`/`--trench`) separated by 1px `--fracture` rules. No cards, no shadows, no gradients, no blur.
+- Primary action is a pale `--frost` button with `--abyss` text — the single focal point.
+- Logo is the project's `public/favicon.png`, unmodified, 24×24 in the header.
+- Fonts: Geist + Geist Mono via Google Fonts (`display=swap`), injected through `Route.Metadata` links.
+- Headings weight 500, sentence case, no uppercase labels. One `<h1>`, `<h2>` per section.
+- JS only enhances: copy buttons and the mobile menu. Everything renders server-side.

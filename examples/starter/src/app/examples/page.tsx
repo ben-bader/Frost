@@ -64,7 +64,8 @@ export default function ExamplesPage({ data }: Route.ComponentProps<ExamplesLoad
   const [activeTab, setActiveTab] = useState<ExampleTab>("SSR");
 
   return (
-    <div className="wrap">
+    <section className="band band--deep">
+      <div className="wrap band__inner">
       <div className="page-head">
         <h1 className="page-title">Runtime behaviors, running live.</h1>
         <p className="page-lede">
@@ -93,7 +94,8 @@ export default function ExamplesPage({ data }: Route.ComponentProps<ExamplesLoad
         {activeTab === "Data & API" && <ApiPanel />}
         {activeTab === "Boundaries" && <BoundariesPanel data={pageData} />}
       </div>
-    </div>
+      </div>
+    </section>
   );
 }
 
@@ -143,7 +145,7 @@ function CodePanel({ filename, code }: { filename: string; code: string }): Reac
 function SsrPanel({ data }: { data: ExamplesLoaderData }): React.JSX.Element {
   return (
     <div className="demo-grid">
-      <div>
+      <div className="demo-span-7">
         <div className="panel">
           <div className="panel__head">
             <div>
@@ -186,7 +188,7 @@ function SsrPanel({ data }: { data: ExamplesLoaderData }): React.JSX.Element {
         </div>
       </div>
 
-      <div>
+      <div className="demo-span-5">
         <CodePanel filename="src/app/examples/page.tsx" code={SSR_SOURCE} />
       </div>
     </div>
@@ -249,7 +251,7 @@ function ApiPanel(): React.JSX.Element {
 function BoundariesPanel({ data }: { data: ExamplesLoaderData }): React.JSX.Element {
   return (
     <div className="demo-grid">
-      <div>
+      <div className="demo-span-7">
         <div className="panel">
           <div className="panel__head">
             <div>
@@ -280,7 +282,7 @@ function BoundariesPanel({ data }: { data: ExamplesLoaderData }): React.JSX.Elem
         </div>
       </div>
 
-      <div>
+      <div className="demo-span-5">
         <CodePanel filename="FS1004 — boundary violation" code={BOUNDARY_SOURCE} />
       </div>
     </div>

@@ -64,7 +64,7 @@ function RecordsLoader(): React.JSX.Element {
       </div>
       {state.error && <p className="mono text-danger" style={{ marginBottom: "var(--space-3)" }}>{state.error}</p>}
       {state.body !== null && (
-        <pre className="code-block--wrap" style={{ background: "var(--ice-50)", border: "var(--rule)", borderRadius: "var(--radius-control)", padding: "var(--space-4)", overflowX: "auto", maxHeight: 240 }}>{JSON.stringify(state.body, null, 2)}</pre>
+        <pre className="code-block--wrap" style={{ background: "var(--trench)", border: "var(--rule)", borderRadius: "var(--radius)", padding: "var(--space-4)", overflowX: "auto", maxHeight: 240 }}>{JSON.stringify(state.body, null, 2)}</pre>
       )}
     </section>
   );
@@ -74,7 +74,8 @@ export default function PlaygroundPage(): React.JSX.Element {
   const [crashArmed, setCrashArmed] = useState(false);
 
   return (
-    <div className="wrap">
+    <section className="band band--deep">
+      <div className="wrap band__inner">
       <div className="page-head">
         <h1 className="page-title">Poke the runtime.</h1>
         <p className="page-lede">
@@ -84,12 +85,12 @@ export default function PlaygroundPage(): React.JSX.Element {
       </div>
 
       <div className="demo-grid">
-        <div>
+        <div className="demo-span-7">
           <Counter initialCount={7} />
           <RecordsLoader />
         </div>
 
-        <div>
+        <div className="demo-span-5">
           <section className="panel" aria-labelledby="error-title">
             <div className="panel__head">
               <div>
@@ -131,10 +132,11 @@ export default function PlaygroundPage(): React.JSX.Element {
               <div className="panel__title">Source</div>
               <CopyButton text={ERROR_SOURCE} label="Copy code" />
             </div>
-            <pre className="code-block--wrap" style={{ background: "var(--ice-50)", border: "var(--rule)", borderRadius: "var(--radius-control)", padding: "var(--space-4)", overflowX: "auto" }}>{ERROR_SOURCE}</pre>
+            <pre className="code-block--wrap" style={{ background: "var(--trench)", border: "var(--rule)", borderRadius: "var(--radius)", padding: "var(--space-4)", overflowX: "auto" }}>{ERROR_SOURCE}</pre>
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </section>
   );
 }
