@@ -38,7 +38,7 @@ export function HydrationInspector(): React.JSX.Element {
           <div className="panel__title">Serialized route state</div>
           <CopyButton text={serialized} label="Copy state" />
         </div>
-        <pre className="code-block--wrap" style={{ background: "var(--background-secondary)", border: "var(--rule)", borderRadius: "var(--radius)", padding: "var(--space-4)", overflowX: "auto", maxHeight: 260 }}>{serialized}</pre>
+        <pre className="code-block--wrap" style={{ background: "var(--panel)", border: "var(--rule)", borderRadius: "var(--radius)", padding: "var(--space-4)", overflowX: "auto", maxHeight: 260 }}>{serialized}</pre>
       </div>
     </div>
   );

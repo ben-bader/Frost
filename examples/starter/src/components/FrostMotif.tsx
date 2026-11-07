@@ -1,91 +1,55 @@
 import React from "react";
 
-/* Deterministic sparse hexagonal lattice — "first frost" crystal lines.
-   ~50 segments at 0°/60°/120°, fading from the top-right corner. */
+/* Ribbon-echo motif: parallel hairlines at a single 60° angle, drawn in
+   bundles of three with staggered lengths — echoes the logo's slanted
+   ribbon cuts. ~24 segments, decorative only. */
 
 const SIZE = 420;
-const R = 34; // hex circumradius-ish spacing unit
-const DX = Math.sqrt(3) * R;
-const DY = 1.5 * R;
-
-function mulberry32(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+const ANGLE = (60 * Math.PI) / 180;
+const DX = Math.cos(ANGLE);
+const DY = Math.sin(ANGLE);
 
 interface Seg {
   d: string;
-  o: number;
-  node?: [number, number];
+  len: number;
 }
 
 function buildSegments(): Seg[] {
-  const rand = mulberry32(0xf057);
   const segs: Seg[] = [];
-  const pts = new Map<string, [number, number]>();
 
-  for (let row = -1; row < 10; row++) {
-    for (let col = -1; col < 9; col++) {
-      const x = SIZE / 2 + (col - row / 2) * DX;
-      const y = SIZE / 2 + row * DY - SIZE * 0.18;
-      pts.set(`${col},${row}`, [x, y]);
-    }
-  }
-
-  const neighbors: Array<[number, number]> = [
-    [1, 0],
-    [0, 1],
-    [-1, 1],
+  // Three bundle columns, each a fan of short parallel strokes.
+  const bundles = [
+    { x: SIZE * 0.62, y: SIZE * 0.30, n: 3 },
+    { x: SIZE * 0.74, y: SIZE * 0.48, n: 3 },
+    { x: SIZE * 0.58, y: SIZE * 0.62, n: 3 },
+    { x: SIZE * 0.82, y: SIZE * 0.24, n: 3 },
+    { x: SIZE * 0.68, y: SIZE * 0.74, n: 3 },
+    { x: SIZE * 0.88, y: SIZE * 0.58, n: 3 },
+    { x: SIZE * 0.50, y: SIZE * 0.44, n: 3 },
+    { x: SIZE * 0.78, y: SIZE * 0.82, n: 3 },
   ];
 
-  const cornerDist = (x: number, y: number) => Math.hypot(SIZE - x, 0 - y);
-
-  for (const [key, point] of pts) {
-    const [col, row] = key.split(",").map(Number) as [number, number];
-    const [x1, y1] = point;
-    for (const [dq, dr] of neighbors) {
-      const n = pts.get(`${col + dq},${row + dr}`);
-      if (!n) continue;
-      const [x2, y2] = n;
-      // deterministic per-edge hash so the pattern is stable
-      const h = rand();
-      if (h > 0.17) continue;
-      const mx = (x1 + x2) / 2;
-      const my = (y1 + y2) / 2;
-      const fade = Math.max(0.06, 0.62 - cornerDist(mx, my) * 0.0011);
+  for (const b of bundles) {
+    for (let i = 0; i < b.n; i++) {
+      // stagger lengths and slight perpendicular offsets within a bundle
+      const len = 46 + ((i * 37 + Math.floor(b.x)) % 96);
+      const off = (i - 1) * 9 + ((Math.floor(b.y) % 7) - 3);
+      const px = -DY * off;
+      const py = DX * off;
+      const x1 = b.x + px;
+      const y1 = b.y + py;
+      const x2 = x1 + DX * len;
+      const y2 = y1 + DY * len;
+      // keep inside the viewBox
+      if (x2 > SIZE - 4 || y2 > SIZE - 4 || x1 < 4 || y1 < 4) continue;
       segs.push({
         d: `M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}`,
-        o: fade,
-        node: h < 0.02 ? [x2, y2] : undefined,
+        len,
       });
     }
   }
 
-  // Frost branches growing from the top-right corner.
-  const branchAngles = [0, 60, 120, 30, 90, 150];
-  for (let i = 0; i < 7; i++) {
-    const a = ((branchAngles[i % branchAngles.length] ?? 0) * Math.PI) / 180;
-    const len = 26 + ((i * 37) % 60);
-    const spread = ((i * 53) % 40) - 20;
-    const aa = a + (spread * Math.PI) / 180;
-    const x1 = SIZE - 8 - i * 9;
-    const y1 = 8 + i * 7;
-    const x2 = x1 - Math.cos(aa) * len;
-    const y2 = y1 + Math.sin(aa) * len * 0.6;
-    segs.push({
-      d: `M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}`,
-      o: 0.6 - i * 0.045,
-      node: [x2, y2],
-    });
-  }
-
-  return segs;
+  return segs.slice(0, 30);
 }
 
 const SEGMENTS = buildSegments();
@@ -103,21 +67,10 @@ export function FrostMotif(): React.JSX.Element {
           key={i}
           d={s.d}
           pathLength={100}
-          style={{ ["--i" as string]: i, opacity: Math.min(0.14, s.o * 0.24) }}
+          strokeWidth={1}
+          style={{ ["--i" as string]: i }}
         />
       ))}
-      {SEGMENTS.map(
-        (s, i) =>
-          s.node && (
-            <circle
-              key={`n${i}`}
-              cx={Number(s.node[0].toFixed(1))}
-              cy={Number(s.node[1].toFixed(1))}
-              r={2}
-              style={{ opacity: Math.min(0.14, s.o * 0.24) }}
-            />
-          ),
-      )}
     </svg>
   );
 }

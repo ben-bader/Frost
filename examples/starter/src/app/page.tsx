@@ -45,7 +45,7 @@ export default function OverviewPage({ data }: Route.ComponentProps<OverviewLoad
   return (
     <>
       {/* Hero — base band; console sits inside it as the product surface */}
-      <section className="band band--base" aria-labelledby="hero-title">
+      <section className="band band--void" aria-labelledby="hero-title">
         <div className="wrap hero">
           <div className="hero__grid">
             <div className="hero__copy">
@@ -116,7 +116,7 @@ export default function OverviewPage({ data }: Route.ComponentProps<OverviewLoad
       </section>
 
       {/* How it works — lifted band, ruled blocks */}
-      <section className="band band--lift band--rule-b" id="how" aria-labelledby="how-title">
+      <section className="band band--base band--rule-b" id="how" aria-labelledby="how-title">
         <div className="wrap band__inner">
           <div className="section-head">
             <h2 className="section-title" id="how-title">
@@ -144,7 +144,7 @@ export default function OverviewPage({ data }: Route.ComponentProps<OverviewLoad
       </section>
 
       {/* Topics index — base band */}
-      <section className="band band--base" aria-labelledby="index-title">
+      <section className="band band--lift" aria-labelledby="index-title">
         <div className="wrap band__inner">
           <div className="section-head">
             <h2 className="section-title" id="index-title">

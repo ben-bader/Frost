@@ -1,7 +1,7 @@
 /* ------------------------------------------------------------------ */
-/* Frost — flat deep-teal system                                       */
-/* Bands + hairlines. Mint accent. Poppins UI, system mono for data.   */
-/* Palette values are the original Frost tokens, unchanged.            */
+/* Frost — brand system                                                    */
+/* Flat bands + hairlines in the logo's teal. Poppins UI, system mono.     */
+/* Palette from Frost_Teal_Ribbon_Logo.png — do not retune.                */
 /* ------------------------------------------------------------------ */
 
 @import "@fontsource/poppins/400.css";
@@ -12,29 +12,28 @@
 :root {
   color-scheme: dark;
 
-  /* Palette — original values, locked */
-  --brand-accent: #00c9a8;
-  --brand-accent-strong: #14e0bd;
-  --brand-accent-ink: #03231f;
-  --brand-accent-soft: rgba(0, 201, 168, 0.1);
-  --brand-accent-line: rgba(0, 201, 168, 0.32);
+  /* Surfaces, deepest to lightest */
+  --void: #010a09;
+  --ground: #02110e;
+  --band: #061b16;
+  --panel: #0a241d;
+  --hover: #0f3027;
 
-  --background-deep: #020a09;
-  --background-primary: #04100e;
-  --background-secondary: #0a211d;
+  /* Lines */
+  --line: #16392f;
+  --line-strong: #24594a;
 
-  /* Derived flat tones (lightness shifts of the palette only) */
-  --band-hover: #0f2a25;
-  --line: rgba(186, 255, 236, 0.09);
-  --line-strong: rgba(186, 255, 236, 0.18);
+  /* Text */
+  --text-hi: #ecf4ed;
+  --text-body: #b4cbc4;
+  --text-lo: #84a89d;
 
-  --text-primary: #e9f6f2;
-  --text-secondary: #a8ccc5;
-  --text-muted: #6d948b;
-  --text-inverse: #03231f;
+  /* Accent — logo ribbon */
+  --accent: #0af3c5;
+  --accent-hover: #06d0a8;
+  --accent-deep: #04937c;
+  --accent-shadow: #013027;
 
-  --status-success: #5ee8c8;
-  --status-warning: #ffd38a;
   --status-danger: #ff9d9d;
 
   --font-sans: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -80,8 +79,8 @@ html {
 
 body {
   min-height: 100vh;
-  background: var(--background-deep);
-  color: var(--text-secondary);
+  background: var(--ground);
+  color: var(--text-body);
   font-family: var(--font-sans);
   font-size: 1rem;
   line-height: 1.6;
@@ -100,13 +99,13 @@ button {
 }
 
 :focus-visible {
-  outline: 2px solid var(--brand-accent);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
 ::selection {
-  background: var(--line-strong);
-  color: var(--text-primary);
+  background: var(--accent-shadow);
+  color: var(--text-hi);
 }
 
 /* ------------------------------------------------------------------ */
@@ -136,15 +135,19 @@ button {
 }
 
 .band--base {
-  background: var(--background-deep);
+  background: var(--ground);
+}
+
+.band--void {
+  background: var(--void);
 }
 
 .band--lift {
-  background: var(--background-primary);
+  background: var(--band);
 }
 
 .band--panel {
-  background: var(--background-secondary);
+  background: var(--panel);
 }
 
 .band--rule-b {
@@ -176,7 +179,7 @@ button {
   top: 0;
   z-index: 40;
   height: var(--header-height);
-  background: var(--background-deep);
+  background: var(--void);
   border-bottom: var(--rule);
 }
 
@@ -194,12 +197,19 @@ button {
   gap: var(--space-3);
   font-weight: 500;
   font-size: 1rem;
-  color: var(--text-primary);
+  color: var(--text-hi);
 }
 
 .brand__mark {
-  width: 24px;
-  height: 24px;
+  width: 36px;
+  height: 28px;
+  flex: none;
+  display: block;
+}
+
+.brand__wordmark {
+  width: 109px;
+  height: 20px;
   flex: none;
   display: block;
 }
@@ -212,19 +222,19 @@ button {
 
 .nav-link {
   font-size: 0.9rem;
-  color: var(--text-muted);
+  color: var(--text-lo);
   padding-block: var(--space-2);
   transition: color var(--ease);
 }
 
 .nav-link:hover {
-  color: var(--text-primary);
+  color: var(--text-hi);
 }
 
 .nav-link--active {
-  color: var(--text-primary);
+  color: var(--text-hi);
   text-decoration: underline;
-  text-decoration-color: var(--brand-accent);
+  text-decoration-color: var(--accent);
   text-underline-offset: 8px;
 }
 
@@ -237,7 +247,7 @@ button {
 .version {
   font-family: var(--font-mono);
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: var(--text-lo);
 }
 
 .menu-btn {
@@ -246,13 +256,13 @@ button {
   padding: 0 var(--space-3);
   background: transparent;
   border: none;
-  color: var(--text-muted);
+  color: var(--text-lo);
   font-size: 0.9rem;
   transition: color var(--ease);
 }
 
 .menu-btn:hover {
-  color: var(--text-primary);
+  color: var(--text-hi);
 }
 
 .mobile-nav {
@@ -272,7 +282,7 @@ button {
 
   .mobile-nav {
     display: block;
-    background: var(--background-deep);
+    background: var(--void);
     border-bottom: var(--rule);
   }
 
@@ -285,7 +295,7 @@ button {
     display: flex;
     align-items: center;
     min-height: 40px;
-    color: var(--text-secondary);
+    color: var(--text-body);
     border-bottom: var(--rule);
     font-size: 0.95rem;
   }
@@ -295,7 +305,7 @@ button {
   }
 
   .mobile-nav a:hover {
-    color: var(--text-primary);
+    color: var(--text-hi);
   }
 }
 
@@ -350,7 +360,7 @@ button {
 
 .eyebrow {
   font-size: 0.9rem;
-  color: var(--brand-accent);
+  color: var(--accent);
   margin-bottom: var(--space-4);
 }
 
@@ -359,7 +369,7 @@ button {
   font-weight: 500;
   line-height: 1.05;
   letter-spacing: -0.02em;
-  color: var(--text-primary);
+  color: var(--text-hi);
   text-wrap: balance;
 }
 
@@ -367,7 +377,7 @@ button {
   margin-top: var(--space-5);
   font-size: 1.125rem;
   line-height: 1.6;
-  color: var(--text-secondary);
+  color: var(--text-body);
   max-width: 56ch;
 }
 
@@ -390,18 +400,18 @@ button {
   border-radius: var(--radius);
   border: 1px solid transparent;
   background: transparent;
-  color: var(--text-primary);
+  color: var(--text-hi);
   transition: background var(--ease), border-color var(--ease), color var(--ease);
   white-space: nowrap;
 }
 
 .btn--primary {
-  background: var(--brand-accent);
-  color: var(--brand-accent-ink);
+  background: var(--accent);
+  color: var(--void);
 }
 
 .btn--primary:hover {
-  background: var(--brand-accent-strong);
+  background: var(--accent-hover);
 }
 
 .btn--secondary {
@@ -409,7 +419,7 @@ button {
 }
 
 .btn--secondary:hover {
-  background: var(--band-hover);
+  background: var(--hover);
 }
 
 .btn--small {
@@ -437,14 +447,14 @@ button {
   background: transparent;
   border: var(--rule);
   border-radius: var(--radius);
-  color: var(--text-secondary);
+  color: var(--text-body);
   transition: background var(--ease), color var(--ease);
   flex: none;
 }
 
 .icon-btn:hover {
-  background: var(--band-hover);
-  color: var(--text-primary);
+  background: var(--hover);
+  color: var(--text-hi);
 }
 
 .install {
@@ -457,11 +467,11 @@ button {
 }
 
 .install__cmd {
-  background: var(--background-secondary);
+  background: var(--panel);
   border: var(--rule);
   border-radius: var(--radius);
   padding: var(--space-3) var(--space-4);
-  color: var(--text-secondary);
+  color: var(--text-body);
 }
 
 /* Line motif — low-contrast accent traces, hero only */
@@ -469,7 +479,7 @@ button {
   width: 100%;
   max-width: 420px;
   height: auto;
-  color: var(--brand-accent);
+  color: var(--line-strong);
 }
 
 .motif path {
@@ -478,11 +488,6 @@ button {
   fill: none;
   stroke-dasharray: 100;
   stroke-dashoffset: 0;
-}
-
-.motif circle {
-  fill: currentColor;
-  stroke: none;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -508,7 +513,7 @@ button {
 .console {
   border: var(--rule);
   border-radius: var(--radius);
-  background: var(--background-secondary);
+  background: var(--band);
   overflow: hidden;
 }
 
@@ -521,7 +526,7 @@ button {
   border-bottom: var(--rule);
   font-family: var(--font-mono);
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: var(--text-lo);
 }
 
 .console__status {
@@ -542,11 +547,11 @@ button {
 }
 
 .console__key {
-  color: var(--text-muted);
+  color: var(--text-lo);
 }
 
 .console__value {
-  color: var(--text-primary);
+  color: var(--text-hi);
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -555,19 +560,20 @@ button {
 .console__log {
   padding: var(--space-5);
   overflow-x: auto;
+  background: var(--panel);
   font-family: var(--font-mono);
   font-size: 0.875rem;
   line-height: 1.7;
-  color: var(--text-primary);
+  color: var(--text-body);
   white-space: pre;
 }
 
 .console__log .ts {
-  color: var(--text-muted);
+  color: var(--text-lo);
 }
 
 .console__log .ok {
-  color: var(--brand-accent);
+  color: var(--accent);
 }
 
 .status-dot {
@@ -575,7 +581,7 @@ button {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--brand-accent);
+  background: var(--accent);
   flex: none;
 }
 
@@ -645,14 +651,14 @@ button {
   font-weight: 500;
   line-height: 1.25;
   letter-spacing: -0.01em;
-  color: var(--text-primary);
+  color: var(--text-hi);
 }
 
 .section-sub {
   margin-top: var(--space-4);
   font-size: 1rem;
   line-height: 1.6;
-  color: var(--text-muted);
+  color: var(--text-lo);
   max-width: 60ch;
 }
 
@@ -683,12 +689,12 @@ button {
 .step__num {
   font-family: var(--font-mono);
   font-size: 0.85rem;
-  color: var(--text-muted);
+  color: var(--text-lo);
 }
 
 .step__title {
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--text-hi);
   font-size: 0.95rem;
   margin-top: var(--space-2);
 }
@@ -696,7 +702,7 @@ button {
 .step__desc {
   margin-top: var(--space-1);
   font-size: 0.9rem;
-  color: var(--text-muted);
+  color: var(--text-lo);
 }
 
 /* ------------------------------------------------------------------ */
@@ -706,7 +712,7 @@ button {
 .code-panel {
   border: var(--rule);
   border-radius: var(--radius);
-  background: var(--background-secondary);
+  background: var(--panel);
   overflow: hidden;
 }
 
@@ -719,7 +725,7 @@ button {
   border-bottom: var(--rule);
   font-family: var(--font-mono);
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: var(--text-lo);
 }
 
 .code-panel__body {
@@ -732,7 +738,7 @@ button {
   font-family: var(--font-mono);
   font-size: 0.875rem;
   line-height: 1.7;
-  color: var(--text-secondary);
+  color: var(--text-body);
   white-space: pre;
   tab-size: 2;
 }
@@ -743,19 +749,19 @@ button {
 }
 
 .tok-k {
-  color: var(--brand-accent);
+  color: var(--accent);
 }
 
 .tok-s {
-  color: var(--brand-accent-strong);
+  color: var(--accent-hover);
 }
 
 .tok-c {
-  color: var(--text-muted);
+  color: var(--text-lo);
 }
 
 .tok-f {
-  color: var(--text-primary);
+  color: var(--text-hi);
 }
 
 /* ------------------------------------------------------------------ */
@@ -789,20 +795,20 @@ button {
 .explain__num {
   font-family: var(--font-mono);
   font-size: 0.85rem;
-  color: var(--text-muted);
+  color: var(--text-lo);
   padding-top: var(--space-1);
 }
 
 .explain__title {
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--text-hi);
   font-size: 0.95rem;
 }
 
 .explain__desc {
   margin-top: var(--space-1);
   font-size: 0.9rem;
-  color: var(--text-muted);
+  color: var(--text-lo);
 }
 
 /* ------------------------------------------------------------------ */
@@ -839,7 +845,7 @@ button {
 
 .index-row__title {
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--text-hi);
   font-size: 0.95rem;
   transition: color var(--ease);
 }
@@ -848,23 +854,23 @@ button {
   display: block;
   font-weight: 400;
   font-size: 0.85rem;
-  color: var(--text-muted);
+  color: var(--text-lo);
   margin-top: var(--space-1);
 }
 
 .index-row__arrow {
-  color: var(--text-muted);
+  color: var(--text-lo);
   transition: transform var(--ease), color var(--ease);
   flex: none;
 }
 
 .index-row:hover .index-row__title {
-  color: var(--brand-accent);
+  color: var(--accent);
 }
 
 .index-row:hover .index-row__arrow {
   transform: translateX(4px);
-  color: var(--brand-accent);
+  color: var(--accent);
 }
 
 /* ------------------------------------------------------------------ */
@@ -880,7 +886,7 @@ button {
   font-weight: 500;
   line-height: 1.15;
   letter-spacing: -0.02em;
-  color: var(--text-primary);
+  color: var(--text-hi);
   text-wrap: balance;
 }
 
@@ -888,7 +894,7 @@ button {
   margin-top: var(--space-4);
   font-size: 1.05rem;
   line-height: 1.6;
-  color: var(--text-muted);
+  color: var(--text-lo);
   max-width: 60ch;
 }
 
@@ -913,19 +919,19 @@ button {
 .panel__title {
   font-size: 1.05rem;
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--text-hi);
 }
 
 .panel__note {
   font-size: 0.85rem;
-  color: var(--text-muted);
+  color: var(--text-lo);
   margin-top: var(--space-1);
 }
 
 .body-sm {
   font-size: 0.875rem;
   line-height: 1.6;
-  color: var(--text-muted);
+  color: var(--text-lo);
 }
 
 .mono {
@@ -954,13 +960,13 @@ button {
 .kv__key {
   font-family: var(--font-mono);
   font-size: 0.78rem;
-  color: var(--text-muted);
+  color: var(--text-lo);
 }
 
 .kv__value {
   font-family: var(--font-mono);
   font-size: 0.8rem;
-  color: var(--text-primary);
+  color: var(--text-hi);
   text-align: right;
   word-break: break-word;
 }
@@ -979,7 +985,7 @@ button {
   padding: var(--space-3) 0;
   font-size: 0.9rem;
   font-weight: 500;
-  color: var(--text-muted);
+  color: var(--text-lo);
   border-bottom: 1px solid transparent;
   margin-bottom: -1px;
   white-space: nowrap;
@@ -987,12 +993,12 @@ button {
 }
 
 .tab:hover {
-  color: var(--text-primary);
+  color: var(--text-hi);
 }
 
 .tab--active {
-  color: var(--text-primary);
-  border-bottom-color: var(--brand-accent);
+  color: var(--text-hi);
+  border-bottom-color: var(--accent);
 }
 
 .tab-panel {
@@ -1002,7 +1008,7 @@ button {
 .tag {
   font-family: var(--font-mono);
   font-size: 0.75rem;
-  color: var(--text-muted);
+  color: var(--text-lo);
   white-space: nowrap;
 }
 
@@ -1053,14 +1059,14 @@ button {
 
 .record-row__name {
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--text-hi);
   font-size: 0.9rem;
 }
 
 .record-row__id {
   font-family: var(--font-mono);
   font-size: 0.75rem;
-  color: var(--text-muted);
+  color: var(--text-lo);
 }
 
 /* Hydration inspector */
@@ -1082,12 +1088,12 @@ button {
 }
 
 .hydration-status__dot--live {
-  background: var(--brand-accent);
+  background: var(--accent);
 }
 
 .hydration-status__title {
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--text-hi);
   font-size: 0.95rem;
 }
 
@@ -1107,13 +1113,13 @@ button {
   background: transparent;
   border: var(--rule);
   border-radius: var(--radius);
-  color: var(--text-secondary);
+  color: var(--text-body);
   transition: background var(--ease), color var(--ease);
 }
 
 .endpoint-btn:hover:not(:disabled) {
-  background: var(--band-hover);
-  color: var(--text-primary);
+  background: var(--hover);
+  color: var(--text-hi);
 }
 
 .endpoint-btn:disabled {
@@ -1122,8 +1128,8 @@ button {
 }
 
 .endpoint-btn--active {
-  background: var(--band-hover);
-  color: var(--text-primary);
+  background: var(--hover);
+  color: var(--text-hi);
 }
 
 /* Error lab */
@@ -1138,7 +1144,7 @@ button {
 /* ------------------------------------------------------------------ */
 
 .site-footer {
-  background: var(--background-primary);
+  background: var(--void);
   border-top: var(--rule);
   padding-block: var(--space-7);
 }
@@ -1150,7 +1156,7 @@ button {
   gap: var(--space-4);
   flex-wrap: wrap;
   font-size: 0.85rem;
-  color: var(--text-muted);
+  color: var(--text-lo);
 }
 
 .site-footer__brand {
@@ -1165,12 +1171,12 @@ button {
 }
 
 .footer-links a {
-  color: var(--text-muted);
+  color: var(--text-lo);
   transition: color var(--ease);
 }
 
 .footer-links a:hover {
-  color: var(--text-primary);
+  color: var(--text-hi);
 }
 
 /* ------------------------------------------------------------------ */

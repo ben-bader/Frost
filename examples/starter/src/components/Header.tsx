@@ -19,8 +19,8 @@ export function Header(): React.JSX.Element {
     <header className="site-header">
       <div className="wrap site-header__inner">
         <a href="/" className="brand" aria-label="Frost home">
-          <img className="brand__mark" src="/favicon.png" alt="" width="24" height="24" />
-          Frost
+          <img className="brand__mark" src="/frost-mark.png" alt="" width={36} height={28} />
+          <img className="brand__wordmark" src="/frost-wordmark.png" alt="Frost" width={109} height={20} />
         </a>
 
         <nav className="primary-nav" aria-label="Primary">
