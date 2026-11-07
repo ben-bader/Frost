@@ -116,11 +116,17 @@ pnpm --dir examples/starter start
 
 ## Routes
 
-The starter app ships three routes:
+The starter app ships two routes:
 
-- `/` — Overview: what Frost is, the real architecture stack, capabilities, and live runtime info.
-- `/examples` — Consolidated framework demos in tabs: SSR, hydration, data & API, and server/client boundaries.
-- `/playground` — Interactive playground and error lab: counter, data loading, and a deliberate render error.
+- `/` — Demo: what Frost is, live runtime info, the real commands to run it, and the starter's file tree.
+- `/playground` — Playground: a plain GET form drives the route loader; the page shows the request console, loader data, and a hydrated client island.
+
+### What's in this starter
+
+- `/` demo page and `/playground` playground — loaders and components live in each route file (`src/app/page.tsx`, `src/app/playground/page.tsx`).
+- Shared chrome: `src/components/` (`Header`, `Footer`, `Panel`, `CopyButton`, `ClientIsland`, `HydrationFlag`).
+- Design tokens and the only stylesheet: `src/styles/theme.css`.
+- Framework config: `frost.config.ts`; scripts in `package.json` (`dev`, `build`, `start`, `test`).
 
 ## CSS and font loading
 
@@ -133,7 +139,7 @@ Because the stylesheet link is in the initial HTML, there is no flash of unstyle
 
 ## SSR and hydration
 
-Frost supports SSR by rendering route content on the server and serializing route data for the browser. During hydration, the client reconnects to the same route payload instead of re-running server logic. The `/examples` and `/playground` routes demonstrate this behavior live in the starter app.
+Frost supports SSR by rendering route content on the server and serializing route data for the browser. During hydration, the client reconnects to the same route payload instead of re-running server logic. The `/playground` route demonstrates this live: its loader reads the form's query params on the server, and the client island flips from `server-rendered` to `hydrated` on mount.
 
 ## Routing and data loading
 
@@ -159,7 +165,7 @@ One of Frost's central guarantees is that server-only code stays server-only. Th
 
 `@frostjs/react` ships a `FrostErrorBoundary` that captures render errors with route, phase, component stack, and source location when available. In development it renders a diagnostic dialog with the error type, message, source file/line, expandable stack traces, copy-message/copy-report actions, and dismiss/retry recovery. In production it falls back to a safe message without leaking filesystem paths or internals.
 
-Note: React error boundaries catch render errors only — not event-handler or asynchronous errors. The playground's error lab demonstrates the boundary with a component that throws during render.
+Note: React error boundaries catch render errors only — not event-handler or asynchronous errors.
 
 ## Current limits
 

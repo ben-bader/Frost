@@ -2,7 +2,6 @@ import { defineConfig } from "@frostjs/vite";
 
 export default defineConfig({
   appDirectory: "src/app",
-  apiDirectory: "src/api",
   publicDirectory: "public",
   server: {
     port: 3000,

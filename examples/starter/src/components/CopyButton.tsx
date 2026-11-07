@@ -18,13 +18,20 @@ const CheckIcon = () => (
   </svg>
 );
 
-export function CopyButton({ text, label = "Copy" }: CopyButtonProps): React.JSX.Element {
+export function CopyButton({ text, label = "Copy" }: CopyButtonProps): React.JSX.Element | null {
   const [copied, setCopied] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current);
+  useEffect(() => {
+    setMounted(true);
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+    };
   }, []);
+
+  // Render only after hydration — the button needs the clipboard API
+  if (!mounted) return null;
 
   const copy = async () => {
     try {

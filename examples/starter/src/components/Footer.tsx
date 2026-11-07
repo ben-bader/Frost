@@ -1,5 +1,6 @@
 import React from "react";
 
+// No repository URL exists in package.json, so no GitHub link is rendered.
 export function Footer(): React.JSX.Element {
   return (
     <footer className="site-footer">
@@ -11,10 +12,8 @@ export function Footer(): React.JSX.Element {
           <span className="version">v0.1.0</span>
         </div>
         <nav className="footer-links" aria-label="Footer">
-          {/* No public repo/docs/license URLs exist yet — rendered as text until destinations are known */}
-          <span>GitHub</span>
-          <span>Docs</span>
-          <span>License</span>
+          <a href="/">Demo</a>
+          <a href="/playground">Playground</a>
         </nav>
       </div>
     </footer>
