@@ -5,3 +5,4 @@ export * from "./ssr.js";
 export * from "./handler.js";
 
 export * from "./server-fn.js";
+export * from "./adapter.js";

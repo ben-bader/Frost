@@ -110,7 +110,7 @@ try {
     const mark = events.length;
     await fs.writeFile(
       path.join(routeDir, "page.tsx"),
-      "export default function P() { return <h1>devcheck</h1>; }\n"
+      "export default function P() { return <h1>devcheck</h1>; }\n",
     );
     await waitFor("frost:routes-changed", mark);
     await waitFor("frost:reload", mark);
@@ -124,7 +124,7 @@ try {
     await fs.writeFile(
       path.join(errDir, "page.tsx"),
       "export default function P() { return <h1>err</h1>; }\n" +
-        "export async function loader() { throw new Error('dev-check loader boom'); }\n"
+        "export async function loader() { throw new Error('dev-check loader boom'); }\n",
     );
     await settle(600);
     const mark = events.length;

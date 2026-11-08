@@ -77,7 +77,7 @@ function sendFile(
     cacheControl: string;
     contentLength: number;
     contentEncoding?: string;
-  }
+  },
 ): void {
   if (req.headers["if-none-match"] === opts.etag) {
     res.statusCode = 304;
@@ -109,7 +109,7 @@ function sendFile(
 export function tryServeStaticFile(
   req: IncomingMessage,
   res: ServerResponse,
-  options: StaticServerOptions
+  options: StaticServerOptions,
 ): boolean {
   if (req.method !== "GET" && req.method !== "HEAD") {
     return false;
@@ -119,9 +119,7 @@ export function tryServeStaticFile(
   const pathname = rawUrl.split("?")[0]!;
   const compression = options.compression;
   const acceptEncoding = req.headers["accept-encoding"] as string | undefined;
-  const encoding = compression?.enabled
-    ? negotiateEncoding(acceptEncoding, compression)
-    : null;
+  const encoding = compression?.enabled ? negotiateEncoding(acceptEncoding, compression) : null;
 
   for (const dir of options.staticDirs) {
     const fullPath = resolveStaticPath(dir, pathname);

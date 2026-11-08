@@ -48,7 +48,7 @@ export function compilePattern<T>(route: T, pattern: string): CompiledRoute<T> {
 
 export function matchRoutes<T>(
   compiledRoutes: CompiledRoute<T>[],
-  pathname: string
+  pathname: string,
 ): RouteMatch<T> | null {
   const normalized = normalizePathname(pathname);
 
@@ -79,4 +79,3 @@ export function matchRoutes<T>(
 
   return null;
 }
-

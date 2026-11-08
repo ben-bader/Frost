@@ -288,9 +288,7 @@ export function defineConfig(config: FrostConfig): FrostConfig {
   return config;
 }
 
-function resolvePermissionsPolicy(
-  input: SecurityConfig["permissionsPolicy"]
-): string | false {
+function resolvePermissionsPolicy(input: SecurityConfig["permissionsPolicy"]): string | false {
   if (input === false) return false;
   if (typeof input === "string") return input;
   if (input && typeof input === "object") {
@@ -304,11 +302,7 @@ function resolvePermissionsPolicy(
 export function resolveConfig(config: FrostConfig = {}): ResolvedFrostConfig {
   const cspInput = config.security?.csp;
   const csp =
-    cspInput === false
-      ? false
-      : typeof cspInput === "string"
-        ? cspInput
-        : DEFAULT_CSP_POLICY;
+    cspInput === false ? false : typeof cspInput === "string" ? cspInput : DEFAULT_CSP_POLICY;
 
   const hstsInput = config.security?.hsts;
   const hsts =
@@ -367,8 +361,7 @@ export function resolveConfig(config: FrostConfig = {}): ResolvedFrostConfig {
       strict: config.budgets?.strict ?? false,
     },
     contracts: {
-      validateInProduction:
-        config.contracts?.validateInProduction ?? false,
+      validateInProduction: config.contracts?.validateInProduction ?? false,
     },
     router: {
       enabled: config.router?.enabled ?? false,

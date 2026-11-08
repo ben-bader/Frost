@@ -72,7 +72,10 @@ function sanitizeHost(rawHost: string | undefined): string {
   return FALLBACK_HOST;
 }
 
-export function nodeReqToWebRequest(req: IncomingMessage, defaultHost: string = FALLBACK_HOST): Request {
+export function nodeReqToWebRequest(
+  req: IncomingMessage,
+  defaultHost: string = FALLBACK_HOST,
+): Request {
   const host = sanitizeHost(req.headers.host ?? defaultHost);
   const protocol = (req.socket as any)?.encrypted ? "https" : "http";
   const base = `${protocol}://${host}`;
@@ -117,7 +120,7 @@ export function nodeReqToWebRequest(req: IncomingMessage, defaultHost: string = 
 export async function sendWebResponseToNode(
   webResponse: Response,
   nodeRes: ServerResponse,
-  compression?: CompressionOptions
+  compression?: CompressionOptions,
 ): Promise<void> {
   nodeRes.statusCode = webResponse.status;
   nodeRes.statusMessage = webResponse.statusText;
@@ -144,7 +147,7 @@ export async function sendWebResponseToNode(
     const encoding = negotiateEncoding(
       // nodeRes.req is available on ServerResponse in Node http
       (nodeRes as any).req?.headers?.["accept-encoding"] as string | undefined,
-      compression
+      compression,
     );
     if (
       encoding &&

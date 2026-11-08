@@ -3,7 +3,12 @@ import * as path from "node:path";
 import * as zlib from "node:zlib";
 import { build as viteBuild } from "vite";
 import { frost, generateClientEntryCode } from "@frostjs/vite";
-import { resolveConfig, routeTypesDeclaration, type FrostAssets, type FrostConfig } from "@frostjs/core";
+import {
+  resolveConfig,
+  routeTypesDeclaration,
+  type FrostAssets,
+  type FrostConfig,
+} from "@frostjs/core";
 import { discoverRoutes } from "@frostjs/router";
 
 export interface BuildCommandOptions {
@@ -61,11 +66,7 @@ export async function buildCommand(options: BuildCommandOptions = {}): Promise<v
     try {
       const typesDir = path.join(outDir, "types");
       fs.mkdirSync(typesDir, { recursive: true });
-      fs.writeFileSync(
-        path.join(typesDir, "routes.d.ts"),
-        routeTypesDeclaration(routes),
-        "utf-8"
-      );
+      fs.writeFileSync(path.join(typesDir, "routes.d.ts"), routeTypesDeclaration(routes), "utf-8");
     } catch {
       // best-effort
     }
@@ -80,14 +81,11 @@ export async function buildCommand(options: BuildCommandOptions = {}): Promise<v
     const clientInputs: Record<string, string> = {};
     if (pageRoutes.length > 0) {
       for (const route of pageRoutes) {
-        const entryFile = path.join(
-          clientEntriesDir,
-          `${route.id.replace(/[\\/]/g, "_")}.ts`
-        );
+        const entryFile = path.join(clientEntriesDir, `${route.id.replace(/[\\/]/g, "_")}.ts`);
         fs.writeFileSync(
           entryFile,
           generateClientEntryCode(route.filePath, route.layouts ?? [], rootDir, route.id),
-          "utf-8"
+          "utf-8",
         );
         clientInputs[route.id] = entryFile;
       }
@@ -179,7 +177,10 @@ export default handler;
     await Promise.all([clientBuild(), serverBuild()]);
 
     // 4. Resolve per-route browser assets from the Vite manifest.
-    const assetsByRoute = resolveRouteAssets(clientOutDir, pageRoutes.map((r) => r.id));
+    const assetsByRoute = resolveRouteAssets(
+      clientOutDir,
+      pageRoutes.map((r) => r.id),
+    );
     const assetsManifestPath = path.join(outDir, "assets.json");
     fs.writeFileSync(assetsManifestPath, JSON.stringify(assetsByRoute, null, 2), "utf-8");
 
@@ -209,7 +210,7 @@ export default handler;
     if (config.seo.sitemap || config.seo.robots) {
       if (!config.seo.baseUrl) {
         console.warn(
-          "⚠️  seo.sitemap/seo.robots enabled but seo.baseUrl is not set — skipping generation."
+          "⚠️  seo.sitemap/seo.robots enabled but seo.baseUrl is not set — skipping generation.",
         );
       } else {
         const base = config.seo.baseUrl.replace(/\/+$/, "");
@@ -218,42 +219,41 @@ export default handler;
           .map((r) => `/${r.pattern}`.replace(/\/+/g, "/"));
         if (config.seo.sitemap) {
           const urls = staticPaths
-            .map(
-              (p) =>
-                `  <url><loc>${escapeXml(base + p)}</loc></url>`
-            )
+            .map((p) => `  <url><loc>${escapeXml(base + p)}</loc></url>`)
             .join("\n");
           fs.writeFileSync(
             path.join(clientOutDir, "sitemap.xml"),
             `<?xml version="1.0" encoding="UTF-8"?>\n` +
               `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`,
-            "utf-8"
+            "utf-8",
           );
         }
         if (config.seo.robots) {
-          const sitemapLine = config.seo.sitemap
-            ? `\nSitemap: ${base}/sitemap.xml\n`
-            : "\n";
+          const sitemapLine = config.seo.sitemap ? `\nSitemap: ${base}/sitemap.xml\n` : "\n";
           fs.writeFileSync(
             path.join(clientOutDir, "robots.txt"),
             `User-agent: *\nAllow: /\n${sitemapLine}`,
-            "utf-8"
+            "utf-8",
           );
         }
         const skipped = pageRoutes.length - staticPaths.length;
         console.log(
-          `🗺️  Generated ${config.seo.sitemap ? "sitemap.xml" : ""}${config.seo.sitemap && config.seo.robots ? " + " : ""}${config.seo.robots ? "robots.txt" : ""} (${staticPaths.length} static route(s)${skipped > 0 ? `, ${skipped} dynamic skipped` : ""})`
+          `🗺️  Generated ${config.seo.sitemap ? "sitemap.xml" : ""}${config.seo.sitemap && config.seo.robots ? " + " : ""}${config.seo.robots ? "robots.txt" : ""} (${staticPaths.length} static route(s)${skipped > 0 ? `, ${skipped} dynamic skipped` : ""})`,
         );
       }
     }
 
     // 8. Optional bundle report + size budgets
     if (options.analyze || config.budgets.clientJsKb) {
-      printBundleReport(clientOutDir, pageRoutes.map((r) => r.id), {
-        analyze: options.analyze === true,
-        budgetKb: config.budgets.clientJsKb,
-        strict: options.strict === true || config.budgets.strict === true,
-      });
+      printBundleReport(
+        clientOutDir,
+        pageRoutes.map((r) => r.id),
+        {
+          analyze: options.analyze === true,
+          budgetKb: config.budgets.clientJsKb,
+          strict: options.strict === true || config.budgets.strict === true,
+        },
+      );
     }
 
     console.log(`\n✅ Production build complete! Output in ${config.build.outDir}\n`);
@@ -263,7 +263,8 @@ export default handler;
 }
 
 const COMPRESSIBLE_EXT = /\.(js|mjs|css|html|svg|json|txt|xml|webmanifest|map)$/i;
-const SKIP_COMPRESS_EXT = /\.(br|gz|zip|png|jpe?g|gif|webp|avif|ico|woff2?|ttf|otf|mp4|webm|wasm)$/i;
+const SKIP_COMPRESS_EXT =
+  /\.(br|gz|zip|png|jpe?g|gif|webp|avif|ico|woff2?|ttf|otf|mp4|webm|wasm)$/i;
 
 /** Writes <file>.br and <file>.gz next to compressible assets. Returns count of source files processed. */
 function precompressDir(dir: string): number {
@@ -283,7 +284,10 @@ function precompressDir(dir: string): number {
     const data = fs.readFileSync(full);
     if (data.byteLength < 256) continue;
     try {
-      fs.writeFileSync(full + ".br", zlib.brotliCompressSync(data, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 11 } }));
+      fs.writeFileSync(
+        full + ".br",
+        zlib.brotliCompressSync(data, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 11 } }),
+      );
       fs.writeFileSync(full + ".gz", zlib.gzipSync(data, { level: 9 }));
       count++;
     } catch {
@@ -317,7 +321,7 @@ function fmtKb(bytes: number): string {
 function printBundleReport(
   clientOutDir: string,
   routeIds: string[],
-  opts: { analyze: boolean; budgetKb?: number; strict: boolean }
+  opts: { analyze: boolean; budgetKb?: number; strict: boolean },
 ): void {
   const manifestPath = path.join(clientOutDir, ".vite", "manifest.json");
   let manifest: ViteManifest = {};
@@ -369,7 +373,7 @@ function printBundleReport(
     const over = opts.budgetKb !== undefined && totalKb > opts.budgetKb;
     if (over) budgetExceeded = true;
     rows.push(
-      `${routeId.padEnd(30)} ${fmtKb(raw).padStart(10)} raw  ${fmtKb(gzip).padStart(10)} gzip  ${files.size} chunk(s)${over ? "  ⚠️ OVER BUDGET" : ""}`
+      `${routeId.padEnd(30)} ${fmtKb(raw).padStart(10)} raw  ${fmtKb(gzip).padStart(10)} gzip  ${files.size} chunk(s)${over ? "  ⚠️ OVER BUDGET" : ""}`,
     );
   }
 

@@ -40,11 +40,7 @@ export function isStandardSchema(value: unknown): value is StandardSchemaV1 {
   const standard = (value as Record<string, unknown>)["~standard"];
   if (typeof standard !== "object" || standard === null) return false;
   const s = standard as Record<string, unknown>;
-  return (
-    s.version === 1 &&
-    typeof s.vendor === "string" &&
-    typeof s.validate === "function"
-  );
+  return s.version === 1 && typeof s.vendor === "string" && typeof s.validate === "function";
 }
 
 export interface RouteContract {
@@ -61,13 +57,12 @@ export interface RouteContract {
 }
 
 export type ContractValidation =
-  | { ok: true; value: unknown }
-  | { ok: false; issues: ReadonlyArray<StandardSchemaIssue> };
+  { ok: true; value: unknown } | { ok: false; issues: ReadonlyArray<StandardSchemaIssue> };
 
 /** Run a Standard Schema validator, normalizing thrown errors to issues. */
 export function validateContractValue(
   schema: StandardSchemaV1,
-  value: unknown
+  value: unknown,
 ): ContractValidation {
   let result: StandardSchemaResult;
   try {
@@ -91,19 +86,17 @@ export function validateContractValue(
 /** Error thrown/reported when a contract validation fails. */
 export function createContractError(
   kind: string,
-  issues: ReadonlyArray<StandardSchemaIssue>
+  issues: ReadonlyArray<StandardSchemaIssue>,
 ): Error & { code: string } {
   const err = new Error(
-    `Contract violation (${kind}): ${formatContractIssues(issues)}`
+    `Contract violation (${kind}): ${formatContractIssues(issues)}`,
   ) as Error & { code: string };
   err.code = FROST_ERROR_CODES.CONTRACT;
   return err;
 }
 
 /** "field.sub: message; other: message" — used in errors and overlays. */
-export function formatContractIssues(
-  issues: ReadonlyArray<StandardSchemaIssue>
-): string {
+export function formatContractIssues(issues: ReadonlyArray<StandardSchemaIssue>): string {
   return issues
     .map((issue) => {
       const path = issue.path?.length ? issue.path.join(".") : "(root)";
@@ -114,7 +107,7 @@ export function formatContractIssues(
 
 /** Build a plain object from URL search params (repeated keys -> arrays). */
 export function searchParamsToObject(
-  searchParams: URLSearchParams
+  searchParams: URLSearchParams,
 ): Record<string, string | string[]> {
   const out: Record<string, string | string[]> = {};
   for (const key of new Set(searchParams.keys())) {
@@ -125,13 +118,10 @@ export function searchParamsToObject(
 }
 
 /** Build a plain object from FormData (files become "[File]" placeholders). */
-export function formDataToObject(
-  formData: FormData
-): Record<string, unknown> {
+export function formDataToObject(formData: FormData): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [key, value] of formData.entries()) {
-    out[key] =
-      typeof value === "string" ? value : `[File: ${(value as File).name || "unnamed"}]`;
+    out[key] = typeof value === "string" ? value : `[File: ${(value as File).name || "unnamed"}]`;
   }
   return out;
 }

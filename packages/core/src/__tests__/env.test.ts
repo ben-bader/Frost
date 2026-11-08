@@ -35,7 +35,7 @@ describe("loadEnvFiles", () => {
         "export FROST_TEST_C='single' # trailing",
         "",
         "not a valid line",
-      ].join("\n")
+      ].join("\n"),
     );
     const res = await loadEnvFiles(dir, "test");
     expect(process.env.FROST_TEST_A).toBe("plain");

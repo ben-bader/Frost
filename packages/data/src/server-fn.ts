@@ -7,7 +7,7 @@ export interface ServerFnContext extends FrostRequestContext {
 
 export type ServerFnHandler<TInput, TOutput> = (
   input: TInput,
-  context: ServerFnContext
+  context: ServerFnContext,
 ) => Promise<TOutput> | TOutput;
 
 export interface ServerFnConfig<TInput, TOutput> {
@@ -51,11 +51,11 @@ export interface ServerFn<TInput, TOutput> {
 }
 
 export function createServerFn<TInput, TOutput>(
-  config: ServerFnConfig<TInput, TOutput>
+  config: ServerFnConfig<TInput, TOutput>,
 ): ServerFn<TInput, TOutput> {
   const serverFunction = async (
     rawInput: TInput,
-    contextOverride?: Partial<ServerFnContext>
+    contextOverride?: Partial<ServerFnContext>,
   ): Promise<TOutput> => {
     // 1. Validate CSRF if requested and running in an HTTP context
     if (config.requireCsrf && contextOverride?.request) {
@@ -63,9 +63,7 @@ export function createServerFn<TInput, TOutput>(
     }
 
     // 2. Validate input schema if validator provided
-    const validatedInput = config.validateInput
-      ? config.validateInput(rawInput)
-      : rawInput;
+    const validatedInput = config.validateInput ? config.validateInput(rawInput) : rawInput;
 
     const ctx: ServerFnContext = {
       requestId: contextOverride?.requestId ?? "direct_call",
@@ -85,9 +83,7 @@ export function createServerFn<TInput, TOutput>(
   registry().set(config.name, {
     name: config.name,
     handler: config.handler as ServerFnHandler<unknown, unknown>,
-    validateInput: config.validateInput as
-      | ((input: unknown) => unknown)
-      | undefined,
+    validateInput: config.validateInput as ((input: unknown) => unknown) | undefined,
   });
 
   Object.defineProperty(serverFunction, "fnName", {
@@ -97,4 +93,3 @@ export function createServerFn<TInput, TOutput>(
 
   return serverFunction as ServerFn<TInput, TOutput>;
 }
-

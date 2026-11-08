@@ -3,11 +3,7 @@ import * as fs from "node:fs";
 import { loadConfigFromFile } from "vite";
 import type { FrostConfig } from "@frostjs/core";
 
-const CONFIG_CANDIDATES = [
-  "frost.config.ts",
-  "frost.config.js",
-  "frost.config.mjs",
-];
+const CONFIG_CANDIDATES = ["frost.config.ts", "frost.config.js", "frost.config.mjs"];
 
 export interface LoadConfigOptions {
   rootDir?: string;
@@ -66,7 +62,7 @@ export async function loadFrostConfig(options: LoadConfigOptions = {}): Promise<
     const result = await loadConfigFromFile(
       { command: "serve", mode: "development" },
       configFile,
-      rootDir
+      rootDir,
     );
     if (!result) {
       throw new Error("config file did not produce a result");
@@ -74,9 +70,7 @@ export async function loadFrostConfig(options: LoadConfigOptions = {}): Promise<
     loaded = result;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    throw new Error(
-      `Failed to load Frost config at ${configFile}:\n${message}`
-    );
+    throw new Error(`Failed to load Frost config at ${configFile}:\n${message}`);
   }
 
   const raw = (loaded as { config?: unknown }).config;
@@ -85,7 +79,7 @@ export async function loadFrostConfig(options: LoadConfigOptions = {}): Promise<
   }
   if (typeof raw !== "object" || Array.isArray(raw)) {
     throw new Error(
-      `Invalid Frost config at ${configFile}: expected an object exported via defineConfig() or a default export.`
+      `Invalid Frost config at ${configFile}: expected an object exported via defineConfig() or a default export.`,
     );
   }
 
@@ -100,7 +94,7 @@ export async function loadFrostConfig(options: LoadConfigOptions = {}): Promise<
  */
 export function mergeCliOverrides(
   fileConfig: FrostConfig,
-  overrides: { port?: number; host?: string }
+  overrides: { port?: number; host?: string },
 ): FrostConfig {
   if (overrides.port === undefined && overrides.host === undefined) {
     return fileConfig;

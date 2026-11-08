@@ -50,7 +50,7 @@ export interface FrostErrorReport {
 
 export function createErrorReport(
   error: unknown,
-  meta: Partial<FrostErrorReport> & { runtime: "server" | "client" }
+  meta: Partial<FrostErrorReport> & { runtime: "server" | "client" },
 ): FrostErrorReport {
   const err = error instanceof Error ? error : new Error(String(error));
   const frost = err as Error & {
@@ -83,10 +83,7 @@ export function createErrorReport(
   // category code supplied by the caller beats third-party codes like
   // Vite's ERR_LOAD_URL, which carry no Frost meaning.
   const errCode = typeof frost.code === "string" ? frost.code : undefined;
-  const code =
-    errCode && errCode.startsWith("FROST_E")
-      ? errCode
-      : (meta.code ?? errCode);
+  const code = errCode && errCode.startsWith("FROST_E") ? errCode : (meta.code ?? errCode);
 
   return {
     name: err.name || "Error",
@@ -129,14 +126,10 @@ export function formatErrorReportTerminal(report: FrostErrorReport): string {
       const num = String(l.line).padStart(width);
       const gutter = isMarked ? "\x1b[41m\x1b[37m" : "\x1b[90m";
       const text = isMarked ? "\x1b[41m\x1b[37m" : "";
-      out.push(
-        `  ${gutter}${num} |\x1b[0m ${text}${l.text}\x1b[0m`
-      );
+      out.push(`  ${gutter}${num} |\x1b[0m ${text}${l.text}\x1b[0m`);
       if (isMarked) {
         const caret =
-          " ".repeat(width + 4) +
-          " ".repeat(Math.max(0, (l.markerColumn ?? 1) - 1)) +
-          "^";
+          " ".repeat(width + 4) + " ".repeat(Math.max(0, (l.markerColumn ?? 1) - 1)) + "^";
         out.push(`  \x1b[41m\x1b[37m${caret}\x1b[0m`);
       }
     }

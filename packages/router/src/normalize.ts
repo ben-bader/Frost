@@ -44,9 +44,7 @@ export function decodePathname(pathname: string): string | null {
     }
     const protectedSegment = segment.replace(/%2f/gi, SLASH_SENTINEL);
     try {
-      decoded.push(
-        decodeURIComponent(protectedSegment).replaceAll(SLASH_SENTINEL, "%2F")
-      );
+      decoded.push(decodeURIComponent(protectedSegment).replaceAll(SLASH_SENTINEL, "%2F"));
     } catch {
       return null;
     }
@@ -112,4 +110,3 @@ export function filePathToPattern(relativePath: string): {
     score,
   };
 }
-

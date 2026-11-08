@@ -75,15 +75,12 @@ describe("Route matching and precedence", () => {
   });
 
   it("decodes URL components safely", () => {
-    const routes = [
-      compilePattern({ id: "user" }, "/users/:name"),
-    ];
+    const routes = [compilePattern({ id: "user" }, "/users/:name")];
 
     const match = matchRoutes(routes, "/users/Alice%20Smith");
     expect(match?.params.name).toBe("Alice Smith");
   });
 });
-
 
 describe("Route discovery: layouts, error boundaries, not-found", () => {
   it("attaches layout chain, nearest error boundary, and not-found route", async () => {

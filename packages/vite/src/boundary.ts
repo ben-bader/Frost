@@ -26,7 +26,7 @@ const NODE_BUILTINS = new Set([
 export function validateModuleBoundary(
   source: string,
   importer: string | undefined,
-  isClientBuild: boolean
+  isClientBuild: boolean,
 ): void {
   if (!isClientBuild || !importer) {
     return;
@@ -81,15 +81,11 @@ export function validateClientEnvAccess(code: string, id: string): void {
   }
   if (offenders.size > 0) {
     const names = [...offenders].sort().join(", ");
-    throw new FrostError(
-      `Client code reads disallowed environment variable(s): ${names}.`,
-      {
-        code: "FS1009",
-        importer: id,
-        hint: `Only NODE_ENV and ${ENV_ALLOW_PREFIX}* variables may be read in client code. Move other env access into a loader, action, or .server module.`,
-        docsUrl: "https://frostjs.dev/docs/errors/FS1009",
-      }
-    );
+    throw new FrostError(`Client code reads disallowed environment variable(s): ${names}.`, {
+      code: "FS1009",
+      importer: id,
+      hint: `Only NODE_ENV and ${ENV_ALLOW_PREFIX}* variables may be read in client code. Move other env access into a loader, action, or .server module.`,
+      docsUrl: "https://frostjs.dev/docs/errors/FS1009",
+    });
   }
 }
-

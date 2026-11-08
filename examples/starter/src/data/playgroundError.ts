@@ -36,12 +36,7 @@ export const PLAYGROUND_ERROR: PlaygroundError = {
   line: 24,
   column: 11,
   snippetStart: 22,
-  snippet: [
-    "  return (",
-    "    <button onClick={inc}>",
-    "      {count}",
-    "    </button>",
-  ],
+  snippet: ["  return (", "    <button onClick={inc}>", "      {count}", "    </button>"],
   failIndex: 2,
   route: "/playground",
   runtime: "client",

@@ -49,18 +49,16 @@ export async function devCommand(options: DevCommandOptions = {}): Promise<void>
   // Vite may fall back to another port when the requested one is busy
   // (strictPort is off by default). Report the port actually bound.
   const address = server.httpServer?.address();
-  const boundPort =
-    typeof address === "object" && address ? address.port : port;
+  const boundPort = typeof address === "object" && address ? address.port : port;
   // Show a friendly host: wildcard/loopback binds display the configured
   // host name rather than "::" or "::1".
-  const boundAddr =
-    typeof address === "object" && address ? address.address : "";
+  const boundAddr = typeof address === "object" && address ? address.address : "";
   const boundHost =
-    boundAddr === "::" || boundAddr === "0.0.0.0" || boundAddr === "::1" || boundAddr === "127.0.0.1"
+    boundAddr === "::" ||
+    boundAddr === "0.0.0.0" ||
+    boundAddr === "::1" ||
+    boundAddr === "127.0.0.1"
       ? host
       : boundAddr || host;
-  console.log(
-    `\n❄️  Frost development server running at http://${boundHost}:${boundPort}/\n`
-  );
+  console.log(`\n❄️  Frost development server running at http://${boundHost}:${boundPort}/\n`);
 }
-

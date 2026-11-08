@@ -5,23 +5,19 @@ import { json } from "./response.js";
 const API_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"];
 
 function allowedMethods(module: ApiRouteModule): string[] {
-  return Object.keys(module).filter((k) =>
-    (API_METHODS as string[]).includes(k)
-  );
+  return Object.keys(module).filter((k) => (API_METHODS as string[]).includes(k));
 }
 
 export async function dispatchApiRoute(
   module: ApiRouteModule,
   request: Request,
   context: FrostRequestContext,
-  onError?: (report: FrostErrorReport) => void
+  onError?: (report: FrostErrorReport) => void,
 ): Promise<Response> {
   const method = request.method.toUpperCase();
   type ApiHandler = NonNullable<ApiRouteModule["GET"]>;
   let handler: ApiHandler | undefined = API_METHODS.includes(method)
-    ? ((module as unknown as Record<string, unknown>)[method] as
-        | ApiHandler
-        | undefined)
+    ? ((module as unknown as Record<string, unknown>)[method] as ApiHandler | undefined)
     : undefined;
 
   // Automatic OPTIONS: advertise allowed methods when the route doesn't
@@ -58,7 +54,7 @@ export async function dispatchApiRoute(
         headers: {
           Allow: allowedMethods(module).join(", "),
         },
-      }
+      },
     );
   }
 
@@ -72,7 +68,7 @@ export async function dispatchApiRoute(
         runtime: "server",
         route: new URL(request.url).pathname,
         code: FROST_ERROR_CODES.API,
-      })
+      }),
     );
     const status =
       typeof (error as { status?: unknown })?.status === "number"
@@ -83,7 +79,7 @@ export async function dispatchApiRoute(
         error: status === 500 ? "Internal Server Error" : "Request Error",
         message: error instanceof Error ? error.message : "Unknown error",
       },
-      { status }
+      { status },
     );
   }
 }

@@ -16,7 +16,7 @@ export function generateRoutesModuleCode(routes: DiscoveredRoute[]): string {
   routes.forEach((route) => {
     const normalizedFilePath = route.filePath.replace(/\\/g, "/");
     importers.push(
-      `  ${JSON.stringify(route.id)}: () => import(${JSON.stringify(normalizedFilePath)})`
+      `  ${JSON.stringify(route.id)}: () => import(${JSON.stringify(normalizedFilePath)})`,
     );
     routeEntries.push(`  {
     id: ${JSON.stringify(route.id)},
@@ -44,7 +44,7 @@ export function generateRoutesModuleCode(routes: DiscoveredRoute[]): string {
   auxPaths.forEach((auxPath) => {
     const normalizedAuxPath = auxPath.replace(/\\/g, "/");
     importers.push(
-      `  ${JSON.stringify(auxPath)}: () => import(${JSON.stringify(normalizedAuxPath)})`
+      `  ${JSON.stringify(auxPath)}: () => import(${JSON.stringify(normalizedAuxPath)})`,
     );
     routeEntries.push(`  {
     id: ${JSON.stringify(auxPath)},
@@ -76,7 +76,7 @@ export function generateClientEntryCode(
   pageFilePath: string,
   layoutFilePaths: string[] = [],
   rootDir?: string,
-  routeId?: string
+  routeId?: string,
 ): string {
   function toImportPath(filePath: string): string {
     let importPath = filePath.replace(/\\/g, "/");

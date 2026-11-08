@@ -6,6 +6,7 @@ import { type AnchorHTMLAttributes, forwardRef } from "react";
  * `Link`/`href` autocomplete. `(string & {})` keeps arbitrary strings
  * assignable for dynamic routes and external URLs.
  */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- augmentation point for generated route types
 export interface FrostRouteMap {}
 
 export type FrostHref = [keyof FrostRouteMap] extends [never]
@@ -23,7 +24,7 @@ export interface LinkProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
 // navigation. Client-side route transitions are not supported yet.
 export const Link = forwardRef<HTMLAnchorElement, LinkProps>(function Link(
   { to, href, children, prefetch: _prefetch, ...rest },
-  ref
+  ref,
 ) {
   const targetUrl = to || href || "#";
 

@@ -44,7 +44,7 @@ async function main() {
     if (missing.length > 0) {
       throw new Error(
         `Missing required environment variable(s): ${missing.join(", ")}. ` +
-          `Set them in the environment or a .env file (see config.env.required).`
+          `Set them in the environment or a .env file (see config.env.required).`,
       );
     }
   }

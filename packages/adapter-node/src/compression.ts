@@ -22,7 +22,7 @@ export type ContentEncoding = "br" | "gzip";
 /** Picks the best encoding the client accepts, or null. */
 export function negotiateEncoding(
   acceptEncoding: string | undefined,
-  options: CompressionOptions
+  options: CompressionOptions,
 ): ContentEncoding | null {
   if (!options.enabled || (!options.brotli && !options.gzip)) return null;
   if (!acceptEncoding) return null;

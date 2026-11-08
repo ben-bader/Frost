@@ -1,6 +1,9 @@
 import type { FrostRequestContext } from "./types.js";
 
-export function createRequestContext(req?: Request, overrides?: Partial<FrostRequestContext>): FrostRequestContext {
+export function createRequestContext(
+  req?: Request,
+  overrides?: Partial<FrostRequestContext>,
+): FrostRequestContext {
   const requestId =
     overrides?.requestId ??
     (typeof crypto !== "undefined" && crypto.randomUUID
@@ -16,4 +19,3 @@ export function createRequestContext(req?: Request, overrides?: Partial<FrostReq
     cspNonce: overrides?.cspNonce,
   };
 }
-

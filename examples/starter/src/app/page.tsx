@@ -14,7 +14,10 @@ export default function DemoPage(): React.JSX.Element {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
-    <section className="flex min-h-0 flex-1 items-center justify-center px-[clamp(20px,5vw,48px)] py-8" aria-labelledby="hero-title">
+    <section
+      className="flex min-h-0 flex-1 items-center justify-center px-[clamp(20px,5vw,48px)] py-8"
+      aria-labelledby="hero-title"
+    >
       <div className="flex max-w-[760px] flex-col items-center text-center">
         <span className="mb-4 h-8 w-px bg-ink-body motion-safe:animate-hero-rise" />
         <p className="font-mono text-[0.6875rem] uppercase tracking-[0.16em] text-ink-body motion-safe:animate-hero-rise [animation-delay:80ms]">
@@ -27,17 +30,14 @@ export default function DemoPage(): React.JSX.Element {
           React rendering. Web-native runtime.
         </h1>
         <p className="mt-5 max-w-[46ch] text-base leading-[1.65] text-ink-body motion-safe:animate-hero-rise [animation-delay:240ms]">
-          Frost keeps execution explicit: server loaders, client hydration,
-          route contracts, and runtime boundaries stay visible, testable,
-          and predictable.
+          Frost keeps execution explicit: server loaders, client hydration, route contracts, and
+          runtime boundaries stay visible, testable, and predictable.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3 motion-safe:animate-hero-rise [animation-delay:320ms]">
-          <Link className={pillPrimary} to="/playground">Open playground</Link>
-          <button
-            type="button"
-            className={pillGhost}
-            onClick={() => setDialogOpen(true)}
-          >
+          <Link className={pillPrimary} to="/playground">
+            Open playground
+          </Link>
+          <button type="button" className={pillGhost} onClick={() => setDialogOpen(true)}>
             Run it locally
           </button>
         </div>

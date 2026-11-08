@@ -45,7 +45,7 @@ function buildLines(): Line[] {
     { kind: "at", text: w.message },
     { kind: "at", text: `at    ${w.file}:${w.line}:${w.column}` },
     { kind: "blank" },
-    { kind: "prompt" }
+    { kind: "prompt" },
   );
   return lines;
 }
@@ -63,7 +63,9 @@ function LineView({ line }: { line: Line }) {
         <div className="text-mint">
           <span className="mr-1">✓</span>
           {line.pre}
-          {line.url && <span className="underline decoration-mint/50 underline-offset-2">{line.url}</span>}
+          {line.url && (
+            <span className="underline decoration-mint/50 underline-offset-2">{line.url}</span>
+          )}
           {line.text}
         </div>
       );
@@ -100,14 +102,20 @@ function LineView({ line }: { line: Line }) {
         );
       }
       return (
-        <div className={`whitespace-pre ${line.fail ? "bg-danger/15 text-danger" : "text-ink-body"}`}>
+        <div
+          className={`whitespace-pre ${line.fail ? "bg-danger/15 text-danger" : "text-ink-body"}`}
+        >
           {line.fail ? ">" : " "} {line.num} | {line.text}
         </div>
       );
     case "prompt":
       return (
         <div className="text-ink-body">
-          $ <span className="ml-1 inline-block h-[1em] w-[0.6em] translate-y-[0.15em] bg-mint motion-safe:animate-pulse" aria-hidden="true" />
+          ${" "}
+          <span
+            className="ml-1 inline-block h-[1em] w-[0.6em] translate-y-[0.15em] bg-mint motion-safe:animate-pulse"
+            aria-hidden="true"
+          />
         </div>
       );
   }
@@ -115,23 +123,26 @@ function LineView({ line }: { line: Line }) {
 
 export function TerminalTile({ runId }: { runId: number }): React.JSX.Element {
   const [printed, setPrinted] = useState(0);
+  const [prevRunId, setPrevRunId] = useState(runId);
   const timers = useRef<number[]>([]);
+
+  if (prevRunId !== runId) {
+    setPrevRunId(runId);
+    setPrinted(0);
+  }
 
   useEffect(() => {
     timers.current.forEach((t) => window.clearTimeout(t));
     timers.current = [];
-    setPrinted(0);
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduced) {
-      setPrinted(LINES.length);
+      timers.current.push(window.setTimeout(() => setPrinted(LINES.length), 0));
       return;
     }
 
     LINES.forEach((_, i) => {
-      timers.current.push(
-        window.setTimeout(() => setPrinted(i + 1), (i + 1) * LINE_MS)
-      );
+      timers.current.push(window.setTimeout(() => setPrinted(i + 1), (i + 1) * LINE_MS));
     });
     return () => timers.current.forEach((t) => window.clearTimeout(t));
   }, [runId]);
@@ -143,7 +154,11 @@ export function TerminalTile({ runId }: { runId: number }): React.JSX.Element {
       icon={Terminal}
       label="Terminal"
       chip={errorPrinted ? "error" : "running"}
-      chipClass={errorPrinted ? "border-danger/50 bg-danger-tint text-danger" : "border-mint/40 bg-mint/10 text-mint"}
+      chipClass={
+        errorPrinted
+          ? "border-danger/50 bg-danger-tint text-danger"
+          : "border-mint/40 bg-mint/10 text-mint"
+      }
     >
       <div className="h-full overflow-hidden bg-[#0a1210] px-4 py-3 font-mono text-ink-body [font-size:clamp(10px,1.55vh,13px)] leading-[1.7]">
         {LINES.slice(0, printed).map((line, i) => (
@@ -151,7 +166,11 @@ export function TerminalTile({ runId }: { runId: number }): React.JSX.Element {
         ))}
         {printed < LINES.length && (
           <div className="text-ink-body">
-            $ <span className="ml-1 inline-block h-[1em] w-[0.6em] translate-y-[0.15em] bg-mint motion-safe:animate-pulse" aria-hidden="true" />
+            ${" "}
+            <span
+              className="ml-1 inline-block h-[1em] w-[0.6em] translate-y-[0.15em] bg-mint motion-safe:animate-pulse"
+              aria-hidden="true"
+            />
           </div>
         )}
       </div>

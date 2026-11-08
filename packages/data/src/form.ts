@@ -28,10 +28,10 @@ export function getBodyLimits(): { formBytes: number; jsonBytes: number } {
 }
 
 function payloadTooLarge(maxBytes: number): FrostError {
-  return new FrostError(
-    `Request body exceeds maximum allowed size of ${maxBytes} bytes.`,
-    { code: "FS1011", status: 413 }
-  );
+  return new FrostError(`Request body exceeds maximum allowed size of ${maxBytes} bytes.`, {
+    code: "FS1011",
+    status: 413,
+  });
 }
 
 /**
@@ -41,7 +41,7 @@ function payloadTooLarge(maxBytes: number): FrostError {
  */
 async function readBodyLimited(
   request: Request,
-  maxBytes: number
+  maxBytes: number,
 ): Promise<{ bytes: Uint8Array; contentType: string | null }> {
   const contentLength = request.headers.get("content-length");
   if (contentLength && parseInt(contentLength, 10) > maxBytes) {
@@ -83,7 +83,7 @@ async function readBodyLimited(
 
 export async function parseJson<T = unknown>(
   request: Request,
-  options: BodyParseOptions = {}
+  options: BodyParseOptions = {},
 ): Promise<T> {
   const maxBytes = options.maxSizeBytes ?? configuredJsonBytes;
 
@@ -102,7 +102,7 @@ export async function parseJson<T = unknown>(
 
 export async function parseFormData(
   request: Request,
-  options: BodyParseOptions = {}
+  options: BodyParseOptions = {},
 ): Promise<Record<string, string | string[]>> {
   const maxBytes = options.maxSizeBytes ?? configuredFormBytes;
 

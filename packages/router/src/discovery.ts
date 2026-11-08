@@ -170,7 +170,7 @@ export function discoverRoutes(options: DiscoverOptions): DiscoveredRoute[] {
 function scanDirectory(
   baseDir: string,
   subDir: string,
-  onFile: (relativePath: string, fullPath: string) => void
+  onFile: (relativePath: string, fullPath: string) => void,
 ) {
   const currentDir = path.join(baseDir, subDir);
   if (!fs.existsSync(currentDir)) return;
@@ -188,4 +188,3 @@ function scanDirectory(
     }
   }
 }
-

@@ -28,7 +28,7 @@ export async function startCommand(options: StartCommandOptions = {}): Promise<v
 
   if (!fs.existsSync(serverEntry)) {
     console.error(
-      `\n❌ Production server entry not found at: ${serverEntry}\nRun 'frost build' before starting the production server.\n`
+      `\n❌ Production server entry not found at: ${serverEntry}\nRun 'frost build' before starting the production server.\n`,
     );
     process.exit(1);
   }
@@ -62,9 +62,7 @@ export async function startCommand(options: StartCommandOptions = {}): Promise<v
     server.once("error", (err: NodeJS.ErrnoException) => {
       if (err.code === "EADDRINUSE" && remaining > 0) {
         const nextPort = attemptPort + 1;
-        console.warn(
-          `⚠️  Port ${attemptPort} is already in use, trying ${nextPort}...`
-        );
+        console.warn(`⚠️  Port ${attemptPort} is already in use, trying ${nextPort}...`);
         tryListen(nextPort, remaining - 1);
         return;
       }
@@ -74,14 +72,10 @@ export async function startCommand(options: StartCommandOptions = {}): Promise<v
 
     server.listen(attemptPort, host, () => {
       const address = server.address();
-      const boundPort =
-        typeof address === "object" && address ? address.port : attemptPort;
-      console.log(
-        `\n🚀 Frost production server running at http://${host}:${boundPort}/\n`
-      );
+      const boundPort = typeof address === "object" && address ? address.port : attemptPort;
+      console.log(`\n🚀 Frost production server running at http://${host}:${boundPort}/\n`);
     });
   };
 
   tryListen(port, MAX_PORT_ATTEMPTS);
 }
-

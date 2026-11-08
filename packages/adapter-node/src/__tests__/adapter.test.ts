@@ -56,4 +56,3 @@ describe("Adapter Node", () => {
     }
   });
 });
-

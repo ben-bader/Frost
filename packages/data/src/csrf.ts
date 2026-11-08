@@ -52,4 +52,3 @@ export function validateCsrf(request: Request, options: CsrfOptions = {}): boole
 
   return true;
 }
-

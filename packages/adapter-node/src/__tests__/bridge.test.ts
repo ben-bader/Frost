@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  isSafeRequestTarget,
-  nodeReqToWebRequest,
-} from "../bridge.js";
+import { isSafeRequestTarget, nodeReqToWebRequest } from "../bridge.js";
 import type { IncomingMessage } from "node:http";
 
 function fakeReq(url: string | undefined, headers: Record<string, string> = {}): IncomingMessage {
@@ -46,9 +43,7 @@ describe("nodeReqToWebRequest", () => {
   });
 
   it("treats //evil.example/x as a path on our host", async () => {
-    const req = nodeReqToWebRequest(
-      fakeReq("//evil.example/x", { host: "localhost:3000" })
-    );
+    const req = nodeReqToWebRequest(fakeReq("//evil.example/x", { host: "localhost:3000" }));
     const url = new URL(req.url);
     expect(url.host).toBe("localhost:3000");
     expect(url.pathname).toBe("/evil.example/x");
@@ -56,7 +51,7 @@ describe("nodeReqToWebRequest", () => {
 
   it("reduces absolute-form URLs to path+query", async () => {
     const req = nodeReqToWebRequest(
-      fakeReq("http://localhost:3000/playground?x=1", { host: "localhost:3000" })
+      fakeReq("http://localhost:3000/playground?x=1", { host: "localhost:3000" }),
     );
     const url = new URL(req.url);
     expect(url.pathname).toBe("/playground");

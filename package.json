@@ -1,22 +1,29 @@
 {
   "name": "frost-monorepo",
   "private": true,
-  "description": "Frost â€” A React-based full-stack framework with explicit execution, visible caching, and host independence.",
+  "description": "Frost \u00e2\u20ac\u201d A React-based full-stack framework with explicit execution, visible caching, and host independence.",
   "packageManager": "pnpm@12.16.1",
   "scripts": {
     "build": "pnpm --recursive run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --build",
-    "lint": "echo \"linting not configured yet\""
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
     "@types/node": "^22.13.5",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
+    "eslint": "^10.14.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "prettier": "^3.9.10",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "typescript": "^5.7.3",
+    "typescript-eslint": "^8.72.1",
     "vite": "^6.2.0",
     "vitest": "^4.1.12"
   }

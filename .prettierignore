@@ -1,0 +1,8 @@
+dist/
+.frost/
+node_modules/
+coverage/
+audit-output/
+CHANGELOG.md
+*.md
+pnpm-lock.yaml

@@ -17,10 +17,7 @@ const ALWAYS_ON: Array<[string, string]> = [
  * HSTS, and Permissions-Policy. Never overwrites a header the response
  * already set (handlers may set their own).
  */
-export function applySecurityHeaders(
-  headers: Headers,
-  options: SecurityHeadersOptions = {}
-): void {
+export function applySecurityHeaders(headers: Headers, options: SecurityHeadersOptions = {}): void {
   for (const [name, value] of ALWAYS_ON) {
     if (!headers.has(name)) {
       headers.set(name, value);

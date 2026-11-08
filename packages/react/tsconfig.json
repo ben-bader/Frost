@@ -5,10 +5,6 @@
     "rootDir": "./src",
     "jsx": "react-jsx"
   },
-  "references": [
-    { "path": "../core" },
-    { "path": "../router" }
-  ],
+  "references": [{ "path": "../core" }, { "path": "../router" }],
   "include": ["src/**/*"]
 }
-

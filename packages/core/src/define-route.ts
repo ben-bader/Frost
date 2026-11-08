@@ -10,13 +10,12 @@ export interface RouteLoaderArgs<Params = Record<string, string>> {
   context: FrostRequestContext;
 }
 
-export interface RouteActionArgs<Params = Record<string, string>>
-  extends RouteLoaderArgs<Params> {}
+export type RouteActionArgs<Params = Record<string, string>> = RouteLoaderArgs<Params>;
 
 export interface RouteComponentProps<
   Data = unknown,
   Params = Record<string, string>,
-  ActionData = unknown
+  ActionData = unknown,
 > {
   data: Data;
   params: Params;
@@ -41,14 +40,10 @@ export interface RouteComponentProps<
 export function defineRoute<
   Params extends Record<string, string> = Record<string, string>,
   LoaderData = unknown,
-  ActionData = unknown
+  ActionData = unknown,
 >(route: {
-  loader?: (
-    args: RouteLoaderArgs<Params>
-  ) => LoaderData | Promise<LoaderData>;
-  action?: (
-    args: RouteActionArgs<Params>
-  ) => ActionData | Promise<ActionData>;
+  loader?: (args: RouteLoaderArgs<Params>) => LoaderData | Promise<LoaderData>;
+  action?: (args: RouteActionArgs<Params>) => ActionData | Promise<ActionData>;
   default?: ComponentType<RouteComponentProps<LoaderData, Params, ActionData>>;
   metadata?: RouteMetadata<LoaderData, Params>;
   headers?: RouteHeaders<Params>;

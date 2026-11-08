@@ -26,7 +26,7 @@ export function getRouteComponents(): Record<string, RouteComponentsEntry> {
 export function registerRouteComponents(
   routeId: string,
   component: RouteComponentsEntry["default"],
-  layouts: RouteComponentsEntry["layouts"] = []
+  layouts: RouteComponentsEntry["layouts"] = [],
 ): void {
   getRouteComponents()[routeId] = { default: component, layouts };
 }

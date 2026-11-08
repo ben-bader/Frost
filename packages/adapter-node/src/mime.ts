@@ -21,4 +21,3 @@ export function getMimeType(filePath: string): string {
   const ext = filePath.slice(filePath.lastIndexOf(".")).toLowerCase();
   return MIME_MAP[ext] ?? "application/octet-stream";
 }
-

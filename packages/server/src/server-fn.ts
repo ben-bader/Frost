@@ -4,26 +4,15 @@ import {
   type FrostErrorReport,
   type FrostRequestContext,
 } from "@frostjs/core";
-import {
-  getServerFn,
-  parseJson,
-  validateCsrf,
-} from "@frostjs/data";
+import { getServerFn, parseJson, validateCsrf } from "@frostjs/data";
 import { json } from "./response.js";
 
 export interface ServerFnDispatchOptions {
   onError?: (report: FrostErrorReport) => void;
 }
 
-function fnError(
-  status: number,
-  code: string,
-  message: string
-): Response {
-  return json(
-    { error: { code, message } },
-    { status }
-  );
+function fnError(status: number, code: string, message: string): Response {
+  return json({ error: { code, message } }, { status });
 }
 
 /**
@@ -36,14 +25,14 @@ export async function dispatchServerFn(
   request: Request,
   fnId: string,
   context: FrostRequestContext,
-  options: ServerFnDispatchOptions = {}
+  options: ServerFnDispatchOptions = {},
 ): Promise<Response> {
   const { onError } = options;
 
   if (request.method !== "POST") {
     return json(
       { error: { code: "FROST_E_SERVERFN", message: "Server functions accept POST only" } },
-      { status: 405, headers: { Allow: "POST" } }
+      { status: 405, headers: { Allow: "POST" } },
     );
   }
 
@@ -55,7 +44,7 @@ export async function dispatchServerFn(
         runtime: "server",
         route: `/_frost/fn/${fnId}`,
         code: FROST_ERROR_CODES.SERVER_FN,
-      })
+      }),
     );
     return fnError(403, "FROST_E_SERVERFN", "CSRF validation failed");
   }
@@ -89,12 +78,12 @@ export async function dispatchServerFn(
           runtime: "server",
           route: `/_frost/fn/${fnId}`,
           code: FROST_ERROR_CODES.CONTRACT,
-        })
+        }),
       );
       return fnError(
         400,
         FROST_ERROR_CODES.CONTRACT,
-        err instanceof Error ? err.message : "Input validation failed"
+        err instanceof Error ? err.message : "Input validation failed",
       );
     }
   }
@@ -112,7 +101,7 @@ export async function dispatchServerFn(
         runtime: "server",
         route: `/_frost/fn/${fnId}`,
         code: FROST_ERROR_CODES.SERVER_FN,
-      })
+      }),
     );
     const status =
       typeof (err as { status?: unknown })?.status === "number"
@@ -123,10 +112,6 @@ export async function dispatchServerFn(
       (err as { code: string }).code.startsWith("FROST_E")
         ? (err as { code: string }).code
         : FROST_ERROR_CODES.SERVER_FN;
-    return fnError(
-      status,
-      code,
-      err instanceof Error ? err.message : "Server function failed"
-    );
+    return fnError(status, code, err instanceof Error ? err.message : "Server function failed");
   }
 }

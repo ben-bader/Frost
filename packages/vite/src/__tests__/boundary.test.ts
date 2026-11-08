@@ -49,17 +49,17 @@ describe("Client env access guard", () => {
   it("allows NODE_ENV and FROST_PUBLIC_* variables", () => {
     expect(() =>
       validateClientEnvAccess(
-        'const a = process.env.NODE_ENV; const b = process.env.FROST_PUBLIC_API_URL;',
-        "/src/app/page.tsx"
-      )
+        "const a = process.env.NODE_ENV; const b = process.env.FROST_PUBLIC_API_URL;",
+        "/src/app/page.tsx",
+      ),
     ).not.toThrow();
   });
 
   it("throws FS1009 for server env vars in client code", () => {
     try {
       validateClientEnvAccess(
-        'const key = process.env.STRIPE_SECRET_KEY;',
-        "/src/components/Checkout.tsx"
+        "const key = process.env.STRIPE_SECRET_KEY;",
+        "/src/components/Checkout.tsx",
       );
       expect.fail("Should have thrown FS1009");
     } catch (err) {
@@ -73,7 +73,7 @@ describe("Client env access guard", () => {
     try {
       validateClientEnvAccess(
         'const a = process.env["DATABASE_URL"]; const b = process.env.REDIS_HOST;',
-        "/src/app/page.tsx"
+        "/src/app/page.tsx",
       );
       expect.fail("Should have thrown FS1009");
     } catch (err) {
@@ -84,4 +84,3 @@ describe("Client env access guard", () => {
     }
   });
 });
-

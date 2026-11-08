@@ -29,8 +29,9 @@ export function isFrostClientState(val: unknown): val is FrostClientState {
 
 const FROST_CONTEXT_KEY = Symbol.for("__FROST_APP_CONTEXT__");
 
-const FrostContext: React.Context<FrostClientState | null> =
-  ((globalThis as any)[FROST_CONTEXT_KEY] ||= createContext<FrostClientState | null>(null));
+const FrostContext: React.Context<FrostClientState | null> = ((globalThis as any)[
+  FROST_CONTEXT_KEY
+] ||= createContext<FrostClientState | null>(null));
 
 export interface FrostProviderProps {
   value: FrostClientState;

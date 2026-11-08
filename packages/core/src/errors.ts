@@ -9,7 +9,7 @@ export type ErrorCode =
   | "FS1008" // Hydration mismatch
   | "FS1009" // Server-only environment variable read in client code
   | "FS1010" // Route contract violation
-  | "FS1011" // Request body too large
+  | "FS1011"; // Request body too large
 
 export interface FrostErrorOptions extends ErrorOptions {
   code: ErrorCode;
@@ -57,4 +57,3 @@ export class FrostError extends Error {
     return output;
   }
 }
-

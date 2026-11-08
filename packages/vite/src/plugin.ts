@@ -13,7 +13,11 @@ import {
 } from "@frostjs/core";
 import { discoverRoutes, type DiscoveredRoute } from "@frostjs/router";
 import { createRequestHandler } from "@frostjs/server";
-import { isSafeRequestTarget, nodeReqToWebRequest, sendWebResponseToNode } from "@frostjs/adapter-node";
+import {
+  isSafeRequestTarget,
+  nodeReqToWebRequest,
+  sendWebResponseToNode,
+} from "@frostjs/adapter-node";
 import { setBodyLimits } from "@frostjs/data";
 import {
   VIRTUAL_ROUTES_ID,
@@ -22,7 +26,11 @@ import {
   generateClientEntryCode,
 } from "./virtual.js";
 import { DEV_CLIENT_CODE, DEV_CLIENT_ID, RESOLVED_DEV_CLIENT_ID } from "./dev-client.js";
-import { SERVER_FN_CLIENT_ID, RESOLVED_SERVER_FN_CLIENT_ID, serverFnClientCode } from "./server-fn-client.js";
+import {
+  SERVER_FN_CLIENT_ID,
+  RESOLVED_SERVER_FN_CLIENT_ID,
+  serverFnClientCode,
+} from "./server-fn-client.js";
 import { transformServerFnCalls } from "./server-fn-transform.js";
 import { validateClientEnvAccess, validateModuleBoundary } from "./boundary.js";
 
@@ -36,7 +44,10 @@ export interface FrostPluginOptions {
 const CONFIG_FILE_RE = /^frost\.config\.(ts|js|mts|mjs|cts|cjs)$/i;
 const SERVER_ONLY_RE = /(?:^|[/\\])(?:[^/\\]*\.server\.[jt]sx?|[^/\\]*api[/\\][^/\\]*\.[jt]sx?)$/i;
 
-export function frost(userConfig: FrostConfig = {}, pluginOptions: FrostPluginOptions = {}): Plugin {
+export function frost(
+  userConfig: FrostConfig = {},
+  pluginOptions: FrostPluginOptions = {},
+): Plugin {
   let config = resolveConfig(userConfig);
   setBodyLimits(config.limits);
   let rootDir: string;
@@ -80,11 +91,7 @@ export function frost(userConfig: FrostConfig = {}, pluginOptions: FrostPluginOp
     try {
       const typesDir = path.resolve(rootDir, config.build.outDir, "types");
       fs.mkdirSync(typesDir, { recursive: true });
-      fs.writeFileSync(
-        path.join(typesDir, "routes.d.ts"),
-        routeTypesDeclaration(routes),
-        "utf-8"
-      );
+      fs.writeFileSync(path.join(typesDir, "routes.d.ts"), routeTypesDeclaration(routes), "utf-8");
     } catch {
       // Route types are best-effort; never break dev/build for them.
     }
@@ -110,7 +117,7 @@ export function frost(userConfig: FrostConfig = {}, pluginOptions: FrostPluginOp
       const result = await loadConfigFromFile(
         { command: "serve", mode: "development" },
         pluginOptions.configFile,
-        rootDir
+        rootDir,
       );
       const fileConfig = ((result?.config ?? {}) as FrostConfig) || {};
       const cli = pluginOptions.cliOverrides;
@@ -168,12 +175,7 @@ export function frost(userConfig: FrostConfig = {}, pluginOptions: FrostPluginOp
             // dev.watch.usePolling for network drives / WSL edge cases.
             usePolling: config.dev.watch.usePolling,
             interval: config.dev.watch.interval,
-            ignored: [
-              "**/node_modules/**",
-              "**/.git/**",
-              "**/.frost/**",
-              "**/dist/**",
-            ],
+            ignored: ["**/node_modules/**", "**/.git/**", "**/.frost/**", "**/dist/**"],
           },
         },
       };
@@ -218,7 +220,7 @@ export function frost(userConfig: FrostConfig = {}, pluginOptions: FrostPluginOp
       if (!html.includes(DEV_CLIENT_ID)) {
         return html.replace(
           "</body>",
-          `<script type="module" src="${DEV_CLIENT_ID}"></script></body>`
+          `<script type="module" src="${DEV_CLIENT_ID}"></script></body>`,
         );
       }
       return html;
@@ -318,8 +320,7 @@ export function frost(userConfig: FrostConfig = {}, pluginOptions: FrostPluginOp
               // finished. With zero clients, leave reloadPending set so the
               // ws connection hook reloads whoever reconnects.
               setTimeout(() => {
-                const clients = (server.ws as unknown as { clients?: { size: number } })
-                  .clients;
+                const clients = (server.ws as unknown as { clients?: { size: number } }).clients;
                 if (reloadPending && (!clients || clients.size > 0)) {
                   reloadPending = false;
                   sendFrostEvent("frost:reload", { reason: "config" });
@@ -473,9 +474,7 @@ export function frost(userConfig: FrostConfig = {}, pluginOptions: FrostPluginOp
                     scripts: [
                       `/@frost/client?file=${encodeURIComponent(route.filePath)}${layoutsQuery}&id=${encodeURIComponent(route.id)}`,
                     ],
-                    css: cssUrls.map(
-                      (cssUrl) => `/@frost/css?url=${encodeURIComponent(cssUrl)}`
-                    ),
+                    css: cssUrls.map((cssUrl) => `/@frost/css?url=${encodeURIComponent(cssUrl)}`),
                   };
                 }
                 return { scripts: [], css: [] };
@@ -522,8 +521,7 @@ function hasClientModule(server: ViteDevServer, absFile: string): boolean {
   const graph = server.environments?.client?.moduleGraph;
   if (!graph) return false;
   const mods =
-    graph.getModulesByFile(absFile.replace(/\\/g, "/")) ??
-    graph.getModulesByFile(absFile);
+    graph.getModulesByFile(absFile.replace(/\\/g, "/")) ?? graph.getModulesByFile(absFile);
   return !!mods && mods.size > 0;
 }
 
@@ -532,8 +530,7 @@ function hasSsrModule(server: ViteDevServer, absFile: string): boolean {
   const graph = server.environments?.ssr?.moduleGraph;
   if (!graph) return false;
   const mods =
-    graph.getModulesByFile(absFile.replace(/\\/g, "/")) ??
-    graph.getModulesByFile(absFile);
+    graph.getModulesByFile(absFile.replace(/\\/g, "/")) ?? graph.getModulesByFile(absFile);
   return !!mods && mods.size > 0;
 }
 
@@ -590,8 +587,7 @@ function collectRouteCss(server: ViteDevServer, entryFiles: string[]): string[] 
 
   for (const file of entryFiles) {
     const modules =
-      ssrGraph.getModulesByFile(file.replace(/\\/g, "/")) ??
-      ssrGraph.getModulesByFile(file);
+      ssrGraph.getModulesByFile(file.replace(/\\/g, "/")) ?? ssrGraph.getModulesByFile(file);
     if (!modules) continue;
     for (const mod of modules) visitModule(mod);
   }
@@ -608,7 +604,7 @@ function collectRouteCss(server: ViteDevServer, entryFiles: string[]): string[] 
 async function serveDevStylesheet(
   server: ViteDevServer,
   req: import("node:http").IncomingMessage,
-  res: import("node:http").ServerResponse
+  res: import("node:http").ServerResponse,
 ): Promise<void> {
   const rawUrl = req.url ?? "";
   const urlParam = new URL(rawUrl, "http://frost.local").searchParams.get("url");

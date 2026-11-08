@@ -29,7 +29,10 @@ export function getClientState(): FrostClientState {
   const currentPath = window.location.pathname || "/";
 
   // 1. Check if parsed state was already cached on window and still belongs to the current route.
-  if (isFrostClientState(window.__FROST_STATE__) && window.__FROST_STATE__.pathname === currentPath) {
+  if (
+    isFrostClientState(window.__FROST_STATE__) &&
+    window.__FROST_STATE__.pathname === currentPath
+  ) {
     return window.__FROST_STATE__;
   }
   if (isFrostClientState(window.__FROST_DATA__) && window.__FROST_DATA__.pathname === currentPath) {
@@ -94,9 +97,7 @@ function HydratedApp({ Component, layouts, state }: HydratedAppProps) {
 
   // Resolve the component tree for the current route: the registry holds
   // components for lazily-loaded routes; fall back to the hydrated entry.
-  const entry = routeState.routeId
-    ? getRouteComponents()[routeState.routeId]
-    : undefined;
+  const entry = routeState.routeId ? getRouteComponents()[routeState.routeId] : undefined;
   const RouteComp = entry?.default ?? Component;
   const layoutList = entry?.layouts ?? layouts;
   const current = routeState;
@@ -120,10 +121,7 @@ function HydratedApp({ Component, layouts, state }: HydratedAppProps) {
       if (actionAttr) {
         try {
           const url = new URL(actionAttr, window.location.href);
-          if (
-            url.origin !== window.location.origin ||
-            url.pathname !== window.location.pathname
-          ) {
+          if (url.origin !== window.location.origin || url.pathname !== window.location.pathname) {
             return;
           }
           target = url.pathname + url.search;
@@ -191,7 +189,7 @@ function HydratedApp({ Component, layouts, state }: HydratedAppProps) {
 export function hydrateApp(
   Component: RouteComponent,
   layouts: RouteComponent[] = [],
-  routeId?: string
+  routeId?: string,
 ): void {
   const state = getClientState();
   const rootElement = document.getElementById("__frost");
@@ -212,10 +210,7 @@ export function hydrateApp(
   if (window.__FROST_HYDRATED__) return;
   window.__FROST_HYDRATED__ = true;
 
-  hydrateRoot(
-    rootElement,
-    <HydratedApp Component={Component} layouts={layouts} state={state} />
-  );
+  hydrateRoot(rootElement, <HydratedApp Component={Component} layouts={layouts} state={state} />);
 
   // Opt-in client router: no-ops unless the document carries a
   // __FROST_ROUTES__ manifest (config.router.enabled).

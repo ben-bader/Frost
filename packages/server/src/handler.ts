@@ -80,12 +80,27 @@ function generateNonce(): string {
 function methodNotAllowed(allow: string[]): Response {
   return json(
     { error: "Method Not Allowed", allowedMethods: allow },
-    { status: 405, headers: { Allow: allow.join(", ") } }
+    { status: 405, headers: { Allow: allow.join(", ") } },
   );
 }
 
 export function createRequestHandler(options: RequestHandlerOptions) {
-  const { routes, loadModule, getAssetsForRoute, security, onError, checkDeterminism, lang, logger, logRequests, validateContracts, serverFnPath = "/_frost/fn", routerEnabled, routerPrefetch = "intent", ssrStreaming } = options;
+  const {
+    routes,
+    loadModule,
+    getAssetsForRoute,
+    security,
+    onError,
+    checkDeterminism,
+    lang,
+    logger,
+    logRequests,
+    validateContracts,
+    serverFnPath = "/_frost/fn",
+    routerEnabled,
+    routerPrefetch = "intent",
+    ssrStreaming,
+  } = options;
 
   // The global not-found route (app/not-found.tsx or app/_404.tsx) is
   // discovered with kind "not-found" and never participates in matching.
@@ -93,9 +108,7 @@ export function createRequestHandler(options: RequestHandlerOptions) {
   // App-root middleware (app/_middleware.ts(x) or app/middleware.ts(x)).
   const middlewareRoute = routes.find((r) => r.kind === "middleware");
 
-  const loadLayoutModules = async (
-    layoutPaths: string[] | undefined
-  ): Promise<RouteModule[]> => {
+  const loadLayoutModules = async (layoutPaths: string[] | undefined): Promise<RouteModule[]> => {
     if (!layoutPaths || layoutPaths.length === 0) return [];
     // Load all layout modules in parallel; a failing layout is skipped
     // with a warning.
@@ -115,7 +128,7 @@ export function createRequestHandler(options: RequestHandlerOptions) {
           console.warn(`[Frost] Could not load layout at ${layoutPath}:`, layoutErr);
           return null;
         }
-      })
+      }),
     );
     return results.filter((m): m is RouteModule => m !== null);
   };
@@ -138,7 +151,7 @@ export function createRequestHandler(options: RequestHandlerOptions) {
   const paramsSearchContractError = (
     contract: RouteContract | undefined,
     params: Record<string, string>,
-    url: URL
+    url: URL,
   ): string | null => {
     if (!validateContracts || !contract) return null;
     if (contract.params) {
@@ -146,10 +159,7 @@ export function createRequestHandler(options: RequestHandlerOptions) {
       if (!r.ok) return `params: ${formatContractIssues(r.issues)}`;
     }
     if (contract.search) {
-      const r = validateContractValue(
-        contract.search,
-        searchParamsToObject(url.searchParams)
-      );
+      const r = validateContractValue(contract.search, searchParamsToObject(url.searchParams));
       if (!r.ok) return `search: ${formatContractIssues(r.issues)}`;
     }
     return null;
@@ -210,7 +220,7 @@ export function createRequestHandler(options: RequestHandlerOptions) {
 
   const handleRequest = async (
     request: Request,
-    contextOverrides?: Partial<FrostRequestContext>
+    contextOverrides?: Partial<FrostRequestContext>,
   ): Promise<Response> => {
     const url = new URL(request.url);
 
@@ -218,7 +228,10 @@ export function createRequestHandler(options: RequestHandlerOptions) {
     // while %2F stays inside its segment. Malformed escapes -> 400.
     const decodedPath = decodePathname(url.pathname);
     if (decodedPath === null) {
-      const res = json({ error: "Bad Request", message: "Malformed percent-encoding in URL" }, { status: 400 });
+      const res = json(
+        { error: "Bad Request", message: "Malformed percent-encoding in URL" },
+        { status: 400 },
+      );
       applySecurityHeaders(res.headers, { security });
       return res;
     }
@@ -234,393 +247,376 @@ export function createRequestHandler(options: RequestHandlerOptions) {
     // The full routing pipeline (API -> page -> 404). Wrapped so
     // middleware's next() can delegate to it.
     const routeRequest = async (): Promise<Response> => {
-    let response: Response;
+      let response: Response;
 
-    // 0a. Server-function RPC endpoint: POST /<serverFnPath>/<id>.
-    const fnPrefix = `${serverFnPath}/`;
-    if (pathname.startsWith(fnPrefix)) {
-      const fnId = decodeURIComponent(pathname.slice(fnPrefix.length));
-      const fnResponse = await dispatchServerFn(request, fnId, context, { onError });
-      applySecurityHeaders(fnResponse.headers, secOptions);
-      return fnResponse;
-    }
-
-    // 1. Try API routes first
-    const apiMatch = matchRoutes(apiRoutes, pathname);
-    if (apiMatch) {
-      try {
-        const mod = (await loadModule(apiMatch.route)) as ApiRouteModule;
-        const contractIssue = paramsSearchContractError(
-          mod.contract,
-          apiMatch.params,
-          url
-        );
-        if (contractIssue) {
-          onError?.(
-            createErrorReport(
-              createContractError("params/search", [
-                { message: contractIssue },
-              ]),
-              { runtime: "server", route: pathname }
-            )
-          );
-          response = json(
-            { error: "Bad Request", message: `Contract violation: ${contractIssue}` },
-            { status: 400 }
-          );
-          applySecurityHeaders(response.headers, secOptions);
-          return response;
-        }
-        response = await dispatchApiRoute(mod, request, context, onError);
-      } catch (err) {
-        console.error(`[Frost] Error in API route ${pathname}:`, err);
-        onError?.(
-          createErrorReport(err, {
-            runtime: "server",
-            route: pathname,
-            code: FROST_ERROR_CODES.API,
-          })
-        );
-        response = new Response(JSON.stringify({ error: "Internal Server Error" }), {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        });
+      // 0a. Server-function RPC endpoint: POST /<serverFnPath>/<id>.
+      const fnPrefix = `${serverFnPath}/`;
+      if (pathname.startsWith(fnPrefix)) {
+        const fnId = decodeURIComponent(pathname.slice(fnPrefix.length));
+        const fnResponse = await dispatchServerFn(request, fnId, context, { onError });
+        applySecurityHeaders(fnResponse.headers, secOptions);
+        return fnResponse;
       }
-    } else {
-      // 2. Try Page routes
-      const pageMatch = matchRoutes(pageRoutes, pathname);
-      if (pageMatch) {
-        try {
-          const mod = (await loadModule(pageMatch.route)) as RouteModule;
 
-          const contractIssue = paramsSearchContractError(
-            mod.contract,
-            pageMatch.params,
-            url
-          );
+      // 1. Try API routes first
+      const apiMatch = matchRoutes(apiRoutes, pathname);
+      if (apiMatch) {
+        try {
+          const mod = (await loadModule(apiMatch.route)) as ApiRouteModule;
+          const contractIssue = paramsSearchContractError(mod.contract, apiMatch.params, url);
           if (contractIssue) {
             onError?.(
               createErrorReport(
-                createContractError("params/search", [
-                  { message: contractIssue },
-                ]),
-                { runtime: "server", route: pathname }
-              )
+                createContractError("params/search", [{ message: contractIssue }]),
+                { runtime: "server", route: pathname },
+              ),
             );
-            response = renderSimpleDocument({
-              title: "Bad Request",
-              heading: "Invalid request",
-              detail: `Contract violation: ${contractIssue}`,
-              status: 400,
-              lang,
-              context,
-            });
+            response = json(
+              { error: "Bad Request", message: `Contract violation: ${contractIssue}` },
+              { status: 400 },
+            );
             applySecurityHeaders(response.headers, secOptions);
             return response;
           }
-
-          // Layout modules are needed for the method gate, actions, and rendering.
-          const layoutModules = await loadLayoutModules(pageMatch.route.layouts);
-
-          // Method gate: pages allow GET/HEAD, plus mutations when the
-          // route or one of its layouts exports an action.
-          const hasAction =
-            !!mod.action || layoutModules.some((l) => !!l.action);
-          const allowed = hasAction
-            ? [...PAGE_METHODS, ...MUTATION_METHODS]
-            : PAGE_METHODS;
-          if (!allowed.includes(request.method.toUpperCase())) {
-            response = methodNotAllowed(allowed);
-            applySecurityHeaders(response.headers, secOptions);
-            return response;
-          }
-
-          // Client-router data endpoint: GET <path>?__frost_data=1 returns
-          // the route's loader data as JSON instead of HTML.
-          if (
-            routerEnabled &&
-            request.method === "GET" &&
-            url.searchParams.has("__frost_data")
-          ) {
-            const settled = await runRouteLoaders({
-              routeModule: mod,
-              layoutModules,
-              params: pageMatch.params,
-              request,
-              url,
-              context,
-              validateContracts,
-            });
-            const routeSettled = settled[0];
-            if (
-              routeSettled?.status === "ok" &&
-              routeSettled.value instanceof Response
-            ) {
-              applySecurityHeaders(routeSettled.value.headers, secOptions);
-              return routeSettled.value;
-            }
-            const loaderFailure = settled.find((s) => s.status === "err");
-            if (loaderFailure && loaderFailure.status === "err") {
-              onError?.(
-                createErrorReport(loaderFailure.error, {
-                  runtime: "server",
-                  route: pathname,
-                  code: FROST_ERROR_CODES.LOADER,
-                })
-              );
-              response = json(
-                {
-                  error: {
-                    code: FROST_ERROR_CODES.LOADER,
-                    message:
-                      loaderFailure.error instanceof Error
-                        ? loaderFailure.error.message
-                        : "Loader failed",
-                  },
-                },
-                { status: 500 }
-              );
-              applySecurityHeaders(response.headers, secOptions);
-              return response;
-            }
-            const loaderData =
-              routeSettled?.status === "ok" ? routeSettled.value : null;
-            const layoutData = layoutModules.map((_, i) => {
-              const s = settled[i + 1];
-              return s && s.status === "ok" ? s.value : undefined;
-            });
-            response = json({
-              routeId: pageMatch.route.id,
-              pathname,
-              params: pageMatch.params,
-              loaderData,
-              layoutData,
-            });
-            response.headers.set("Cache-Control", "no-store");
-            applySecurityHeaders(response.headers, secOptions);
-            return response;
-          }
-
-          // Handle page route actions on mutation methods (POST, PUT, DELETE, PATCH).
-          // The page's own action wins; otherwise the nearest layout action
-          // (leaf -> root) handles the mutation.
-          if (request.method !== "GET" && request.method !== "HEAD" && hasAction) {
-            try {
-              validateCsrf(request);
-            } catch (csrfErr) {
-              onError?.(
-                createErrorReport(csrfErr, {
-                  runtime: "server",
-                  route: pathname,
-                  code: FROST_ERROR_CODES.MIDDLEWARE,
-                })
-              );
-              response = json(
-                { error: "Forbidden", message: "CSRF validation failed" },
-                { status: 403 }
-              );
-              applySecurityHeaders(response.headers, secOptions);
-              return response;
-            }
-
-            const actionOwner = mod.action
-              ? mod
-              : [...layoutModules].reverse().find((l) => l.action);
-
-            // contract.action validates the parsed request input
-            // (JSON body or form fields). The page contract wins; a
-            // layout action falls back to its own contract.
-            const actionContract = mod.contract?.action
-              ? mod.contract
-              : actionOwner?.contract;
-            if (validateContracts && actionContract?.action) {
-              const input = await parseActionInput(request);
-              if (input !== undefined) {
-                const v = validateContractValue(actionContract.action, input);
-                if (!v.ok) {
-                  const err = createContractError("action", v.issues);
-                  onError?.(
-                    createErrorReport(err, {
-                      runtime: "server",
-                      route: pathname,
-                    })
-                  );
-                  response = json(
-                    { error: "Bad Request", message: err.message },
-                    { status: 400 }
-                  );
-                  applySecurityHeaders(response.headers, secOptions);
-                  return response;
-                }
-              }
-            }
-
-            let actionResult: unknown;
-            try {
-              actionResult = await actionOwner!.action!({
-                request,
-                params: pageMatch.params,
-                url,
-                context,
-              });
-            } catch (actionErr) {
-              onError?.(
-                createErrorReport(actionErr, {
-                  runtime: "server",
-                  route: pathname,
-                  code: FROST_ERROR_CODES.ACTION,
-                })
-              );
-              (actionErr as Record<string, unknown>)["__frostReported"] = true;
-              throw actionErr;
-            }
-            if (actionResult instanceof Response) {
-              applySecurityHeaders(actionResult.headers, secOptions);
-              return actionResult;
-            }
-            // Progressive enhancement: a plain <form method="post"> sends
-            // Accept: text/html — re-render the page with actionData so it
-            // works without client JS. Fetch/XHR clients get JSON.
-            const acceptsHtml = request.headers
-              .get("accept")
-              ?.includes("text/html");
-            if (acceptsHtml) {
-              const assets = await getAssetsForRoute?.(pageMatch.route);
-              response = await renderRouteToHtml({
-                routeModule: mod,
-                layoutModules,
-                params: pageMatch.params,
-                pathname,
-                request,
-                context,
-                assets,
-                actionData: actionResult,
-                errorBoundaryModule: pageMatch.route.errorBoundary
-                  ? ((await loadModule({
-                      id: pageMatch.route.errorBoundary,
-                      pattern: "",
-                      filePath: pageMatch.route.errorBoundary,
-                      kind: "layout",
-                      isDynamic: false,
-                      isCatchAll: false,
-                      score: 0,
-                    })) as RouteModule)
-                  : undefined,
-                lang,
-                onError,
-                checkDeterminism,
-                validateContracts,
-                routeId: pageMatch.route.id,
-                routeManifest: routerEnabled ? await getRouteManifest() : undefined,
-                streaming: ssrStreaming,
-              });
-            } else {
-              response = json(actionResult);
-            }
-            applySecurityHeaders(response.headers, secOptions);
-            return response;
-          }
-
-          const assets = await getAssetsForRoute?.(pageMatch.route);
-          response = await renderRouteToHtml({
-            routeModule: mod,
-            layoutModules,
-            params: pageMatch.params,
-            pathname,
-            request,
-            context,
-            assets,
-            errorBoundaryModule: pageMatch.route.errorBoundary
-              ? ((await loadModule({
-                  id: pageMatch.route.errorBoundary,
-                  pattern: "",
-                  filePath: pageMatch.route.errorBoundary,
-                  kind: "layout",
-                  isDynamic: false,
-                  isCatchAll: false,
-                  score: 0,
-                })) as RouteModule)
-              : undefined,
-            lang,
-            onError,
-            checkDeterminism,
-            validateContracts,
-            routeId: pageMatch.route.id,
-            routeManifest: routerEnabled ? await getRouteManifest() : undefined,
-            streaming: ssrStreaming,
-          });
-
-          // Per-route headers export (static map or function).
-          if (mod.headers) {
-            const routeHeaders =
-              typeof mod.headers === "function"
-                ? await mod.headers({ request, params: pageMatch.params, url, context })
-                : mod.headers;
-            for (const [key, value] of Object.entries(routeHeaders)) {
-              response.headers.set(key, value);
-            }
-            if (validateContracts && mod.contract?.headers) {
-              const v = validateContractValue(mod.contract.headers, routeHeaders);
-              if (!v.ok) {
-                throw createContractError("headers", v.issues);
-              }
-            }
-          }
-
-          // HTML must always revalidate — it embeds per-request state.
-          if (
-            response.headers.get("Content-Type")?.includes("text/html") &&
-            !response.headers.has("Cache-Control")
-          ) {
-            response.headers.set("Cache-Control", "no-cache");
-          }
+          response = await dispatchApiRoute(mod, request, context, onError);
         } catch (err) {
-          console.error(`[Frost] Error rendering route ${pathname}:`, err);
-          if (!(err as Record<string, unknown>)?.["__frostReported"]) {
-            onError?.(
-              createErrorReport(err, {
-                runtime: "server",
-                route: pathname,
-                code: FROST_ERROR_CODES.RENDER,
-              })
-            );
-          }
-          response = renderSimpleDocument({
-            title: "Server Error",
-            heading: "Something went wrong",
-            detail: err instanceof Error ? err.message : "Unknown error",
+          console.error(`[Frost] Error in API route ${pathname}:`, err);
+          onError?.(
+            createErrorReport(err, {
+              runtime: "server",
+              route: pathname,
+              code: FROST_ERROR_CODES.API,
+            }),
+          );
+          response = new Response(JSON.stringify({ error: "Internal Server Error" }), {
             status: 500,
-            lang,
-            context,
+            headers: { "Content-Type": "application/json" },
           });
         }
       } else {
-        // 3. 404 Not Found — render app/not-found.tsx (or _404.tsx) inside
-        // the root layout when present, else a minimal styled document.
-        if (notFoundRoute) {
+        // 2. Try Page routes
+        const pageMatch = matchRoutes(pageRoutes, pathname);
+        if (pageMatch) {
           try {
-            const mod = (await loadModule(notFoundRoute)) as RouteModule;
-            const layoutModules = await loadLayoutModules(notFoundRoute.layouts);
-            const assets = await getAssetsForRoute?.(notFoundRoute);
+            const mod = (await loadModule(pageMatch.route)) as RouteModule;
+
+            const contractIssue = paramsSearchContractError(mod.contract, pageMatch.params, url);
+            if (contractIssue) {
+              onError?.(
+                createErrorReport(
+                  createContractError("params/search", [{ message: contractIssue }]),
+                  { runtime: "server", route: pathname },
+                ),
+              );
+              response = renderSimpleDocument({
+                title: "Bad Request",
+                heading: "Invalid request",
+                detail: `Contract violation: ${contractIssue}`,
+                status: 400,
+                lang,
+                context,
+              });
+              applySecurityHeaders(response.headers, secOptions);
+              return response;
+            }
+
+            // Layout modules are needed for the method gate, actions, and rendering.
+            const layoutModules = await loadLayoutModules(pageMatch.route.layouts);
+
+            // Method gate: pages allow GET/HEAD, plus mutations when the
+            // route or one of its layouts exports an action.
+            const hasAction = !!mod.action || layoutModules.some((l) => !!l.action);
+            const allowed = hasAction ? [...PAGE_METHODS, ...MUTATION_METHODS] : PAGE_METHODS;
+            if (!allowed.includes(request.method.toUpperCase())) {
+              response = methodNotAllowed(allowed);
+              applySecurityHeaders(response.headers, secOptions);
+              return response;
+            }
+
+            // Client-router data endpoint: GET <path>?__frost_data=1 returns
+            // the route's loader data as JSON instead of HTML.
+            if (routerEnabled && request.method === "GET" && url.searchParams.has("__frost_data")) {
+              const settled = await runRouteLoaders({
+                routeModule: mod,
+                layoutModules,
+                params: pageMatch.params,
+                request,
+                url,
+                context,
+                validateContracts,
+              });
+              const routeSettled = settled[0];
+              if (routeSettled?.status === "ok" && routeSettled.value instanceof Response) {
+                applySecurityHeaders(routeSettled.value.headers, secOptions);
+                return routeSettled.value;
+              }
+              const loaderFailure = settled.find((s) => s.status === "err");
+              if (loaderFailure && loaderFailure.status === "err") {
+                onError?.(
+                  createErrorReport(loaderFailure.error, {
+                    runtime: "server",
+                    route: pathname,
+                    code: FROST_ERROR_CODES.LOADER,
+                  }),
+                );
+                response = json(
+                  {
+                    error: {
+                      code: FROST_ERROR_CODES.LOADER,
+                      message:
+                        loaderFailure.error instanceof Error
+                          ? loaderFailure.error.message
+                          : "Loader failed",
+                    },
+                  },
+                  { status: 500 },
+                );
+                applySecurityHeaders(response.headers, secOptions);
+                return response;
+              }
+              const loaderData = routeSettled?.status === "ok" ? routeSettled.value : null;
+              const layoutData = layoutModules.map((_, i) => {
+                const s = settled[i + 1];
+                return s && s.status === "ok" ? s.value : undefined;
+              });
+              response = json({
+                routeId: pageMatch.route.id,
+                pathname,
+                params: pageMatch.params,
+                loaderData,
+                layoutData,
+              });
+              response.headers.set("Cache-Control", "no-store");
+              applySecurityHeaders(response.headers, secOptions);
+              return response;
+            }
+
+            // Handle page route actions on mutation methods (POST, PUT, DELETE, PATCH).
+            // The page's own action wins; otherwise the nearest layout action
+            // (leaf -> root) handles the mutation.
+            if (request.method !== "GET" && request.method !== "HEAD" && hasAction) {
+              try {
+                validateCsrf(request);
+              } catch (csrfErr) {
+                onError?.(
+                  createErrorReport(csrfErr, {
+                    runtime: "server",
+                    route: pathname,
+                    code: FROST_ERROR_CODES.MIDDLEWARE,
+                  }),
+                );
+                response = json(
+                  { error: "Forbidden", message: "CSRF validation failed" },
+                  { status: 403 },
+                );
+                applySecurityHeaders(response.headers, secOptions);
+                return response;
+              }
+
+              const actionOwner = mod.action
+                ? mod
+                : [...layoutModules].reverse().find((l) => l.action);
+
+              // contract.action validates the parsed request input
+              // (JSON body or form fields). The page contract wins; a
+              // layout action falls back to its own contract.
+              const actionContract = mod.contract?.action ? mod.contract : actionOwner?.contract;
+              if (validateContracts && actionContract?.action) {
+                const input = await parseActionInput(request);
+                if (input !== undefined) {
+                  const v = validateContractValue(actionContract.action, input);
+                  if (!v.ok) {
+                    const err = createContractError("action", v.issues);
+                    onError?.(
+                      createErrorReport(err, {
+                        runtime: "server",
+                        route: pathname,
+                      }),
+                    );
+                    response = json(
+                      { error: "Bad Request", message: err.message },
+                      { status: 400 },
+                    );
+                    applySecurityHeaders(response.headers, secOptions);
+                    return response;
+                  }
+                }
+              }
+
+              let actionResult: unknown;
+              try {
+                actionResult = await actionOwner!.action!({
+                  request,
+                  params: pageMatch.params,
+                  url,
+                  context,
+                });
+              } catch (actionErr) {
+                onError?.(
+                  createErrorReport(actionErr, {
+                    runtime: "server",
+                    route: pathname,
+                    code: FROST_ERROR_CODES.ACTION,
+                  }),
+                );
+                (actionErr as Record<string, unknown>)["__frostReported"] = true;
+                throw actionErr;
+              }
+              if (actionResult instanceof Response) {
+                applySecurityHeaders(actionResult.headers, secOptions);
+                return actionResult;
+              }
+              // Progressive enhancement: a plain <form method="post"> sends
+              // Accept: text/html — re-render the page with actionData so it
+              // works without client JS. Fetch/XHR clients get JSON.
+              const acceptsHtml = request.headers.get("accept")?.includes("text/html");
+              if (acceptsHtml) {
+                const assets = await getAssetsForRoute?.(pageMatch.route);
+                response = await renderRouteToHtml({
+                  routeModule: mod,
+                  layoutModules,
+                  params: pageMatch.params,
+                  pathname,
+                  request,
+                  context,
+                  assets,
+                  actionData: actionResult,
+                  errorBoundaryModule: pageMatch.route.errorBoundary
+                    ? ((await loadModule({
+                        id: pageMatch.route.errorBoundary,
+                        pattern: "",
+                        filePath: pageMatch.route.errorBoundary,
+                        kind: "layout",
+                        isDynamic: false,
+                        isCatchAll: false,
+                        score: 0,
+                      })) as RouteModule)
+                    : undefined,
+                  lang,
+                  onError,
+                  checkDeterminism,
+                  validateContracts,
+                  routeId: pageMatch.route.id,
+                  routeManifest: routerEnabled ? await getRouteManifest() : undefined,
+                  streaming: ssrStreaming,
+                });
+              } else {
+                response = json(actionResult);
+              }
+              applySecurityHeaders(response.headers, secOptions);
+              return response;
+            }
+
+            const assets = await getAssetsForRoute?.(pageMatch.route);
             response = await renderRouteToHtml({
               routeModule: mod,
               layoutModules,
-              params: {},
+              params: pageMatch.params,
               pathname,
               request,
               context,
               assets,
-              status: 404,
+              errorBoundaryModule: pageMatch.route.errorBoundary
+                ? ((await loadModule({
+                    id: pageMatch.route.errorBoundary,
+                    pattern: "",
+                    filePath: pageMatch.route.errorBoundary,
+                    kind: "layout",
+                    isDynamic: false,
+                    isCatchAll: false,
+                    score: 0,
+                  })) as RouteModule)
+                : undefined,
               lang,
               onError,
               checkDeterminism,
               validateContracts,
-              routeId: "not-found",
+              routeId: pageMatch.route.id,
               routeManifest: routerEnabled ? await getRouteManifest() : undefined,
               streaming: ssrStreaming,
             });
-          } catch (nfErr) {
-            console.error(`[Frost] Error rendering not-found route:`, nfErr);
+
+            // Per-route headers export (static map or function).
+            if (mod.headers) {
+              const routeHeaders =
+                typeof mod.headers === "function"
+                  ? await mod.headers({ request, params: pageMatch.params, url, context })
+                  : mod.headers;
+              for (const [key, value] of Object.entries(routeHeaders)) {
+                response.headers.set(key, value);
+              }
+              if (validateContracts && mod.contract?.headers) {
+                const v = validateContractValue(mod.contract.headers, routeHeaders);
+                if (!v.ok) {
+                  throw createContractError("headers", v.issues);
+                }
+              }
+            }
+
+            // HTML must always revalidate — it embeds per-request state.
+            if (
+              response.headers.get("Content-Type")?.includes("text/html") &&
+              !response.headers.has("Cache-Control")
+            ) {
+              response.headers.set("Cache-Control", "no-cache");
+            }
+          } catch (err) {
+            console.error(`[Frost] Error rendering route ${pathname}:`, err);
+            if (!(err as Record<string, unknown>)?.["__frostReported"]) {
+              onError?.(
+                createErrorReport(err, {
+                  runtime: "server",
+                  route: pathname,
+                  code: FROST_ERROR_CODES.RENDER,
+                }),
+              );
+            }
+            response = renderSimpleDocument({
+              title: "Server Error",
+              heading: "Something went wrong",
+              detail: err instanceof Error ? err.message : "Unknown error",
+              status: 500,
+              lang,
+              context,
+            });
+          }
+        } else {
+          // 3. 404 Not Found — render app/not-found.tsx (or _404.tsx) inside
+          // the root layout when present, else a minimal styled document.
+          if (notFoundRoute) {
+            try {
+              const mod = (await loadModule(notFoundRoute)) as RouteModule;
+              const layoutModules = await loadLayoutModules(notFoundRoute.layouts);
+              const assets = await getAssetsForRoute?.(notFoundRoute);
+              response = await renderRouteToHtml({
+                routeModule: mod,
+                layoutModules,
+                params: {},
+                pathname,
+                request,
+                context,
+                assets,
+                status: 404,
+                lang,
+                onError,
+                checkDeterminism,
+                validateContracts,
+                routeId: "not-found",
+                routeManifest: routerEnabled ? await getRouteManifest() : undefined,
+                streaming: ssrStreaming,
+              });
+            } catch (nfErr) {
+              console.error(`[Frost] Error rendering not-found route:`, nfErr);
+              response = renderSimpleDocument({
+                title: "404 Not Found",
+                heading: "404 Not Found",
+                detail: `No route matched URL: ${pathname}`,
+                status: 404,
+                lang,
+                context,
+              });
+            }
+          } else {
             response = renderSimpleDocument({
               title: "404 Not Found",
               heading: "404 Not Found",
@@ -630,21 +626,11 @@ export function createRequestHandler(options: RequestHandlerOptions) {
               context,
             });
           }
-        } else {
-          response = renderSimpleDocument({
-            title: "404 Not Found",
-            heading: "404 Not Found",
-            detail: `No route matched URL: ${pathname}`,
-            status: 404,
-            lang,
-            context,
-          });
         }
       }
-    }
 
-    applySecurityHeaders(response.headers, secOptions);
-    return response;
+      applySecurityHeaders(response.headers, secOptions);
+      return response;
     };
 
     // 0. Middleware chain (app/_middleware.ts or app/middleware.ts) runs
@@ -661,20 +647,15 @@ export function createRequestHandler(options: RequestHandlerOptions) {
         const candidates = Array.isArray(mwMod?.middleware)
           ? mwMod.middleware
           : [mwMod?.middleware ?? mwMod?.default];
-        const fns = candidates.filter(
-          (f): f is FrostMiddleware => typeof f === "function"
-        );
+        const fns = candidates.filter((f): f is FrostMiddleware => typeof f === "function");
         if (fns.length > 0) {
           const dispatch = async (index: number): Promise<Response | void> => {
             if (index >= fns.length) return routeRequest();
-            const result = await fns[index]!(request, context, () =>
-              dispatch(index + 1)
-            );
+            const result = await fns[index]!(request, context, () => dispatch(index + 1));
             return result === undefined ? dispatch(index + 1) : result;
           };
           const mwResult = await dispatch(0);
-          const response =
-            mwResult instanceof Response ? mwResult : await routeRequest();
+          const response = mwResult instanceof Response ? mwResult : await routeRequest();
           applySecurityHeaders(response.headers, secOptions);
           return response;
         }
@@ -684,7 +665,7 @@ export function createRequestHandler(options: RequestHandlerOptions) {
             runtime: "server",
             route: pathname,
             code: FROST_ERROR_CODES.MIDDLEWARE,
-          })
+          }),
         );
         return renderSimpleDocument({
           title: "Server Error",
@@ -701,10 +682,7 @@ export function createRequestHandler(options: RequestHandlerOptions) {
   };
 
   if (!logRequests || !logger) return handleRequest;
-  return async (
-    request: Request,
-    contextOverrides?: Partial<FrostRequestContext>
-  ) => {
+  return async (request: Request, contextOverrides?: Partial<FrostRequestContext>) => {
     const start = performance.now();
     const response = await handleRequest(request, contextOverrides);
     let path = request.url;

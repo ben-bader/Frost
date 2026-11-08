@@ -14,7 +14,13 @@ export interface FrostDocumentProps {
 const SKIP_LINK_STYLE =
   ".frost-skip-link{position:absolute;left:-9999px;top:0;z-index:2147483647;background:#0b1517;color:#e8f4f1;padding:10px 16px;border-radius:0 0 8px 0;font:600 14px/1.2 system-ui,sans-serif;text-decoration:none}.frost-skip-link:focus{left:0;outline:2px solid #10e8c8}";
 
-export function FrostDocument({ children, title, head, lang, routeManifest }: FrostDocumentProps): React.JSX.Element {
+export function FrostDocument({
+  children,
+  title,
+  head,
+  lang,
+  routeManifest,
+}: FrostDocumentProps): React.JSX.Element {
   const ctx = useFrostContext();
   const clientState: FrostClientState = ctx ?? {
     pathname: typeof window !== "undefined" ? window.location.pathname : "/",

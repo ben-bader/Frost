@@ -68,7 +68,12 @@ function connectDevClient(port: number): Promise<FakeClient> {
     const resolveOnce = () => {
       if (!resolved) {
         resolved = true;
-        resolve({ events, close: () => { closed = true; } });
+        resolve({
+          events,
+          close: () => {
+            closed = true;
+          },
+        });
       }
     };
 
@@ -84,7 +89,7 @@ async function waitForEvent(
   client: FakeClient,
   event: string,
   timeoutMs = 5000,
-  since = 0
+  since = 0,
 ): Promise<FrostEvent> {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
@@ -95,7 +100,7 @@ async function waitForEvent(
   throw new Error(
     `Timed out waiting for frost event "${event}". Saw: ${client.events
       .map((e) => e.event)
-      .join(", ")}`
+      .join(", ")}`,
   );
 }
 
@@ -103,7 +108,7 @@ async function waitForAbsence(
   client: FakeClient,
   event: string,
   windowMs = 800,
-  since = 0
+  since = 0,
 ): Promise<void> {
   await new Promise((r) => setTimeout(r, windowMs));
   expect(client.events.slice(since).some((e) => e.event === event)).toBe(false);
@@ -143,17 +148,13 @@ describe("Frost dev protocol (F19/F5)", () => {
     await fetch(`http://localhost:${port}/styled`).then((r) => r.text());
     // The browser fetches each imported module after the entry; do the
     // same so the client module graph contains the component tree.
-    for (const mod of [
-      "src/app/page.tsx",
-      "src/app/styled/page.tsx",
-      "src/lib/Widget.tsx",
-    ]) {
+    for (const mod of ["src/app/page.tsx", "src/app/styled/page.tsx", "src/lib/Widget.tsx"]) {
       await fetch(`http://localhost:${port}/${mod}`);
     }
     await fetch(
       `http://localhost:${port}/@frost/client?file=${encodeURIComponent(
-        path.join(FIXTURE_ROOT, "src/app/page.tsx")
-      )}`
+        path.join(FIXTURE_ROOT, "src/app/page.tsx"),
+      )}`,
     );
 
     client = await connectDevClient(port);
@@ -211,10 +212,7 @@ describe("Frost dev protocol (F19/F5)", () => {
     const dir = path.join(FIXTURE_ROOT, "src/app/added-route");
     await fs.mkdir(dir, { recursive: true });
     const file = path.join(dir, "page.tsx");
-    await fs.writeFile(
-      file,
-      "export default function Added() { return <h1>added</h1>; }\n"
-    );
+    await fs.writeFile(file, "export default function Added() { return <h1>added</h1>; }\n");
     const mark = client.events.length;
     await waitForEvent(client, "frost:routes-changed", 5000, mark);
     await waitForEvent(client, "frost:reload", 5000, mark);
@@ -232,9 +230,7 @@ describe("Frost dev protocol (F19/F5)", () => {
     await touch(widgetFile, original.replace("widget", "widget!"));
     await waitForAbsence(client, "frost:reload", 800, mark);
     // Assert no NEW frost:reload arrived during the window.
-    const reloads = client.events
-      .slice(mark)
-      .filter((e) => e.event === "frost:reload");
+    const reloads = client.events.slice(mark).filter((e) => e.event === "frost:reload");
     expect(reloads).toEqual([]);
     await touch(widgetFile, original);
   });
@@ -263,10 +259,7 @@ describe("Frost dev protocol (F19/F5)", () => {
 
   it("restarts in-process when frost.config.ts changes", async () => {
     const original = await fs.readFile(configFile, "utf8");
-    await touch(
-      configFile,
-      original.replace("54991", "54992") + "\n// restart trigger\n"
-    );
+    await touch(configFile, original.replace("54991", "54992") + "\n// restart trigger\n");
     // Config restart debounce is 300ms + server restart; allow generous time.
     const mark = client.events.length;
     const ev = await waitForEvent(client, "frost:reload", 10000, mark);

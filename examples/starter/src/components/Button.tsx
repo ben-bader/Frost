@@ -7,8 +7,7 @@ const base =
 
 const variants: Record<Variant, string> = {
   primary: "h-10 bg-mint px-5 text-mint-ink hover:bg-mint-hover",
-  ghost:
-    "h-10 border border-mint/70 bg-transparent px-5 text-mint hover:bg-mint/10",
+  ghost: "h-10 border border-mint/70 bg-transparent px-5 text-mint hover:bg-mint/10",
   danger: "h-10 border border-danger/70 bg-transparent px-5 text-danger hover:bg-danger-tint",
   icon: "h-10 w-10 border border-line bg-transparent text-ink-body hover:bg-teal-800 hover:text-ink-hi",
 };
@@ -24,16 +23,13 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children?: ReactNode;
 }
 
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  function Button({ variant = "primary", className = "", children, ...rest }, ref) {
-    return (
-      <button
-        ref={ref}
-        className={`${base} ${variants[variant]} ${className}`}
-        {...rest}
-      >
-        {children}
-      </button>
-    );
-  }
-);
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  { variant = "primary", className = "", children, ...rest },
+  ref,
+) {
+  return (
+    <button ref={ref} className={`${base} ${variants[variant]} ${className}`} {...rest}>
+      {children}
+    </button>
+  );
+});

@@ -47,8 +47,14 @@ describe("starter routes", () => {
 
   it("error demo renders terminal and dialog from typed data", () => {
     const data = fs.readFileSync(path.join(SRC, "data", "playgroundError.ts"), "utf-8");
-    const terminal = fs.readFileSync(path.join(SRC, "components", "bento", "TerminalTile.tsx"), "utf-8");
-    const browser = fs.readFileSync(path.join(SRC, "components", "bento", "BrowserTile.tsx"), "utf-8");
+    const terminal = fs.readFileSync(
+      path.join(SRC, "components", "bento", "TerminalTile.tsx"),
+      "utf-8",
+    );
+    const browser = fs.readFileSync(
+      path.join(SRC, "components", "bento", "BrowserTile.tsx"),
+      "utf-8",
+    );
     expect(data).toContain("PLAYGROUND_ERROR");
     expect(data).toContain("HydrationError");
     expect(terminal).toContain("PLAYGROUND_ERROR");

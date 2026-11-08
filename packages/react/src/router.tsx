@@ -79,7 +79,7 @@ async function ensureChunks(entry: RouteManifestEntry): Promise<void> {
       // @vite-ignore — chunk URLs come from the runtime manifest.
       await import(/* @vite-ignore */ src);
       loadedScripts.add(src);
-    })
+    }),
   );
 }
 
@@ -102,7 +102,7 @@ async function fetchRouteData(url: URL): Promise<{
 
 function findRoute(
   manifest: RouteManifest,
-  pathname: string
+  pathname: string,
 ): { entry: RouteManifestEntry; match: MatchResult } | null {
   // Static routes first, then dynamic, then catch-all — mirrors the
   // server's route scoring.
@@ -119,7 +119,7 @@ function findRoute(
 async function navigateTo(
   href: string,
   manifest: RouteManifest,
-  options: { push?: boolean } = {}
+  options: { push?: boolean } = {},
 ): Promise<boolean> {
   let url: URL;
   try {
@@ -133,10 +133,7 @@ async function navigateTo(
   const search = url.search;
 
   // Hash-only or same-document changes don't need a data fetch.
-  if (
-    pathname === window.location.pathname &&
-    search === window.location.search
-  ) {
+  if (pathname === window.location.pathname && search === window.location.search) {
     if (options.push !== false) {
       history.pushState({}, "", url.pathname + url.search + url.hash);
     }
@@ -165,21 +162,13 @@ async function navigateTo(
     };
 
     if (options.push !== false) {
-      scrollPositions.set(
-        window.location.pathname + window.location.search,
-        window.scrollY
-      );
+      scrollPositions.set(window.location.pathname + window.location.search, window.scrollY);
       history.pushState({}, "", url.pathname + url.search + url.hash);
     }
-    (window as unknown as { __FROST_STATE__?: FrostClientState }).__FROST_STATE__ =
-      state;
-    window.dispatchEvent(
-      new CustomEvent<FrostClientState>("frost:navigate", { detail: state })
-    );
+    (window as unknown as { __FROST_STATE__?: FrostClientState }).__FROST_STATE__ = state;
+    window.dispatchEvent(new CustomEvent<FrostClientState>("frost:navigate", { detail: state }));
     requestAnimationFrame(() => {
-      const saved = options.push === false
-        ? scrollPositions.get(pathname + search)
-        : undefined;
+      const saved = options.push === false ? scrollPositions.get(pathname + search) : undefined;
       window.scrollTo(0, saved ?? 0);
       document.getElementById("__frost")?.focus({ preventScroll: true });
     });
@@ -263,9 +252,6 @@ export function initClientRouter(): void {
         observer.unobserve(anchor);
       }
     });
-    document
-      .querySelectorAll("a[href]")
-      .forEach((a) => observer.observe(a));
+    document.querySelectorAll("a[href]").forEach((a) => observer.observe(a));
   }
 }
-

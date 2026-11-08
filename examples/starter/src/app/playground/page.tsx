@@ -22,7 +22,9 @@ export default function PlaygroundPage(): React.JSX.Element {
       className="h-full min-h-0 overflow-y-auto px-[clamp(20px,5vw,48px)] py-4"
       aria-labelledby="pg-title"
     >
-      <h1 className="sr-only" id="pg-title">Playground</h1>
+      <h1 className="sr-only" id="pg-title">
+        Playground
+      </h1>
       <div className="mx-auto grid h-full min-h-0 w-full max-w-[1400px] grid-cols-1 gap-[18px] min-[900px]:grid-cols-[0.8fr_1.5fr] min-[900px]:grid-rows-2">
         <div className="min-h-[360px] min-[900px]:row-span-2 min-[900px]:min-h-0">
           <CounterTile onTriggerError={() => setRunId((r) => r + 1)} />

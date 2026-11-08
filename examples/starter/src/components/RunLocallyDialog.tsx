@@ -10,7 +10,9 @@ function CommandBlock({ command }: { command: string }) {
   return (
     <div className="flex items-stretch overflow-hidden rounded-xl border border-white/15 bg-black/30">
       <code className="flex min-w-0 flex-1 items-center overflow-x-auto whitespace-nowrap px-4 py-3 font-mono text-[0.8rem] leading-6 text-ink-hi error-log-scroll">
-        <span className="mr-2 select-none text-ink-dim" aria-hidden="true">$</span>
+        <span className="mr-2 select-none text-ink-dim" aria-hidden="true">
+          $
+        </span>
         {command}
       </code>
       <button
@@ -96,8 +98,8 @@ export function RunLocallyDialog({
       {/* Body — scrolls inside on short viewports */}
       <div className="error-log-scroll max-h-[calc(85dvh-8.5rem)] space-y-5 overflow-y-auto px-5 py-5">
         <p className="text-sm leading-6 text-ink-body">
-          You need {node} and {packageManager} installed. Run these commands in
-          order from a terminal.
+          You need {node} and {packageManager} installed. Run these commands in order from a
+          terminal.
         </p>
 
         {SITE.steps.map((step) => (

@@ -32,7 +32,7 @@ describe("loadFrostConfig", () => {
         apiDirectory: "src/endpoints",
         publicDirectory: "assets",
         server: { port: 4321, host: "0.0.0.0" },
-      };`
+      };`,
     );
     const config = await loadFrostConfig({ rootDir: dir });
     expect(config.appDirectory).toBe("src/pages");
@@ -47,7 +47,7 @@ describe("loadFrostConfig", () => {
     try {
       fs.writeFileSync(
         path.join(dir2, "frost.config.mjs"),
-        `export default { server: { port: 5555 } };`
+        `export default { server: { port: 5555 } };`,
       );
       const config = await loadFrostConfig({ rootDir: dir2 });
       expect(config.server?.port).toBe(5555);
@@ -74,9 +74,9 @@ describe("loadFrostConfig", () => {
   });
 
   it("fails clearly when --config points at a missing file", async () => {
-    await expect(
-      loadFrostConfig({ rootDir: dir, configPath: "nope.config.ts" })
-    ).rejects.toThrow(/not found/);
+    await expect(loadFrostConfig({ rootDir: dir, configPath: "nope.config.ts" })).rejects.toThrow(
+      /not found/,
+    );
   });
 });
 
@@ -84,7 +84,7 @@ describe("mergeCliOverrides", () => {
   it("CLI port/host flags win over the config file", () => {
     const merged = mergeCliOverrides(
       { server: { port: 1111, host: "a" }, appDirectory: "x" },
-      { port: 2222 }
+      { port: 2222 },
     );
     expect(merged.server?.port).toBe(2222);
     expect(merged.server?.host).toBe("a");

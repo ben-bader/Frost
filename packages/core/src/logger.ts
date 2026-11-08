@@ -25,11 +25,7 @@ export interface FrostLogger {
 export function createLogger(config: Required<LoggingConfig>): FrostLogger {
   const minLevel = LEVEL_ORDER[config.level];
 
-  const write = (
-    level: LogLevel,
-    message: string,
-    meta?: Record<string, unknown>
-  ): void => {
+  const write = (level: LogLevel, message: string, meta?: Record<string, unknown>): void => {
     if (LEVEL_ORDER[level] < minLevel) return;
     if (config.format === "json") {
       const line = JSON.stringify({
@@ -45,9 +41,7 @@ export function createLogger(config: Required<LoggingConfig>): FrostLogger {
     }
     const stamp = new Date().toISOString();
     const tag = level.toUpperCase().padEnd(5);
-    const suffix = meta && Object.keys(meta).length
-      ? ` ${JSON.stringify(meta)}`
-      : "";
+    const suffix = meta && Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : "";
     const line = `[${stamp}] ${tag} ${message}${suffix}`;
     if (level === "error") console.error(line);
     else if (level === "warn") console.warn(line);
@@ -65,7 +59,7 @@ export function createLogger(config: Required<LoggingConfig>): FrostLogger {
 /** One-line request log entry: method, path, status, duration. */
 export function logRequest(
   logger: FrostLogger,
-  entry: { method: string; path: string; status: number; ms: number }
+  entry: { method: string; path: string; status: number; ms: number },
 ): void {
   logger.info(`${entry.method} ${entry.path} ${entry.status} ${entry.ms}ms`, {
     method: entry.method,

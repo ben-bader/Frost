@@ -23,11 +23,7 @@ function RoundButton({
   );
 }
 
-export function CounterTile({
-  onTriggerError,
-}: {
-  onTriggerError: () => void;
-}): React.JSX.Element {
+export function CounterTile({ onTriggerError }: { onTriggerError: () => void }): React.JSX.Element {
   const [count, setCount] = useState(0);
 
   return (

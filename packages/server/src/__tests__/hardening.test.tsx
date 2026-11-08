@@ -18,7 +18,8 @@ const pageModule: RouteModule = {
 };
 
 const apiModule: ApiRouteModule = {
-  GET: () => new Response(JSON.stringify({ ok: true }), { headers: { "Content-Type": "application/json" } }),
+  GET: () =>
+    new Response(JSON.stringify({ ok: true }), { headers: { "Content-Type": "application/json" } }),
   POST: () => new Response("created", { status: 201 }),
 };
 
@@ -28,7 +29,10 @@ function makeHandler(extra?: Partial<Parameters<typeof createRequestHandler>[0]>
     ["/virtual/api.ts", apiModule],
   ]);
   return createRequestHandler({
-    routes: [page("page.tsx", "/", "/virtual/page.tsx"), api("api.ts", "/api/x", "/virtual/api.ts")],
+    routes: [
+      page("page.tsx", "/", "/virtual/page.tsx"),
+      api("api.ts", "/api/x", "/virtual/api.ts"),
+    ],
     loadModule: async (r) => modules.get(r.filePath)!,
     security: resolveConfig().security,
     ...extra,
@@ -59,13 +63,21 @@ describe("Request hardening", () => {
 
   it("keeps %2F inside a single segment (no route-structure change)", async () => {
     const dyn: DiscoveredRoute = {
-      id: "u/[...rest]/page.tsx", pattern: "/u/*rest", filePath: "/virtual/catch.tsx",
-      kind: "page", isDynamic: true, isCatchAll: true, score: 1,
+      id: "u/[...rest]/page.tsx",
+      pattern: "/u/*rest",
+      filePath: "/virtual/catch.tsx",
+      kind: "page",
+      isDynamic: true,
+      isCatchAll: true,
+      score: 1,
     };
     const seen: string[] = [];
     const mod: RouteModule = {
       default: () => null,
-      loader: async ({ params }: any) => { seen.push(params.rest); return {}; },
+      loader: async ({ params }: any) => {
+        seen.push(params.rest);
+        return {};
+      },
     };
     const handler = createRequestHandler({
       routes: [dyn],

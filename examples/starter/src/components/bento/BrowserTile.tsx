@@ -26,7 +26,10 @@ function FauxDialog({ onDismiss }: { onDismiss: () => void }) {
       {/* Header */}
       <div className="flex items-center gap-2.5 border-b border-danger-deep bg-danger-tint px-4 py-2.5">
         <TriangleAlert size={15} className="shrink-0 text-danger" aria-hidden="true" />
-        <span id="faux-dialog-title" className="font-mono text-[0.72rem] font-bold uppercase tracking-widest text-danger">
+        <span
+          id="faux-dialog-title"
+          className="font-mono text-[0.72rem] font-bold uppercase tracking-widest text-danger"
+        >
           Errors detected
         </span>
         <span className="rounded-pill border border-danger/50 bg-danger-tint px-2 py-px font-mono text-[0.62rem] font-bold text-danger">
@@ -86,7 +89,9 @@ function FauxDialog({ onDismiss }: { onDismiss: () => void }) {
           ).map(([k, v]) => (
             <div key={k}>
               <dt className="font-mono text-[0.6rem] uppercase tracking-wider text-ink-dim">{k}</dt>
-              <dd className="truncate font-mono text-[0.72rem] text-ink-body" title={v}>{v}</dd>
+              <dd className="truncate font-mono text-[0.72rem] text-ink-body" title={v}>
+                {v}
+              </dd>
             </div>
           ))}
         </dl>
@@ -112,7 +117,11 @@ function FauxDialog({ onDismiss }: { onDismiss: () => void }) {
             }}
             className="inline-flex h-9 items-center gap-1.5 rounded-pill border border-mint/60 px-4 font-mono text-[0.68rem] font-bold uppercase tracking-wider text-mint transition-colors duration-150 hover:bg-mint/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mint"
           >
-            {copied ? <Check size={13} aria-hidden="true" /> : <Copy size={13} aria-hidden="true" />}
+            {copied ? (
+              <Check size={13} aria-hidden="true" />
+            ) : (
+              <Copy size={13} aria-hidden="true" />
+            )}
             {copied ? "Copied" : "Copy details"}
           </button>
           <button
@@ -130,17 +139,20 @@ function FauxDialog({ onDismiss }: { onDismiss: () => void }) {
 
 export function BrowserTile({ runId }: { runId: number }): React.JSX.Element {
   const [showDialog, setShowDialog] = useState(false);
+  const [prevRunId, setPrevRunId] = useState(runId);
   const timers = useRef<number[]>([]);
+
+  if (prevRunId !== runId) {
+    setPrevRunId(runId);
+    setShowDialog(false);
+  }
 
   useEffect(() => {
     timers.current.forEach((t) => window.clearTimeout(t));
     timers.current = [];
-    setShowDialog(false);
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    timers.current.push(
-      window.setTimeout(() => setShowDialog(true), reduced ? 0 : SEQUENCE_MS)
-    );
+    timers.current.push(window.setTimeout(() => setShowDialog(true), reduced ? 0 : SEQUENCE_MS));
     return () => timers.current.forEach((t) => window.clearTimeout(t));
   }, [runId]);
 
@@ -149,7 +161,11 @@ export function BrowserTile({ runId }: { runId: number }): React.JSX.Element {
       icon={Globe}
       label="Browser"
       chip={showDialog ? "1 error" : ""}
-      chipClass={showDialog ? "border-danger/50 bg-danger-tint text-danger" : "border-line bg-white/5 text-ink-lo"}
+      chipClass={
+        showDialog
+          ? "border-danger/50 bg-danger-tint text-danger"
+          : "border-line bg-white/5 text-ink-lo"
+      }
     >
       {/* Faux browser window */}
       <div className="relative flex h-full min-h-0 flex-col bg-teal-900/60">

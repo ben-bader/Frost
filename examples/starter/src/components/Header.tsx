@@ -20,12 +20,25 @@ export function Header(): React.JSX.Element {
   return (
     <header className="relative z-10 h-[88px]">
       <div className="mx-auto grid h-full w-full max-w-[1200px] grid-cols-[1fr_auto_1fr] items-center px-[clamp(20px,5vw,48px)]">
-        <Link to="/" className="inline-flex items-center gap-3 justify-self-start" aria-label="Frost home">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-3 justify-self-start"
+          aria-label="Frost home"
+        >
           <img className="block h-8 w-[37px]" src="/frost-mark.png" alt="" width={37} height={32} />
-          <img className="block h-[22px] w-[118px]" src="/frost-wordmark.png" alt="Frost" width={118} height={22} />
+          <img
+            className="block h-[22px] w-[118px]"
+            src="/frost-wordmark.png"
+            alt="Frost"
+            width={118}
+            height={22}
+          />
         </Link>
 
-        <nav className="hidden items-center gap-8 justify-self-center min-[640px]:flex" aria-label="Primary">
+        <nav
+          className="hidden items-center gap-8 justify-self-center min-[640px]:flex"
+          aria-label="Primary"
+        >
           {navItems.map((item) => {
             const active = isActive(pathname, item.href);
             return (

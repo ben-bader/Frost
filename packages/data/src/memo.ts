@@ -8,7 +8,7 @@ import type { FrostRequestContext } from "@frostjs/core";
 export async function dedupe<T>(
   context: FrostRequestContext,
   key: string,
-  factory: () => Promise<T> | T
+  factory: () => Promise<T> | T,
 ): Promise<T> {
   const existing = context.memo.get(key);
   if (existing !== undefined) {
@@ -28,4 +28,3 @@ export async function dedupe<T>(
     throw err;
   }
 }
-

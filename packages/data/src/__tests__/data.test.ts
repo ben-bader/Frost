@@ -51,4 +51,3 @@ describe("Data package", () => {
     expect(getUser.fnName).toBe("getUser");
   });
 });
-

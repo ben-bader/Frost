@@ -51,10 +51,7 @@ function parseEnvFile(content: string): Record<string, string> {
  * into process.env (without overriding existing variables) and returns
  * what was loaded. Later files win over earlier ones.
  */
-export async function loadEnvFiles(
-  rootDir: string,
-  mode: string
-): Promise<EnvFilesResult> {
+export async function loadEnvFiles(rootDir: string, mode: string): Promise<EnvFilesResult> {
   const fs = await import("node:fs/promises");
   const path = await import("node:path");
   const loaded: Record<string, string> = {};

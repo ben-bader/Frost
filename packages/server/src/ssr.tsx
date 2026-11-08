@@ -1,6 +1,11 @@
 import type { ReactNode } from "react";
 import { renderToString, renderToReadableStream } from "react-dom/server";
-import { FrostDocument, FrostProvider, FrostErrorBoundary, type FrostClientState } from "@frostjs/react";
+import {
+  FrostDocument,
+  FrostProvider,
+  FrostErrorBoundary,
+  type FrostClientState,
+} from "@frostjs/react";
 import {
   createErrorReport,
   createContractError,
@@ -46,9 +51,7 @@ export interface SsrRenderOptions {
 }
 
 type Settled<T> =
-  | { status: "ok"; value: T }
-  | { status: "err"; error: unknown }
-  | { status: "empty" };
+  { status: "ok"; value: T } | { status: "err"; error: unknown } | { status: "empty" };
 
 interface LoaderSpec {
   module: RouteModule;
@@ -91,9 +94,9 @@ export async function runRouteLoaders(options: {
         .then(() => spec.module.loader!({ request, params, url, context }))
         .then(
           (value): Settled<unknown> => ({ status: "ok", value }),
-          (error): Settled<unknown> => ({ status: "err", error })
+          (error): Settled<unknown> => ({ status: "err", error }),
         );
-    })
+    }),
   );
 
   // Contract validation: a loader return that violates its schema becomes
@@ -135,12 +138,11 @@ function formatErrorReportTerminalSafe(report: FrostErrorReport): string {
 
 function resolveMetadata(
   mod: RouteModule,
-  args: Route.MetadataArgs
+  args: Route.MetadataArgs,
 ): Promise<Route.Metadata | undefined> {
   if (!mod.metadata) return Promise.resolve(undefined);
   try {
-    const meta =
-      typeof mod.metadata === "function" ? mod.metadata(args) : mod.metadata;
+    const meta = typeof mod.metadata === "function" ? mod.metadata(args) : mod.metadata;
     return Promise.resolve(meta);
   } catch {
     return Promise.resolve(undefined);
@@ -150,7 +152,7 @@ function resolveMetadata(
 /** Child wins per-field; arrays concatenate parent -> child. */
 function mergeMetadata(
   parent: Route.Metadata | undefined,
-  child: Route.Metadata | undefined
+  child: Route.Metadata | undefined,
 ): Route.Metadata | undefined {
   if (!parent) return child;
   if (!child) return parent;
@@ -174,9 +176,7 @@ function mergeMetadata(
 }
 
 /** Applies ancestor title templates, nearest template first. */
-function applyTitleTemplates(
-  metas: Array<Route.Metadata | undefined>
-): string | undefined {
+function applyTitleTemplates(metas: Array<Route.Metadata | undefined>): string | undefined {
   let title: string | undefined;
   for (let i = metas.length - 1; i >= 0; i--) {
     const t = metas[i]?.title;
@@ -197,7 +197,7 @@ function applyTitleTemplates(
 function metadataToHead(
   meta: Route.Metadata | undefined,
   title: string | undefined,
-  nonce: string | undefined
+  nonce: string | undefined,
 ): ReactNode {
   if (!meta && !title) return undefined;
   const nodes: ReactNode[] = [];
@@ -216,11 +216,13 @@ function metadataToHead(
     const ogTitle = og.title ?? title;
     const ogDesc = og.description ?? meta.description;
     if (ogTitle) nodes.push(<meta key="og:title" property="og:title" content={ogTitle} />);
-    if (ogDesc) nodes.push(<meta key="og:description" property="og:description" content={ogDesc} />);
+    if (ogDesc)
+      nodes.push(<meta key="og:description" property="og:description" content={ogDesc} />);
     if (og.image) nodes.push(<meta key="og:image" property="og:image" content={og.image} />);
     if (og.type) nodes.push(<meta key="og:type" property="og:type" content={og.type} />);
     if (og.url) nodes.push(<meta key="og:url" property="og:url" content={og.url} />);
-    if (og.siteName) nodes.push(<meta key="og:site_name" property="og:site_name" content={og.siteName} />);
+    if (og.siteName)
+      nodes.push(<meta key="og:site_name" property="og:site_name" content={og.siteName} />);
   }
   if (meta?.twitter) {
     const tw = meta.twitter;
@@ -244,7 +246,7 @@ function metadataToHead(
             // Escape "</" so a payload can never terminate the element.
             __html: JSON.stringify(block).replace(/<\//g, "<\\/"),
           }}
-        />
+        />,
       );
     });
   }
@@ -257,13 +259,7 @@ function metadataToHead(
   meta?.scripts?.forEach((s, i) => {
     if (s.src) {
       nodes.push(
-        <script
-          key={`script-${i}`}
-          src={s.src}
-          type={s.type}
-          async={s.async}
-          nonce={nonce}
-        />
+        <script key={`script-${i}`} src={s.src} type={s.type} async={s.async} nonce={nonce} />,
       );
     } else if (s.content) {
       nodes.push(
@@ -274,11 +270,9 @@ function metadataToHead(
           // Escape sequences that could terminate the script element or
           // open an HTML comment inside inline script content.
           dangerouslySetInnerHTML={{
-            __html: s.content
-              .replace(/<\/script/gi, "<\\/script")
-              .replace(/<!--/g, "<\\!--"),
+            __html: s.content.replace(/<\/script/gi, "<\\/script").replace(/<!--/g, "<\\!--"),
           }}
-        />
+        />,
       );
     }
   });
@@ -297,7 +291,12 @@ interface RenderTreeOptions {
 function documentElement(opts: RenderTreeOptions): ReactNode {
   return (
     <FrostProvider value={opts.clientState}>
-      <FrostDocument title={opts.title} head={opts.head} lang={opts.lang} routeManifest={opts.routeManifest}>
+      <FrostDocument
+        title={opts.title}
+        head={opts.head}
+        lang={opts.lang}
+        routeManifest={opts.routeManifest}
+      >
         <FrostErrorBoundary>{opts.content}</FrostErrorBoundary>
       </FrostDocument>
     </FrostProvider>
@@ -430,11 +429,9 @@ export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Resp
   /** Renders the error boundary (or a minimal styled fallback) inside the layout chain. */
   const renderFailure = async (
     err: unknown,
-    code: (typeof FROST_ERROR_CODES)[keyof typeof FROST_ERROR_CODES]
+    code: (typeof FROST_ERROR_CODES)[keyof typeof FROST_ERROR_CODES],
   ): Promise<Response> => {
-    onError?.(
-      createErrorReport(err, { runtime: "server", route: pathname, code })
-    );
+    onError?.(createErrorReport(err, { runtime: "server", route: pathname, code }));
     const error = err instanceof Error ? err : new Error(String(err));
 
     if (errorBoundaryModule?.default) {
@@ -481,7 +478,7 @@ export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Resp
     } catch {
       return html(
         `<!DOCTYPE html><html><head><title>Error</title></head><body><h1>Server Error</h1></body></html>`,
-        { status: 500 }
+        { status: 500 },
       );
     }
   };
@@ -501,7 +498,7 @@ export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Resp
     { module: routeModule, data: loaderData },
   ];
   const resolvedMetas = await Promise.all(
-    metaSpecs.map((s) => resolveMetadata(s.module, metaArgsFor(s.data)))
+    metaSpecs.map((s) => resolveMetadata(s.module, metaArgsFor(s.data))),
   );
 
   let mergedMeta: Route.Metadata | undefined;
@@ -516,13 +513,11 @@ export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Resp
   if (!Component) {
     return html(
       `<!DOCTYPE html><html><head><title>Route has no default export</title></head><body><h1>Route Missing Default Component</h1><p>The route module at ${pathname} does not export a default React component.</p></body></html>`,
-      { status: 500 }
+      { status: 500 },
     );
   }
 
-  let content: ReactNode = (
-    <Component data={loaderData} actionData={actionData} params={params} />
-  );
+  let content: ReactNode = <Component data={loaderData} actionData={actionData} params={params} />;
 
   // Wrap with layouts from leaf to root; each layout receives its own
   // loader data via the `data` prop.
@@ -560,7 +555,7 @@ export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Resp
               runtime: "server",
               route: pathname,
               code: FROST_ERROR_CODES.RENDER,
-            })
+            }),
           );
         },
       });
@@ -588,9 +583,14 @@ export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Resp
         const line = appHtml.slice(0, idx).split("\n").length;
         const report = createErrorReport(
           new Error(
-            `Nondeterministic render output on ${pathname} (first difference at output line ${line}). Typical culprits: Date.now(), Math.random(), locale-dependent formatting.`
+            `Nondeterministic render output on ${pathname} (first difference at output line ${line}). Typical culprits: Date.now(), Math.random(), locale-dependent formatting.`,
           ),
-          { runtime: "server", route: pathname, code: FROST_ERROR_CODES.HYDRATION, severity: "warning" }
+          {
+            runtime: "server",
+            route: pathname,
+            code: FROST_ERROR_CODES.HYDRATION,
+            severity: "warning",
+          },
         );
         console.warn(`\n${formatErrorReportTerminalSafe(report)}\n`);
         onError?.(report);

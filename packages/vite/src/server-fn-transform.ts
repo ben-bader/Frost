@@ -8,8 +8,7 @@
  * runtime if invoked in the browser).
  */
 
-const IMPORT_RE =
-  /import\s*\{[^}]*\bcreateServerFn\b[^}]*\}\s*from\s*["']@frostjs\/data["']/;
+const IMPORT_RE = /import\s*\{[^}]*\bcreateServerFn\b[^}]*\}\s*from\s*["']@frostjs\/data["']/;
 const NAME_RE = /\bname\s*:\s*(["'`])([^"'`]+)\1/;
 
 /** Finds the index of the paren matching the '(' at `open`. */
@@ -37,7 +36,7 @@ function matchParen(code: string, open: number): number {
       }
     } else {
       // code state (also inside ${} of templates)
-      if (c === "'" ) state = "sq";
+      if (c === "'") state = "sq";
       else if (c === '"') state = "dq";
       else if (c === "`") state = "tpl";
       else if (c === "{") depth++;

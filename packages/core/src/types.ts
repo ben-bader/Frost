@@ -25,6 +25,7 @@ export interface FrostRequestContext {
   readonly cspNonce?: string;
 }
 
+/* eslint-disable @typescript-eslint/no-namespace -- Route.* is Frost's public route-type API surface */
 export namespace Route {
   export interface LoaderArgs<TParams = Record<string, string>> {
     request: Request;
@@ -91,15 +92,15 @@ export namespace Route {
 }
 
 export type RouteLoader<TData = any, TParams = Record<string, string>> = (
-  args: Route.LoaderArgs<TParams>
+  args: Route.LoaderArgs<TParams>,
 ) => Promise<TData | Response> | TData | Response;
 
 export type RouteAction<TResult = any, TParams = Record<string, string>> = (
-  args: Route.ActionArgs<TParams>
+  args: Route.ActionArgs<TParams>,
 ) => Promise<TResult | Response> | TResult | Response;
 
 export type RouteComponent<TData = any, TParams = Record<string, string>> = (
-  props: Route.ComponentProps<TData, TParams>
+  props: Route.ComponentProps<TData, TParams>,
 ) => ReactNode;
 
 export type RouteMetadata<TData = any, TParams = Record<string, string>> =
@@ -125,7 +126,7 @@ export type RouteHeaders<TParams = Record<string, string>> =
 export type FrostMiddleware = (
   request: Request,
   context: FrostRequestContext,
-  next: () => Promise<Response | void>
+  next: () => Promise<Response | void>,
 ) => Response | void | Promise<Response | void>;
 
 export interface RouteModule {
@@ -152,4 +153,3 @@ export interface ApiRouteModule {
   HEAD?: (request: Request, context: FrostRequestContext) => Promise<Response> | Response;
   OPTIONS?: (request: Request, context: FrostRequestContext) => Promise<Response> | Response;
 }
-

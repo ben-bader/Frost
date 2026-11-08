@@ -8,7 +8,7 @@ function page(
   id: string,
   pattern: string,
   filePath: string,
-  extra: Partial<DiscoveredRoute> = {}
+  extra: Partial<DiscoveredRoute> = {},
 ): DiscoveredRoute {
   return {
     id,
@@ -24,10 +24,7 @@ function page(
 
 const security = resolveConfig().security;
 
-function handlerFor(
-  routes: DiscoveredRoute[],
-  modules: Record<string, RouteModule>
-) {
+function handlerFor(routes: DiscoveredRoute[], modules: Record<string, RouteModule>) {
   return createRequestHandler({
     routes,
     loadModule: async (r) => modules[r.filePath] as RouteModule,
@@ -36,8 +33,7 @@ function handlerFor(
   });
 }
 
-const get = (path: string, init?: RequestInit) =>
-  new Request(`http://localhost${path}`, init);
+const get = (path: string, init?: RequestInit) => new Request(`http://localhost${path}`, init);
 
 describe("F3: layout loaders and metadata", () => {
   it("runs layout loaders in parallel and passes each layout its own data", async () => {
@@ -64,7 +60,7 @@ describe("F3: layout loaders and metadata", () => {
     const layoutPath = "/virtual/layout.tsx";
     const handler = handlerFor(
       [page("page.tsx", "/", "/virtual/page.tsx", { layouts: [layoutPath] })],
-      { "/virtual/page.tsx": route, [layoutPath]: layout }
+      { "/virtual/page.tsx": route, [layoutPath]: layout },
     );
     const res = await handler(get("/"));
     const html = await res.text();
@@ -90,7 +86,7 @@ describe("F3: layout loaders and metadata", () => {
     const layoutPath = "/virtual/layout.tsx";
     const handler = handlerFor(
       [page("page.tsx", "/", "/virtual/page.tsx", { layouts: [layoutPath] })],
-      { "/virtual/page.tsx": route, [layoutPath]: layout }
+      { "/virtual/page.tsx": route, [layoutPath]: layout },
     );
     const res = await handler(get("/"));
     const html = await res.text();
@@ -108,14 +104,14 @@ describe("F3: layout loaders and metadata", () => {
     const layoutPath = "/virtual/layout.tsx";
     const handler = handlerFor(
       [page("page.tsx", "/", "/virtual/page.tsx", { layouts: [layoutPath] })],
-      { "/virtual/page.tsx": route, [layoutPath]: layout }
+      { "/virtual/page.tsx": route, [layoutPath]: layout },
     );
     const res = await handler(
       get("/", {
         method: "POST",
         headers: { "content-type": "application/json", accept: "application/json" },
         body: "{}",
-      })
+      }),
     );
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ handledBy: "layout" });
@@ -128,10 +124,9 @@ describe("Progressive enhancement / actions", () => {
       default: ({ actionData }: any) => <p>result:{String(actionData?.msg)}</p>,
       action: async () => ({ msg: "saved" }),
     };
-    const handler = handlerFor(
-      [page("page.tsx", "/form", "/virtual/form.tsx")],
-      { "/virtual/form.tsx": route }
-    );
+    const handler = handlerFor([page("page.tsx", "/form", "/virtual/form.tsx")], {
+      "/virtual/form.tsx": route,
+    });
     const res = await handler(
       get("/form", {
         method: "POST",
@@ -140,7 +135,7 @@ describe("Progressive enhancement / actions", () => {
           accept: "text/html",
         },
         body: "field=value",
-      })
+      }),
     );
     const html = await res.text();
     expect(res.status).toBe(200);
@@ -154,16 +149,15 @@ describe("Progressive enhancement / actions", () => {
       default: () => <p>x</p>,
       action: async () => ({ ok: 1 }),
     };
-    const handler = handlerFor(
-      [page("page.tsx", "/form", "/virtual/form.tsx")],
-      { "/virtual/form.tsx": route }
-    );
+    const handler = handlerFor([page("page.tsx", "/form", "/virtual/form.tsx")], {
+      "/virtual/form.tsx": route,
+    });
     const res = await handler(
       get("/form", {
         method: "POST",
         headers: { "content-type": "application/json", accept: "application/json" },
         body: "{}",
-      })
+      }),
     );
     expect(res.headers.get("content-type")).toContain("application/json");
     expect(await res.json()).toEqual({ ok: 1 });
@@ -174,10 +168,9 @@ describe("Progressive enhancement / actions", () => {
       default: () => <p>x</p>,
       action: async () => ({ ok: 1 }),
     };
-    const handler = handlerFor(
-      [page("page.tsx", "/form", "/virtual/form.tsx")],
-      { "/virtual/form.tsx": route }
-    );
+    const handler = handlerFor([page("page.tsx", "/form", "/virtual/form.tsx")], {
+      "/virtual/form.tsx": route,
+    });
     const res = await handler(
       get("/form", {
         method: "POST",
@@ -187,7 +180,7 @@ describe("Progressive enhancement / actions", () => {
           host: "localhost",
         },
         body: "a=b",
-      })
+      }),
     );
     expect(res.status).toBe(403);
   });
@@ -220,7 +213,7 @@ describe("Error and not-found routes", () => {
         "/virtual/boom.tsx": route,
         [layoutPath]: layout,
         [boundaryPath]: boundary,
-      }
+      },
     );
     const res = await handler(get("/boom"));
     const html = await res.text();
@@ -245,7 +238,7 @@ describe("Error and not-found routes", () => {
           errorBoundary: "/virtual/error.tsx",
         }),
       ],
-      { "/virtual/r.tsx": route, "/virtual/error.tsx": boundary }
+      { "/virtual/r.tsx": route, "/virtual/error.tsx": boundary },
     );
     const res = await handler(get("/r"));
     const html = await res.text();
@@ -260,10 +253,9 @@ describe("Error and not-found routes", () => {
         throw new Error("no boundary");
       },
     };
-    const handler = handlerFor(
-      [page("page.tsx", "/x", "/virtual/x.tsx")],
-      { "/virtual/x.tsx": route }
-    );
+    const handler = handlerFor([page("page.tsx", "/x", "/virtual/x.tsx")], {
+      "/virtual/x.tsx": route,
+    });
     const res = await handler(get("/x"));
     const html = await res.text();
     expect(res.status).toBe(500);
@@ -305,10 +297,9 @@ describe("Error and not-found routes", () => {
   });
 
   it("renders a styled 404 when no not-found module exists", async () => {
-    const handler = handlerFor(
-      [page("page.tsx", "/", "/virtual/page.tsx")],
-      { "/virtual/page.tsx": { default: () => <p>home</p> } }
-    );
+    const handler = handlerFor([page("page.tsx", "/", "/virtual/page.tsx")], {
+      "/virtual/page.tsx": { default: () => <p>home</p> },
+    });
     const res = await handler(get("/missing"));
     const html = await res.text();
     expect(res.status).toBe(404);
@@ -328,10 +319,9 @@ describe("SEO / head", () => {
         jsonLd: { "@context": "https://schema.org", name: "</script><b>x</b>" },
       },
     };
-    const handler = handlerFor(
-      [page("page.tsx", "/", "/virtual/page.tsx")],
-      { "/virtual/page.tsx": route }
-    );
+    const handler = handlerFor([page("page.tsx", "/", "/virtual/page.tsx")], {
+      "/virtual/page.tsx": route,
+    });
     const res = await handler(get("/"));
     const html = await res.text();
     expect(html).toContain('name="robots" content="noindex"');
@@ -347,10 +337,9 @@ describe("SEO / head", () => {
       default: () => <p>x</p>,
       metadata: { title: "Hello", openGraph: { type: "website" } },
     };
-    const handler = handlerFor(
-      [page("page.tsx", "/", "/virtual/page.tsx")],
-      { "/virtual/page.tsx": route }
-    );
+    const handler = handlerFor([page("page.tsx", "/", "/virtual/page.tsx")], {
+      "/virtual/page.tsx": route,
+    });
     const html = await (await handler(get("/"))).text();
     expect(html).toContain('property="og:title" content="Hello"');
     expect(html).toContain('property="og:type" content="website"');
@@ -371,10 +360,7 @@ describe("Middleware", () => {
   it("runs middleware before routing and can short-circuit with a Response", async () => {
     const order: string[] = [];
     const handler = handlerFor(
-      [
-        page("page.tsx", "/", "/virtual/page.tsx"),
-        mwRoute("_middleware.ts"),
-      ],
+      [page("page.tsx", "/", "/virtual/page.tsx"), mwRoute("_middleware.ts")],
       {
         "/virtual/page.tsx": {
           default: () => {
@@ -392,7 +378,7 @@ describe("Middleware", () => {
             return res;
           },
         },
-      }
+      },
     );
     const res = await handler(get("/"));
     expect(order).toEqual(["middleware", "page"]);
@@ -403,10 +389,7 @@ describe("Middleware", () => {
   it("supports multiple middlewares in order and early return", async () => {
     const order: string[] = [];
     const handler = handlerFor(
-      [
-        page("page.tsx", "/", "/virtual/page.tsx"),
-        mwRoute("_middleware.ts"),
-      ],
+      [page("page.tsx", "/", "/virtual/page.tsx"), mwRoute("_middleware.ts")],
       {
         "/virtual/page.tsx": { default: () => <p>page</p> },
         "/virtual/_middleware.ts": {
@@ -420,7 +403,7 @@ describe("Middleware", () => {
             },
           ],
         },
-      }
+      },
     );
     const res = await handler(get("/"));
     expect(order).toEqual(["first"]);
@@ -439,19 +422,16 @@ describe("Middleware", () => {
       score: 100,
     };
     let ran = false;
-    const handler = handlerFor(
-      [apiRoute, mwRoute("_middleware.ts")],
-      {
-        "/virtual/api/hello.ts": {
-          GET: () => Response.json({ ok: true }),
-        } as RouteModule,
-        "/virtual/_middleware.ts": {
-          middleware: () => {
-            ran = true;
-          },
+    const handler = handlerFor([apiRoute, mwRoute("_middleware.ts")], {
+      "/virtual/api/hello.ts": {
+        GET: () => Response.json({ ok: true }),
+      } as RouteModule,
+      "/virtual/_middleware.ts": {
+        middleware: () => {
+          ran = true;
         },
-      }
-    );
+      },
+    });
     const res = await handler(get("/api/hello"));
     expect(ran).toBe(true);
     expect(res.status).toBe(200);
@@ -466,9 +446,7 @@ const schema = {
         version: 1 as const,
         vendor: "test",
         validate: (v: unknown) =>
-          typeof v === "string"
-            ? { value: v }
-            : { issues: [{ message: "expected string" }] },
+          typeof v === "string" ? { value: v } : { issues: [{ message: "expected string" }] },
       },
     }) as any,
   object: (shape: Record<string, any>) =>
@@ -484,8 +462,7 @@ const schema = {
           for (const [key, s] of Object.entries(shape)) {
             const r = s["~standard"].validate((v as any)[key]);
             if (r.issues) {
-              for (const i of r.issues)
-                issues.push({ ...i, path: [key, ...(i.path ?? [])] });
+              for (const i of r.issues) issues.push({ ...i, path: [key, ...(i.path ?? [])] });
             } else out[key] = r.value;
           }
           return issues.length ? { issues } : { value: out };
@@ -495,10 +472,7 @@ const schema = {
 };
 
 describe("Route contracts", () => {
-  const contractHandler = (
-    routes: DiscoveredRoute[],
-    modules: Record<string, RouteModule>
-  ) =>
+  const contractHandler = (routes: DiscoveredRoute[], modules: Record<string, RouteModule>) =>
     createRequestHandler({
       routes,
       loadModule: async (r) => modules[r.filePath] as RouteModule,
@@ -557,18 +531,15 @@ describe("Route contracts", () => {
   });
 
   it("validates action input and returns 400 on violation", async () => {
-    const handler = contractHandler(
-      [page("page.tsx", "/", "/virtual/page.tsx")],
-      {
-        "/virtual/page.tsx": {
-          default: () => <p>form</p>,
-          action: () => ({ saved: true }),
-          contract: {
-            action: schema.object({ name: schema.string() }),
-          },
+    const handler = contractHandler([page("page.tsx", "/", "/virtual/page.tsx")], {
+      "/virtual/page.tsx": {
+        default: () => <p>form</p>,
+        action: () => ({ saved: true }),
+        contract: {
+          action: schema.object({ name: schema.string() }),
         },
-      }
-    );
+      },
+    });
     const bad = await handler(
       new Request("http://localhost/", {
         method: "POST",
@@ -577,7 +548,7 @@ describe("Route contracts", () => {
           origin: "http://localhost",
         },
         body: "age=42",
-      })
+      }),
     );
     expect(bad.status).toBe(400);
     expect(await bad.text()).toContain("name");
@@ -590,7 +561,7 @@ describe("Route contracts", () => {
           origin: "http://localhost",
         },
         body: "name=frost",
-      })
+      }),
     );
     expect(good.status).toBe(200);
   });
@@ -616,9 +587,11 @@ describe("Route contracts", () => {
 describe("Client router data endpoint", () => {
   it("returns loader data as JSON for ?__frost_data=1", async () => {
     const handler = createRequestHandler({
-      routes: [page("user/[id]/page.tsx", "user/:id", "/virtual/user/page.tsx", {
-        isDynamic: true,
-      })],
+      routes: [
+        page("user/[id]/page.tsx", "user/:id", "/virtual/user/page.tsx", {
+          isDynamic: true,
+        }),
+      ],
       loadModule: async () =>
         ({
           default: () => <p>u</p>,
@@ -638,10 +611,9 @@ describe("Client router data endpoint", () => {
   });
 
   it("does not serve data JSON when the router is disabled", async () => {
-    const handler = handlerFor(
-      [page("page.tsx", "/", "/virtual/page.tsx")],
-      { "/virtual/page.tsx": { default: () => <p>hi</p> } }
-    );
+    const handler = handlerFor([page("page.tsx", "/", "/virtual/page.tsx")], {
+      "/virtual/page.tsx": { default: () => <p>hi</p> },
+    });
     const res = await handler(get("/?__frost_data=1"));
     expect(res.headers.get("content-type")).toContain("text/html");
   });
@@ -682,10 +654,9 @@ describe("Streaming SSR", () => {
   });
 
   it("still renders synchronously when streaming is off", async () => {
-    const handler = handlerFor(
-      [page("page.tsx", "/", "/virtual/page.tsx")],
-      { "/virtual/page.tsx": { default: () => <p>sync</p> } }
-    );
+    const handler = handlerFor([page("page.tsx", "/", "/virtual/page.tsx")], {
+      "/virtual/page.tsx": { default: () => <p>sync</p> },
+    });
     const res = await handler(get("/"));
     expect(await res.text()).toContain("sync");
   });
