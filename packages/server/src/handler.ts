@@ -20,6 +20,7 @@ import { applySecurityHeaders } from "./security.js";
 import { json } from "./response.js";
 import { validateCsrf } from "@frostjs/data";
 import { dispatchServerFn } from "./server-fn.js";
+import { runRouteLoaders } from "./ssr.js";
 import { randomBytes } from "node:crypto";
 import {
   createErrorReport,
@@ -61,6 +62,10 @@ export interface RequestHandlerOptions {
   validateContracts?: boolean;
   /** URL prefix for createServerFn RPC (default "/_frost/fn"). */
   serverFnPath?: string;
+  /** Opt-in client router: emits route manifest + data endpoint. */
+  routerEnabled?: boolean;
+  /** Prefetch strategy embedded in the route manifest. */
+  routerPrefetch?: "intent" | "viewport" | "none";
 }
 
 const PAGE_METHODS = ["GET", "HEAD"];
@@ -78,7 +83,7 @@ function methodNotAllowed(allow: string[]): Response {
 }
 
 export function createRequestHandler(options: RequestHandlerOptions) {
-  const { routes, loadModule, getAssetsForRoute, security, onError, checkDeterminism, lang, logger, logRequests, validateContracts, serverFnPath = "/_frost/fn" } = options;
+  const { routes, loadModule, getAssetsForRoute, security, onError, checkDeterminism, lang, logger, logRequests, validateContracts, serverFnPath = "/_frost/fn", routerEnabled, routerPrefetch = "intent" } = options;
 
   // The global not-found route (app/not-found.tsx or app/_404.tsx) is
   // discovered with kind "not-found" and never participates in matching.
@@ -146,6 +151,39 @@ export function createRequestHandler(options: RequestHandlerOptions) {
       if (!r.ok) return `search: ${formatContractIssues(r.issues)}`;
     }
     return null;
+  };
+
+  // Client-router manifest: route id -> pattern + asset URLs, computed
+  // once and shared by every SSR'd document when the router is enabled.
+  let routeManifestCache: Promise<unknown> | null = null;
+  const getRouteManifest = (): Promise<unknown> => {
+    if (!routeManifestCache) {
+      routeManifestCache = (async () => {
+        const entries = [];
+        for (const r of routes.filter((x) => x.kind === "page")) {
+          try {
+            const assets = await getAssetsForRoute?.(r);
+            entries.push({
+              id: r.id,
+              pattern: r.pattern,
+              isDynamic: r.isDynamic,
+              scripts: assets?.scripts ?? [],
+              css: assets?.css ?? [],
+            });
+          } catch {
+            entries.push({
+              id: r.id,
+              pattern: r.pattern,
+              isDynamic: r.isDynamic,
+              scripts: [],
+              css: [],
+            });
+          }
+        }
+        return { prefetch: routerPrefetch, routes: entries };
+      })();
+    }
+    return routeManifestCache;
   };
 
   /** Parses an action request body into a plain object for contract
@@ -295,6 +333,72 @@ export function createRequestHandler(options: RequestHandlerOptions) {
             return response;
           }
 
+          // Client-router data endpoint: GET <path>?__frost_data=1 returns
+          // the route's loader data as JSON instead of HTML.
+          if (
+            routerEnabled &&
+            request.method === "GET" &&
+            url.searchParams.has("__frost_data")
+          ) {
+            const settled = await runRouteLoaders({
+              routeModule: mod,
+              layoutModules,
+              params: pageMatch.params,
+              request,
+              url,
+              context,
+              validateContracts,
+            });
+            const routeSettled = settled[0];
+            if (
+              routeSettled?.status === "ok" &&
+              routeSettled.value instanceof Response
+            ) {
+              applySecurityHeaders(routeSettled.value.headers, secOptions);
+              return routeSettled.value;
+            }
+            const loaderFailure = settled.find((s) => s.status === "err");
+            if (loaderFailure && loaderFailure.status === "err") {
+              onError?.(
+                createErrorReport(loaderFailure.error, {
+                  runtime: "server",
+                  route: pathname,
+                  code: FROST_ERROR_CODES.LOADER,
+                })
+              );
+              response = json(
+                {
+                  error: {
+                    code: FROST_ERROR_CODES.LOADER,
+                    message:
+                      loaderFailure.error instanceof Error
+                        ? loaderFailure.error.message
+                        : "Loader failed",
+                  },
+                },
+                { status: 500 }
+              );
+              applySecurityHeaders(response.headers, secOptions);
+              return response;
+            }
+            const loaderData =
+              routeSettled?.status === "ok" ? routeSettled.value : null;
+            const layoutData = layoutModules.map((_, i) => {
+              const s = settled[i + 1];
+              return s && s.status === "ok" ? s.value : undefined;
+            });
+            response = json({
+              routeId: pageMatch.route.id,
+              pathname,
+              params: pageMatch.params,
+              loaderData,
+              layoutData,
+            });
+            response.headers.set("Cache-Control", "no-store");
+            applySecurityHeaders(response.headers, secOptions);
+            return response;
+          }
+
           // Handle page route actions on mutation methods (POST, PUT, DELETE, PATCH).
           // The page's own action wins; otherwise the nearest layout action
           // (leaf -> root) handles the mutation.
@@ -404,6 +508,8 @@ export function createRequestHandler(options: RequestHandlerOptions) {
                 onError,
                 checkDeterminism,
                 validateContracts,
+                routeId: pageMatch.route.id,
+                routeManifest: routerEnabled ? await getRouteManifest() : undefined,
               });
             } else {
               response = json(actionResult);
@@ -436,6 +542,8 @@ export function createRequestHandler(options: RequestHandlerOptions) {
             onError,
             checkDeterminism,
             validateContracts,
+            routeId: pageMatch.route.id,
+            routeManifest: routerEnabled ? await getRouteManifest() : undefined,
           });
 
           // Per-route headers export (static map or function).
@@ -503,6 +611,8 @@ export function createRequestHandler(options: RequestHandlerOptions) {
               onError,
               checkDeterminism,
               validateContracts,
+              routeId: "not-found",
+              routeManifest: routerEnabled ? await getRouteManifest() : undefined,
             });
           } catch (nfErr) {
             console.error(`[Frost] Error rendering not-found route:`, nfErr);

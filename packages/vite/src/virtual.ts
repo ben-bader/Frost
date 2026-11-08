@@ -75,7 +75,8 @@ export default routes;
 export function generateClientEntryCode(
   pageFilePath: string,
   layoutFilePaths: string[] = [],
-  rootDir?: string
+  rootDir?: string,
+  routeId?: string
 ): string {
   function toImportPath(filePath: string): string {
     let importPath = filePath.replace(/\\/g, "/");
@@ -108,6 +109,6 @@ import { hydrateApp } from "@frostjs/react/client";
 const PageComponent = PageModule.default || PageModule;
 const layoutComponents = [${layoutArray}];
 
-hydrateApp(PageComponent, layoutComponents);
+hydrateApp(PageComponent, layoutComponents, ${JSON.stringify(routeId ?? "")});
 `;
 }

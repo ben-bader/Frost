@@ -3,6 +3,8 @@ import type { FrostAssets } from "@frostjs/core";
 
 export interface FrostClientState {
   pathname: string;
+  /** Route id (file path) for client-router component lookup. */
+  routeId?: string;
   params: Record<string, string>;
   loaderData: unknown;
   /** Result of the route action when the page re-rendered after a POST. */
@@ -89,9 +91,15 @@ export function useRouteParams<T = Record<string, string>>(): T {
 }
 
 export function usePathname(): string {
+  // Router context wins (F18): after a client-side navigation the
+  // provider holds the current route while window.location still shows
+  // the previous document until the next full load.
+  const ctx = useFrostContext();
+  if (ctx?.pathname) {
+    return ctx.pathname;
+  }
   if (typeof window !== "undefined" && window.location.pathname) {
     return window.location.pathname;
   }
-  const ctx = useFrostContext();
-  return ctx.pathname || "/";
+  return "/";
 }

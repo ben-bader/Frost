@@ -265,6 +265,7 @@ export function frost(userConfig: FrostConfig = {}, pluginOptions: FrostPluginOp
         if (queryIndex !== -1) {
           const searchParams = new URLSearchParams(id.slice(queryIndex));
           const file = searchParams.get("file");
+          const routeId = searchParams.get("id") ?? undefined;
           const layoutsRaw = searchParams.get("layouts");
           let layouts: string[] = [];
           if (layoutsRaw) {
@@ -275,7 +276,7 @@ export function frost(userConfig: FrostConfig = {}, pluginOptions: FrostPluginOp
             }
           }
           if (file) {
-            return generateClientEntryCode(file, layouts, rootDir);
+            return generateClientEntryCode(file, layouts, rootDir, routeId);
           }
         }
       }
@@ -445,6 +446,8 @@ export function frost(userConfig: FrostConfig = {}, pluginOptions: FrostPluginOp
               checkDeterminism: config.dev.checkDeterminism,
               validateContracts: true, // contracts always validate in dev
               serverFnPath: config.serverFns.path,
+              routerEnabled: config.router.enabled,
+              routerPrefetch: config.router.prefetch,
               lang: config.app.lang,
               logger: createLogger(config.logging),
               logRequests: config.logging.requestLogs,
@@ -467,7 +470,7 @@ export function frost(userConfig: FrostConfig = {}, pluginOptions: FrostPluginOp
                   }
                   return {
                     scripts: [
-                      `/@frost/client?file=${encodeURIComponent(route.filePath)}${layoutsQuery}`,
+                      `/@frost/client?file=${encodeURIComponent(route.filePath)}${layoutsQuery}&id=${encodeURIComponent(route.id)}`,
                     ],
                     css: cssUrls.map(
                       (cssUrl) => `/@frost/css?url=${encodeURIComponent(cssUrl)}`

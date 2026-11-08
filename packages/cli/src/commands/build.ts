@@ -86,7 +86,7 @@ export async function buildCommand(options: BuildCommandOptions = {}): Promise<v
         );
         fs.writeFileSync(
           entryFile,
-          generateClientEntryCode(route.filePath, route.layouts ?? [], rootDir),
+          generateClientEntryCode(route.filePath, route.layouts ?? [], rootDir, route.id),
           "utf-8"
         );
         clientInputs[route.id] = entryFile;
@@ -127,6 +127,8 @@ export const handler = createRequestHandler({
   logRequests: ${config.logging.requestLogs},
   validateContracts: ${config.contracts.validateInProduction},
   serverFnPath: ${JSON.stringify(config.serverFns.path)},
+  routerEnabled: ${config.router.enabled},
+  routerPrefetch: ${JSON.stringify(config.router.prefetch)},
   loadModule: async (route) => {
     const importer = importerById.get(route.id);
     if (!importer) return null;

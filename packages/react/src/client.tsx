@@ -1,12 +1,19 @@
-import { useEffect, useState, type ComponentType, type ReactNode } from "react";
+import { startTransition, useEffect, useState, type ReactNode } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { FrostProvider, isFrostClientState, type FrostClientState } from "./context.js";
 import { FrostErrorBoundary } from "./error-boundary.js";
+import {
+  getRouteComponents,
+  registerRouteComponents,
+  type RouteComponent,
+} from "./route-registry.js";
+import { initClientRouter } from "./router.js";
 
 declare global {
   interface Window {
     __FROST_DATA__?: any;
     __FROST_STATE__?: FrostClientState;
+    __FROST_HYDRATED__?: boolean;
   }
 }
 
@@ -59,12 +66,7 @@ export function getClientState(): FrostClientState {
   return fallbackState;
 }
 
-export type RouteComponent = ComponentType<{
-  data: unknown;
-  params: Record<string, string>;
-  children?: ReactNode;
-  actionData?: unknown;
-}>;
+export type { RouteComponent };
 
 interface HydratedAppProps {
   Component: RouteComponent;
@@ -73,7 +75,31 @@ interface HydratedAppProps {
 }
 
 function HydratedApp({ Component, layouts, state }: HydratedAppProps) {
+  const [routeState, setRouteState] = useState<FrostClientState>(state);
   const [actionData, setActionData] = useState<unknown>(state.actionData);
+
+  // Client-router navigations swap route state without a document load.
+  useEffect(() => {
+    const onNavigate = (event: Event) => {
+      const detail = (event as CustomEvent<FrostClientState>).detail;
+      if (!detail) return;
+      startTransition(() => {
+        setRouteState(detail);
+        setActionData(detail.actionData);
+      });
+    };
+    window.addEventListener("frost:navigate", onNavigate);
+    return () => window.removeEventListener("frost:navigate", onNavigate);
+  }, []);
+
+  // Resolve the component tree for the current route: the registry holds
+  // components for lazily-loaded routes; fall back to the hydrated entry.
+  const entry = routeState.routeId
+    ? getRouteComponents()[routeState.routeId]
+    : undefined;
+  const RouteComp = entry?.default ?? Component;
+  const layoutList = entry?.layouts ?? layouts;
+  const current = routeState;
 
   // Progressive enhancement: intercept same-document <form method="post">
   // submissions and upgrade them to fetch. The server returns JSON action
@@ -133,21 +159,21 @@ function HydratedApp({ Component, layouts, state }: HydratedAppProps) {
 
   // Build component tree from page up through layout hierarchy to match SSR structure
   let appTree: ReactNode = (
-    <Component data={state.loaderData} actionData={actionData} params={state.params} />
+    <RouteComp data={current.loaderData} actionData={actionData} params={current.params} />
   );
 
-  if (Array.isArray(layouts) && layouts.length > 0) {
-    for (let i = layouts.length - 1; i >= 0; i--) {
-      const LayoutComp = layouts[i];
+  if (Array.isArray(layoutList) && layoutList.length > 0) {
+    for (let i = layoutList.length - 1; i >= 0; i--) {
+      const LayoutComp = layoutList[i];
       if (LayoutComp) {
         // Each layout receives its own loader data (serialized as
         // state.layoutData); fall back to route data for older payloads.
         const layoutData =
-          state.layoutData && i < state.layoutData.length
-            ? state.layoutData[i]
-            : state.loaderData;
+          current.layoutData && i < current.layoutData.length
+            ? current.layoutData[i]
+            : current.loaderData;
         appTree = (
-          <LayoutComp data={layoutData} actionData={actionData} params={state.params}>
+          <LayoutComp data={layoutData} actionData={actionData} params={current.params}>
             {appTree}
           </LayoutComp>
         );
@@ -155,25 +181,43 @@ function HydratedApp({ Component, layouts, state }: HydratedAppProps) {
     }
   }
 
-  return <FrostErrorBoundary>{appTree}</FrostErrorBoundary>;
+  return (
+    <FrostProvider value={current}>
+      <FrostErrorBoundary>{appTree}</FrostErrorBoundary>
+    </FrostProvider>
+  );
 }
 
 export function hydrateApp(
   Component: RouteComponent,
-  layouts: RouteComponent[] = []
+  layouts: RouteComponent[] = [],
+  routeId?: string
 ): void {
   const state = getClientState();
   const rootElement = document.getElementById("__frost");
+
+  // Register this route's components so the client router can swap to
+  // them later. Runs for every route chunk, hydrated or not. The
+  // explicit routeId matters: lazily-imported chunks run before the
+  // navigation commits, so window state still points at the old route.
+  registerRouteComponents(routeId ?? state.routeId ?? state.pathname, Component, layouts);
 
   if (!rootElement) {
     console.error("[Frost] Could not find #__frost root element for hydration.");
     return;
   }
 
+  // Route chunks loaded by the client router also call hydrateApp — only
+  // the first entry performs hydration.
+  if (window.__FROST_HYDRATED__) return;
+  window.__FROST_HYDRATED__ = true;
+
   hydrateRoot(
     rootElement,
-    <FrostProvider value={state}>
-      <HydratedApp Component={Component} layouts={layouts} state={state} />
-    </FrostProvider>
+    <HydratedApp Component={Component} layouts={layouts} state={state} />
   );
+
+  // Opt-in client router: no-ops unless the document carries a
+  // __FROST_ROUTES__ manifest (config.router.enabled).
+  initClientRouter();
 }

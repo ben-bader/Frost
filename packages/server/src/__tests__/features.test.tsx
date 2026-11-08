@@ -612,3 +612,53 @@ describe("Route contracts", () => {
     expect(res.status).toBe(200);
   });
 });
+
+describe("Client router data endpoint", () => {
+  it("returns loader data as JSON for ?__frost_data=1", async () => {
+    const handler = createRequestHandler({
+      routes: [page("user/[id]/page.tsx", "user/:id", "/virtual/user/page.tsx", {
+        isDynamic: true,
+      })],
+      loadModule: async () =>
+        ({
+          default: () => <p>u</p>,
+          loader: ({ params }: any) => ({ id: params.id }),
+        }) as RouteModule,
+      security,
+      lang: "en",
+      routerEnabled: true,
+      getAssetsForRoute: async () => ({ scripts: ["/assets/u.js"], css: ["/assets/u.css"] }),
+    });
+    const res = await handler(get("/user/42?__frost_data=1"));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.routeId).toBe("user/[id]/page.tsx");
+    expect(body.loaderData).toEqual({ id: "42" });
+    expect(body.params).toEqual({ id: "42" });
+  });
+
+  it("does not serve data JSON when the router is disabled", async () => {
+    const handler = handlerFor(
+      [page("page.tsx", "/", "/virtual/page.tsx")],
+      { "/virtual/page.tsx": { default: () => <p>hi</p> } }
+    );
+    const res = await handler(get("/?__frost_data=1"));
+    expect(res.headers.get("content-type")).toContain("text/html");
+  });
+
+  it("emits __FROST_ROUTES__ manifest in HTML when router is enabled", async () => {
+    const handler = createRequestHandler({
+      routes: [page("page.tsx", "/", "/virtual/page.tsx")],
+      loadModule: async () => ({ default: () => <p>hi</p> }) as RouteModule,
+      security,
+      lang: "en",
+      routerEnabled: true,
+      routerPrefetch: "intent",
+      getAssetsForRoute: async () => ({ scripts: ["/a.js"], css: [] }),
+    });
+    const html = await (await handler(get("/"))).text();
+    expect(html).toContain("__FROST_ROUTES__");
+    expect(html).toContain("/a.js");
+    expect(html).toContain('"prefetch":"intent"');
+  });
+});

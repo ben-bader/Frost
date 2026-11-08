@@ -37,12 +37,83 @@ export interface SsrRenderOptions {
   checkDeterminism?: boolean;
   /** Validate loader return values against route contracts. */
   validateContracts?: boolean;
+  /** Route id (file path) embedded in client state for the router. */
+  routeId?: string;
+  /** Client-router manifest emitted as window.__FROST_ROUTES__. */
+  routeManifest?: unknown;
 }
 
 type Settled<T> =
   | { status: "ok"; value: T }
   | { status: "err"; error: unknown }
   | { status: "empty" };
+
+interface LoaderSpec {
+  module: RouteModule;
+  role: "route" | "layout";
+}
+
+/**
+ * Runs the route loader and every layout loader in parallel. Layout
+ * loaders receive the same args; their results feed their own `data`
+ * prop. Shared by HTML rendering and the client-router data endpoint.
+ */
+export async function runRouteLoaders(options: {
+  routeModule: RouteModule;
+  layoutModules?: RouteModule[];
+  params: Record<string, string>;
+  request: Request;
+  url: URL;
+  context: FrostRequestContext;
+  validateContracts?: boolean;
+}): Promise<Settled<unknown>[]> {
+  const {
+    routeModule,
+    layoutModules = [],
+    params,
+    request,
+    url,
+    context,
+    validateContracts,
+  } = options;
+
+  const specs: LoaderSpec[] = [
+    { module: routeModule, role: "route" },
+    ...layoutModules.map((m) => ({ module: m, role: "layout" as const })),
+  ];
+
+  const settled = await Promise.all(
+    specs.map((spec) => {
+      if (!spec.module.loader) return Promise.resolve<Settled<unknown>>({ status: "empty" });
+      return Promise.resolve()
+        .then(() => spec.module.loader!({ request, params, url, context }))
+        .then(
+          (value): Settled<unknown> => ({ status: "ok", value }),
+          (error): Settled<unknown> => ({ status: "err", error })
+        );
+    })
+  );
+
+  // Contract validation: a loader return that violates its schema becomes
+  // a FROST_E_CONTRACT error (surfaced through the error boundary).
+  if (validateContracts) {
+    for (let i = 0; i < settled.length; i++) {
+      const s = settled[i]!;
+      if (s.status !== "ok" || s.value instanceof Response) continue;
+      const contract = specs[i]!.module.contract;
+      if (!contract?.loader) continue;
+      const v = validateContractValue(contract.loader, s.value);
+      if (!v.ok) {
+        settled[i] = {
+          status: "err",
+          error: createContractError("loader", v.issues),
+        };
+      }
+    }
+  }
+
+  return settled;
+}
 
 function firstDiffIndex(a: string, b: string): number {
   const len = Math.min(a.length, b.length);
@@ -218,12 +289,13 @@ interface RenderTreeOptions {
   title?: string;
   head?: ReactNode;
   lang?: string;
+  routeManifest?: unknown;
 }
 
 function renderTree(opts: RenderTreeOptions): string {
   return renderToString(
     <FrostProvider value={opts.clientState}>
-      <FrostDocument title={opts.title} head={opts.head} lang={opts.lang}>
+      <FrostDocument title={opts.title} head={opts.head} lang={opts.lang} routeManifest={opts.routeManifest}>
         <FrostErrorBoundary>{opts.content}</FrostErrorBoundary>
       </FrostDocument>
     </FrostProvider>
@@ -278,6 +350,8 @@ export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Resp
     onError,
     checkDeterminism,
     validateContracts,
+    routeId,
+    routeManifest,
   } = options;
 
   const url = new URL(request.url);
@@ -286,44 +360,15 @@ export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Resp
   //    loaders receive the same args; their results feed their own
   //    `data` prop. The first failure (route first, then layouts in
   //    root->leaf order) decides the error page.
-  interface LoaderSpec {
-    module: RouteModule;
-    role: "route" | "layout";
-  }
-  const specs: LoaderSpec[] = [
-    { module: routeModule, role: "route" },
-    ...layoutModules.map((m) => ({ module: m, role: "layout" as const })),
-  ];
-
-  const settled = await Promise.all(
-    specs.map((spec) => {
-      if (!spec.module.loader) return Promise.resolve<Settled<unknown>>({ status: "empty" });
-      return Promise.resolve()
-        .then(() => spec.module.loader!({ request, params, url, context }))
-        .then(
-          (value): Settled<unknown> => ({ status: "ok", value }),
-          (error): Settled<unknown> => ({ status: "err", error })
-        );
-    })
-  );
-
-  // Contract validation: a loader return that violates its schema becomes
-  // a FROST_E_CONTRACT error (surfaced through the error boundary).
-  if (validateContracts) {
-    for (let i = 0; i < settled.length; i++) {
-      const s = settled[i]!;
-      if (s.status !== "ok" || s.value instanceof Response) continue;
-      const contract = specs[i]!.module.contract;
-      if (!contract?.loader) continue;
-      const v = validateContractValue(contract.loader, s.value);
-      if (!v.ok) {
-        settled[i] = {
-          status: "err",
-          error: createContractError("loader", v.issues),
-        };
-      }
-    }
-  }
+  const settled = await runRouteLoaders({
+    routeModule,
+    layoutModules,
+    params,
+    request,
+    url,
+    context,
+    validateContracts,
+  });
 
   const routeSettled = settled[0]!;
 
@@ -344,6 +389,7 @@ export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Resp
 
   const buildClientState = (data: unknown): FrostClientState => ({
     pathname,
+    routeId,
     params,
     loaderData: data,
     actionData,
@@ -466,7 +512,7 @@ export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Resp
 
   let appHtml: string;
   try {
-    appHtml = renderTree({ content, clientState, title, head, lang });
+    appHtml = renderTree({ content, clientState, title, head, lang, routeManifest });
   } catch (renderErr) {
     return renderFailure(renderErr, FROST_ERROR_CODES.RENDER);
   }
