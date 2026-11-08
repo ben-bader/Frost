@@ -1,0 +1,30 @@
+{
+  "name": "my-frost-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "frost dev",
+    "build": "frost build",
+    "start": "frost start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@frostjs/adapter-node": "^0.1.0",
+    "@frostjs/cli": "^0.1.0",
+    "@frostjs/core": "^0.1.0",
+    "@frostjs/react": "^0.1.0",
+    "@frostjs/router": "^0.1.0",
+    "@frostjs/server": "^0.1.0",
+    "@frostjs/vite": "^0.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwindcss": "^4.3.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.5",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "postcss": "^8.5.0",
+    "typescript": "^5.7.3"
+  }
+}
