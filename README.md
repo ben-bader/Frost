@@ -185,6 +185,11 @@ Tailwind is a valid fit for Frost applications, but the repo is intentionally ke
 
 ## Docs and references
 
+Guides live in `docs/guides/`: routing, data loading, layouts/metadata,
+contracts, middleware, environment, error codes, auto reload, the
+opt-in client router, performance, security (CSP), and deployment.
+Decisions are recorded in `docs/decisions/`.
+
 - `examples/starter/` — live starter/playground app
 - `packages/` — framework implementation
 - `docs/` — design and architecture notes
