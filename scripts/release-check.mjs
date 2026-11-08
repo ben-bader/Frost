@@ -1,32 +1,40 @@
-// Dry-run release verification: pack dry-run, publint, attw, e2e.
-// Never publishes and never writes to the registry.
-import { spawnSync } from "node:child_process";
+// release:check — dry-run release verification. NEVER publishes and
+// never writes to the npm registry.
+//
+// Every step is a Node script or a direct binary invocation through
+// scripts/lib/run.mjs (no shell globs, no bash-only syntax), so this
+// works identically on Windows and Linux.
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { run } from "./lib/run.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const node = process.execPath;
 
 const steps = [
-  ["pack --dry-run (all packages)", "pnpm", ["-r", "pack", "--dry-run"]],
-  ["publint (all packages)", "npx", ["publint", "packages/*"]],
+  ["pack --dry-run", "pnpm", ["-r", "pack", "--dry-run"]],
+  ["lint-packages (publint + attw)", node, ["scripts/lint-packages.mjs"]],
+  ["check:template", node, ["scripts/check-template.mjs"]],
+  ["e2e-pack", node, ["scripts/e2e-pack.mjs", "--skip-build"]],
 ];
-for (const dir of ["core", "router", "data", "react", "server", "adapter-node", "vite", "test", "cli"]) {
-  steps.push([`attw ${dir}`, "npx", ["@arethetypeswrong/cli", "--pack", `packages/${dir}`]]);
-}
-steps.push(["e2e-pack", process.execPath, ["scripts/e2e-pack.mjs", "--skip-build"]]);
 
-let failed = 0;
+const results = [];
 for (const [label, cmd, args] of steps) {
   console.log(`\n===== release:check — ${label} =====`);
-  const res = spawnSync(cmd, args, {
-    cwd: root,
-    stdio: "inherit",
-    shell: process.platform === "win32" && /^(pnpm|npm|npx)(\.cmd)?$/.test(cmd),
-    windowsHide: true,
-  });
-  if (res.status !== 0) {
-    failed++;
-    console.error(`FAILED: ${label}`);
+  const res = run(cmd, args, { cwd: root });
+  const ok = res.status === 0;
+  results.push({ label, ok });
+  if (!ok) {
+    const out = `${res.stderr ?? ""}\n${res.stdout ?? ""}`;
+    console.error(out.slice(-3000));
   }
 }
-process.exit(failed ? 1 : 0);
+
+console.log("\n===== release:check RESULTS =====");
+let failed = 0;
+for (const r of results) {
+  if (!r.ok) failed++;
+  console.log(`${r.ok ? "PASS" : "FAIL"}  ${r.label}`);
+}
+console.log(failed === 0 ? "\nALL CHECKS PASSED" : `\n${failed} STEP(S) FAILED`);
+process.exit(failed === 0 ? 0 : 1);

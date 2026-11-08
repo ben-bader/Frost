@@ -12,12 +12,13 @@
 // 7. Kill the server tree, print PASS/FAIL table
 //
 // Usage: node scripts/e2e-pack.mjs [--keep] [--skip-build]
-import { spawnSync, spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import net from "node:net";
 import path from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
+import { run, runOrFail } from "./lib/run.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const keep = process.argv.includes("--keep");
@@ -44,27 +45,8 @@ function check(name, ok, detail = "") {
   console.log(`  ${ok ? "PASS" : "FAIL"}  ${name}${detail ? ` — ${detail}` : ""}`);
 }
 
-function run(cmd, args, opts = {}) {
-  const res = spawnSync(cmd, args, {
-    cwd: opts.cwd ?? root,
-    env: { ...process.env, ...opts.env },
-    encoding: "utf8",
-    windowsHide: true,
-    // pnpm/npm are .cmd shims on Windows — needs the shell there.
-    shell: opts.shell ?? (process.platform === "win32" && /^(pnpm|npm)(\.cmd)?$/.test(cmd)),
-  });
-  return res;
-}
-
-function runOrFail(cmd, args, label, opts = {}) {
-  const res = run(cmd, args, opts);
-  if (res.status !== 0) {
-    console.error(`\n${label} failed (exit ${res.status}):`);
-    console.error((res.stderr || res.stdout || "").slice(-4000));
-    throw new Error(label);
-  }
-  return res;
-}
+// run/runOrFail come from ./lib/run.mjs — cmd.exe /c shim on Windows,
+// no shell:true (avoids DEP0190).
 
 // ---------- semver (borrowed from the workspace store) ----------
 function loadSemver() {

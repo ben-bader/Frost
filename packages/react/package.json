@@ -15,6 +15,12 @@
       "import": "./dist/client.js"
     }
   },
+  "typesVersions": {
+    "*": {
+      "index": ["./dist/index.d.ts"],
+      "client": ["./dist/client.d.ts"]
+    }
+  },
   "dependencies": {
     "@frost.js/core": "workspace:^",
     "@frost.js/router": "workspace:^"
