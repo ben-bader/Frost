@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, frost-hardening]
+    branches: [main, frost-hardening, release-prep]
   pull_request:
 
 jobs:
@@ -25,6 +25,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
-      - run: pnpm --filter @frost.js/starter build
+      - run: pnpm check:template
+      - run: node scripts/e2e-pack.mjs
       - name: Audit (non-blocking)
         run: pnpm audit || true

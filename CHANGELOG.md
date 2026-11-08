@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (frost-hardening)
+## 0.1.0
 
 ### Breaking
 - Removed the dead `rendering` config section, the per-route

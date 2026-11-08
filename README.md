@@ -59,7 +59,19 @@ The main building blocks are:
 
 ## Installation
 
-This repo uses pnpm workspaces.
+Create a new app (requires Node.js >= 20):
+
+```bash
+npm create frost-app@latest my-app
+cd my-app
+npm install
+```
+
+This scaffolds a minimal Frost application (add `--template tailwind` for
+Tailwind CSS). Published packages live under the `@frost.js` scope
+(`@frost.js/core`, `@frost.js/react`, `@frost.js/server`, and friends).
+
+To hack on the framework itself, this repo uses pnpm workspaces:
 
 ```bash
 git clone <repo-url>

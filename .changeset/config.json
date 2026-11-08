@@ -2,7 +2,20 @@
   "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
   "changelog": "@changesets/cli/changelog",
   "commit": false,
-  "fixed": [],
+  "fixed": [
+    [
+      "@frost.js/core",
+      "@frost.js/router",
+      "@frost.js/data",
+      "@frost.js/react",
+      "@frost.js/server",
+      "@frost.js/adapter-node",
+      "@frost.js/vite",
+      "@frost.js/test",
+      "@frost.js/cli",
+      "create-frost-app"
+    ]
+  ],
   "linked": [],
   "access": "public",
   "baseBranch": "main",

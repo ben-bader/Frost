@@ -11,9 +11,14 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check:template": "node scripts/check-template.mjs"
+    "check:template": "node scripts/check-template.mjs",
+    "version-packages": "changeset version",
+    "release:pack": "node scripts/release-pack.mjs",
+    "release:check": "node scripts/release-check.mjs",
+    "e2e:pack": "node scripts/e2e-pack.mjs"
   },
   "devDependencies": {
+    "@changesets/cli": "^3.0.3",
     "@types/node": "^22.13.5",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
