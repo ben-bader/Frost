@@ -7,4 +7,9 @@ export default defineConfig({
     port: 3000,
     host: "localhost",
   },
+  seo: {
+    sitemap: true,
+    robots: true,
+    baseUrl: "https://frostjs.dev",
+  },
 });

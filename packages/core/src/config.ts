@@ -1,5 +1,3 @@
-import type { RenderingMode } from "./types.js";
-
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
 export interface SecurityConfig {
@@ -76,6 +74,15 @@ export interface LoggingConfig {
   format?: "pretty" | "json";
 }
 
+export interface SeoConfig {
+  /** Generate sitemap.xml at build time (static routes only). */
+  sitemap?: boolean;
+  /** Generate robots.txt at build time. */
+  robots?: boolean;
+  /** Absolute site origin used in generated URLs (e.g. "https://example.com"). */
+  baseUrl?: string;
+}
+
 export interface EnvConfig {
   /** Variable names that must be present at startup or the CLI fails fast. */
   required?: string[];
@@ -117,13 +124,6 @@ export interface FrostConfig {
   publicDirectory?: string;
 
   /**
-   * Rendering configuration defaults.
-   */
-  rendering?: {
-    default?: RenderingMode;
-  };
-
-  /**
    * Cache configuration defaults.
    */
   cache?: {
@@ -156,6 +156,7 @@ export interface FrostConfig {
   ssr?: SsrConfig;
   logging?: LoggingConfig;
   env?: EnvConfig;
+  seo?: SeoConfig;
   limits?: LimitsConfig;
 }
 
@@ -171,9 +172,6 @@ export interface ResolvedFrostConfig {
   appDirectory: string;
   apiDirectory: string;
   publicDirectory: string;
-  rendering: {
-    default: RenderingMode;
-  };
   cache: {
     default: "no-store" | "memory";
     maxMemoryEntries: number;
@@ -195,6 +193,7 @@ export interface ResolvedFrostConfig {
   ssr: Required<SsrConfig>;
   logging: Required<LoggingConfig>;
   env: Required<EnvConfig>;
+  seo: { sitemap: boolean; robots: boolean; baseUrl?: string };
   limits: Required<LimitsConfig>;
 }
 
@@ -216,9 +215,6 @@ export const defaultFrostConfig: ResolvedFrostConfig = {
   appDirectory: "src/app",
   apiDirectory: "src/api",
   publicDirectory: "public",
-  rendering: {
-    default: "server",
-  },
   cache: {
     default: "no-store",
     maxMemoryEntries: 1000,
@@ -267,6 +263,10 @@ export const defaultFrostConfig: ResolvedFrostConfig = {
   env: {
     required: [],
     publicPrefix: "FROST_PUBLIC_",
+  },
+  seo: {
+    sitemap: false,
+    robots: false,
   },
   limits: {
     formBytes: 1024 * 1024,
@@ -320,9 +320,6 @@ export function resolveConfig(config: FrostConfig = {}): ResolvedFrostConfig {
     appDirectory: config.appDirectory ?? defaultFrostConfig.appDirectory,
     apiDirectory: config.apiDirectory ?? defaultFrostConfig.apiDirectory,
     publicDirectory: config.publicDirectory ?? defaultFrostConfig.publicDirectory,
-    rendering: {
-      default: config.rendering?.default ?? defaultFrostConfig.rendering.default,
-    },
     cache: {
       default: config.cache?.default ?? defaultFrostConfig.cache.default,
       maxMemoryEntries: config.cache?.maxMemoryEntries ?? defaultFrostConfig.cache.maxMemoryEntries,
@@ -378,6 +375,11 @@ export function resolveConfig(config: FrostConfig = {}): ResolvedFrostConfig {
     env: {
       required: config.env?.required ?? [],
       publicPrefix: config.env?.publicPrefix ?? "FROST_PUBLIC_",
+    },
+    seo: {
+      sitemap: config.seo?.sitemap ?? false,
+      robots: config.seo?.robots ?? false,
+      baseUrl: config.seo?.baseUrl,
     },
     limits: {
       formBytes: config.limits?.formBytes ?? defaultFrostConfig.limits.formBytes,

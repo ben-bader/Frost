@@ -1,13 +1,5 @@
 import type { ReactNode } from "react";
 
-export type RenderingMode = "static" | "server" | "incremental" | "client";
-
-export interface RenderingConfig {
-  mode: RenderingMode;
-  revalidateSeconds?: number;
-  cacheTags?: string[];
-}
-
 export interface FrostAssetPreload {
   href: string;
   as: string;
@@ -141,7 +133,6 @@ export interface RouteModule {
   loader?: RouteLoader;
   action?: RouteAction;
   metadata?: RouteMetadata;
-  rendering?: RenderingConfig;
   /** Static or per-request response headers applied to page responses. */
   headers?: RouteHeaders;
   /** Middleware chain (used by app/_middleware modules). */

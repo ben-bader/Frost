@@ -30,6 +30,12 @@ type ViteManifest = Record<string, ViteManifestEntry>;
 export async function buildCommand(options: BuildCommandOptions = {}): Promise<void> {
   const rootDir = options.rootDir ?? process.cwd();
   const config = resolveConfig(options.config);
+  // Production logs are structured JSON unless the user explicitly chose
+  // a format in frost.config.ts.
+  const prodLogging = {
+    ...config.logging,
+    format: options.config?.logging?.format ?? "json",
+  };
   const outDir = path.resolve(rootDir, config.build.outDir);
   const serverOutDir = path.join(outDir, "server");
   const clientOutDir = path.join(outDir, "client");
@@ -78,6 +84,7 @@ export async function buildCommand(options: BuildCommandOptions = {}): Promise<v
     const serverEntrySource = `
 import { readFileSync } from "node:fs";
 import { createRequestHandler } from "@frostjs/server";
+import { createLogger } from "@frostjs/core";
 import { setBodyLimits } from "@frostjs/data";
 import { routes, routeImporters } from "virtual:frost/routes";
 
@@ -103,6 +110,8 @@ export const handler = createRequestHandler({
   routes,
   security,
   lang: ${JSON.stringify(config.app.lang)},
+  logger: createLogger(${JSON.stringify(prodLogging)}),
+  logRequests: ${config.logging.requestLogs},
   loadModule: async (route) => {
     const importer = importerById.get(route.id);
     if (!importer) return null;
@@ -178,7 +187,49 @@ export default handler;
     };
     fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2), "utf-8");
 
-    // 7. Optional bundle report + size budgets
+    // 7. Optional SEO files: sitemap.xml + robots.txt (static routes only).
+    if (config.seo.sitemap || config.seo.robots) {
+      if (!config.seo.baseUrl) {
+        console.warn(
+          "⚠️  seo.sitemap/seo.robots enabled but seo.baseUrl is not set — skipping generation."
+        );
+      } else {
+        const base = config.seo.baseUrl.replace(/\/+$/, "");
+        const staticPaths = pageRoutes
+          .filter((r) => !r.isDynamic && !r.isCatchAll)
+          .map((r) => `/${r.pattern}`.replace(/\/+/g, "/"));
+        if (config.seo.sitemap) {
+          const urls = staticPaths
+            .map(
+              (p) =>
+                `  <url><loc>${escapeXml(base + p)}</loc></url>`
+            )
+            .join("\n");
+          fs.writeFileSync(
+            path.join(clientOutDir, "sitemap.xml"),
+            `<?xml version="1.0" encoding="UTF-8"?>\n` +
+              `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`,
+            "utf-8"
+          );
+        }
+        if (config.seo.robots) {
+          const sitemapLine = config.seo.sitemap
+            ? `\nSitemap: ${base}/sitemap.xml\n`
+            : "\n";
+          fs.writeFileSync(
+            path.join(clientOutDir, "robots.txt"),
+            `User-agent: *\nAllow: /\n${sitemapLine}`,
+            "utf-8"
+          );
+        }
+        const skipped = pageRoutes.length - staticPaths.length;
+        console.log(
+          `🗺️  Generated ${config.seo.sitemap ? "sitemap.xml" : ""}${config.seo.sitemap && config.seo.robots ? " + " : ""}${config.seo.robots ? "robots.txt" : ""} (${staticPaths.length} static route(s)${skipped > 0 ? `, ${skipped} dynamic skipped` : ""})`
+        );
+      }
+    }
+
+    // 8. Optional bundle report + size budgets
     if (options.analyze || config.budgets.clientJsKb) {
       printBundleReport(clientOutDir, pageRoutes.map((r) => r.id), {
         analyze: options.analyze === true,
@@ -222,6 +273,15 @@ function precompressDir(dir: string): number {
     }
   }
   return count;
+}
+
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
 }
 
 function gzipSize(file: string): number {

@@ -24,7 +24,9 @@ import {
   createErrorReport,
   FROST_ERROR_CODES,
   type FrostErrorReport,
+  type FrostLogger,
   type FrostMiddleware,
+  logRequest,
 } from "@frostjs/core";
 
 export interface LoadedRoute<T = RouteModule | ApiRouteModule> {
@@ -44,6 +46,10 @@ export interface RequestHandlerOptions {
   checkDeterminism?: boolean;
   /** html lang attribute for rendered documents. */
   lang?: string;
+  /** Leveled logger; enables request logging when logRequests is set. */
+  logger?: FrostLogger;
+  /** Log one line per request (method, path, status, ms). */
+  logRequests?: boolean;
 }
 
 const PAGE_METHODS = ["GET", "HEAD"];
@@ -61,7 +67,7 @@ function methodNotAllowed(allow: string[]): Response {
 }
 
 export function createRequestHandler(options: RequestHandlerOptions) {
-  const { routes, loadModule, getAssetsForRoute, security, onError, checkDeterminism, lang } = options;
+  const { routes, loadModule, getAssetsForRoute, security, onError, checkDeterminism, lang, logger, logRequests } = options;
 
   // The global not-found route (app/not-found.tsx or app/_404.tsx) is
   // discovered with kind "not-found" and never participates in matching.
@@ -109,10 +115,10 @@ export function createRequestHandler(options: RequestHandlerOptions) {
     }
   }
 
-  return async function handleRequest(
+  const handleRequest = async (
     request: Request,
     contextOverrides?: Partial<FrostRequestContext>
-  ): Promise<Response> {
+  ): Promise<Response> => {
     const url = new URL(request.url);
 
     // Decode percent-escapes per segment so %70-style escapes match routes,
@@ -430,5 +436,27 @@ export function createRequestHandler(options: RequestHandlerOptions) {
     }
 
     return routeRequest();
+  };
+
+  if (!logRequests || !logger) return handleRequest;
+  return async (
+    request: Request,
+    contextOverrides?: Partial<FrostRequestContext>
+  ) => {
+    const start = performance.now();
+    const response = await handleRequest(request, contextOverrides);
+    let path = request.url;
+    try {
+      path = new URL(request.url).pathname;
+    } catch {
+      // keep raw url
+    }
+    logRequest(logger, {
+      method: request.method,
+      path,
+      status: response.status,
+      ms: Math.round(performance.now() - start),
+    });
+    return response;
   };
 }

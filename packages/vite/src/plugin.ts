@@ -3,6 +3,7 @@ import { loadConfigFromFile, type EnvironmentModuleNode } from "vite";
 import * as path from "node:path";
 import {
   createErrorReport,
+  createLogger,
   formatErrorReportTerminal,
   resolveConfig,
   type FrostConfig,
@@ -412,6 +413,8 @@ export function frost(userConfig: FrostConfig = {}, pluginOptions: FrostPluginOp
               },
               checkDeterminism: config.dev.checkDeterminism,
               lang: config.app.lang,
+              logger: createLogger(config.logging),
+              logRequests: config.logging.requestLogs,
               loadModule: async (route) => {
                 return (await server.ssrLoadModule(route.filePath)) as any;
               },
