@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@frostjs/core": "workspace:*",
+    "@frostjs/data": "workspace:*",
     "@frostjs/router": "workspace:*",
     "@frostjs/react": "workspace:*"
   },

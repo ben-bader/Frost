@@ -328,6 +328,9 @@ importers:
       '@frostjs/core':
         specifier: workspace:*
         version: link:../core
+      '@frostjs/data':
+        specifier: workspace:*
+        version: link:../data
       '@frostjs/react':
         specifier: workspace:*
         version: link:../react

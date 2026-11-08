@@ -63,6 +63,7 @@ export type RouteComponent = ComponentType<{
   data: unknown;
   params: Record<string, string>;
   children?: ReactNode;
+  actionData?: unknown;
 }>;
 
 export function hydrateApp(
@@ -78,14 +79,22 @@ export function hydrateApp(
   }
 
   // Build component tree from page up through layout hierarchy to match SSR structure
-  let appTree: ReactNode = <Component data={state.loaderData} params={state.params} />;
+  let appTree: ReactNode = (
+    <Component data={state.loaderData} actionData={state.actionData} params={state.params} />
+  );
 
   if (Array.isArray(layouts) && layouts.length > 0) {
     for (let i = layouts.length - 1; i >= 0; i--) {
       const LayoutComp = layouts[i];
       if (LayoutComp) {
+        // Each layout receives its own loader data (serialized as
+        // state.layoutData); fall back to route data for older payloads.
+        const layoutData =
+          state.layoutData && i < state.layoutData.length
+            ? state.layoutData[i]
+            : state.loaderData;
         appTree = (
-          <LayoutComp data={state.loaderData} params={state.params}>
+          <LayoutComp data={layoutData} actionData={state.actionData} params={state.params}>
             {appTree}
           </LayoutComp>
         );

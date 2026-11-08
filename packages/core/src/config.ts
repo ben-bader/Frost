@@ -91,6 +91,13 @@ export interface LimitsConfig {
 }
 
 export interface FrostConfig {
+  /** Application metadata. */
+  app?: {
+    /** Used in default metadata/OG site name. Default "Frost". */
+    name?: string;
+    /** html lang attribute. Default "en". */
+    lang?: string;
+  };
   /**
    * Application source directory containing pages, layouts, and API routes.
    * Defaults to "src/app".
@@ -160,6 +167,7 @@ export interface ResolvedSecurityConfig {
 }
 
 export interface ResolvedFrostConfig {
+  app: { name: string; lang: string };
   appDirectory: string;
   apiDirectory: string;
   publicDirectory: string;
@@ -204,6 +212,7 @@ export const DEFAULT_CSP_POLICY = [
 ].join("; ");
 
 export const defaultFrostConfig: ResolvedFrostConfig = {
+  app: { name: "Frost", lang: "en" },
   appDirectory: "src/app",
   apiDirectory: "src/api",
   publicDirectory: "public",
@@ -304,6 +313,10 @@ export function resolveConfig(config: FrostConfig = {}): ResolvedFrostConfig {
         : false;
 
   return {
+    app: {
+      name: config.app?.name ?? defaultFrostConfig.app.name,
+      lang: config.app?.lang ?? defaultFrostConfig.app.lang,
+    },
     appDirectory: config.appDirectory ?? defaultFrostConfig.appDirectory,
     apiDirectory: config.apiDirectory ?? defaultFrostConfig.apiDirectory,
     publicDirectory: config.publicDirectory ?? defaultFrostConfig.publicDirectory,

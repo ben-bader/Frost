@@ -1,4 +1,4 @@
-export type RouteKind = "page" | "layout" | "api";
+export type RouteKind = "page" | "layout" | "api" | "not-found";
 
 export interface DiscoveredRoute {
   id: string;
@@ -9,6 +9,11 @@ export interface DiscoveredRoute {
   isCatchAll: boolean;
   score: number;
   layouts?: string[];
+  /**
+   * Nearest error-boundary module (error.tsx / _error.tsx) applying to
+   * this route, found by walking up from the route's directory.
+   */
+  errorBoundary?: string;
 }
 
 export interface RouteMatch<TRoute = DiscoveredRoute> {

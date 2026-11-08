@@ -14,9 +14,11 @@ export function discoverRoutes(options: DiscoverOptions): DiscoveredRoute[] {
   const appDir = path.resolve(root, options.appDirectory);
   const routes: DiscoveredRoute[] = [];
 
-  // 1. Discover app pages and layouts
+  // 1. Discover app pages, layouts, error boundaries, and not-found
   const layoutsByDir = new Map<string, string>();
+  const errorsByDir = new Map<string, string>();
   const pageRoutes: DiscoveredRoute[] = [];
+  let notFoundFile: string | undefined;
 
   if (fs.existsSync(appDir)) {
     scanDirectory(appDir, "", (relPath, fullPath) => {
@@ -27,6 +29,17 @@ export function discoverRoutes(options: DiscoverOptions): DiscoveredRoute[] {
         kind = "page";
       } else if (/^layout\.[tj]sx?$/.test(filename)) {
         kind = "layout";
+      } else if (/^(error|_error)\.[tj]sx?$/.test(filename)) {
+        const dir = path.dirname(relPath).replace(/\\/g, "/");
+        errorsByDir.set(dir === "." ? "" : dir, fullPath);
+        return;
+      } else if (/^(not-found|_404)\.[tj]sx?$/.test(filename)) {
+        // Only the app-root not-found file is global; nested ones are
+        // ignored for now (documented limitation).
+        if (path.dirname(relPath) === "." && !notFoundFile) {
+          notFoundFile = fullPath;
+        }
+        return;
       }
 
       if (kind === "layout") {
@@ -70,8 +83,38 @@ export function discoverRoutes(options: DiscoverOptions): DiscoveredRoute[] {
         }
       }
 
+      // Nearest error boundary: walk from the page's directory up to the
+      // app root ("a/b" -> "a" -> ""), first error.tsx/_error.tsx wins.
+      let errDir = normalizedDir;
+      let boundary: string | undefined;
+      while (true) {
+        const candidate = errorsByDir.get(errDir);
+        if (candidate) {
+          boundary = candidate;
+          break;
+        }
+        if (!errDir) break;
+        const idx = errDir.lastIndexOf("/");
+        errDir = idx === -1 ? "" : errDir.slice(0, idx);
+      }
+      if (boundary) page.errorBoundary = boundary;
       page.layouts = layoutChain;
       routes.push(page);
+    }
+
+    // Global not-found route (never matched; used for 404 rendering).
+    if (notFoundFile) {
+      const rootLayout = layoutsByDir.get("");
+      routes.push({
+        id: "not-found",
+        pattern: "",
+        filePath: notFoundFile,
+        kind: "not-found",
+        isDynamic: false,
+        isCatchAll: false,
+        score: -1,
+        layouts: rootLayout ? [rootLayout] : [],
+      });
     }
   }
 

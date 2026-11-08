@@ -5,6 +5,10 @@ export interface FrostClientState {
   pathname: string;
   params: Record<string, string>;
   loaderData: unknown;
+  /** Result of the route action when the page re-rendered after a POST. */
+  actionData?: unknown;
+  /** Per-layout loader results, aligned with the layout chain (root->leaf). */
+  layoutData?: unknown[];
   error?: { message: string; stack?: string };
   assets?: FrostAssets;
   /** Per-request CSP nonce echoed into inline script tags. */

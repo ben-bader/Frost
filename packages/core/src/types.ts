@@ -53,6 +53,8 @@ export namespace Route {
     params: TParams;
     children?: ReactNode;
     error?: Error;
+    /** Result of the route action when the page re-renders after a POST. */
+    actionData?: unknown;
   }
 
   export interface MetadataArgs<TData = any, TParams = Record<string, string>> {
@@ -63,14 +65,33 @@ export namespace Route {
 
   export interface Metadata {
     title?: string;
+    /**
+     * Title template applied to descendant titles, e.g. "%s | My App".
+     * The nearest ancestor template wins; "%s" is replaced by the child
+     * title. A template with no "%s" is used verbatim.
+     */
+    titleTemplate?: string;
     description?: string;
     canonical?: string;
+    /** robots meta content, e.g. "index, follow" or "noindex". */
+    robots?: string;
     openGraph?: {
       title?: string;
       description?: string;
       image?: string;
       type?: string;
+      url?: string;
+      siteName?: string;
     };
+    twitter?: {
+      card?: "summary" | "summary_large_image" | "app" | "player";
+      title?: string;
+      description?: string;
+      image?: string;
+      site?: string;
+    };
+    /** JSON-LD structured data objects; serialized and escaped on render. */
+    jsonLd?: unknown | unknown[];
     meta?: Array<Record<string, string>>;
     links?: Array<Record<string, string>>;
     scripts?: Array<{ src?: string; content?: string; type?: string; async?: boolean }>;

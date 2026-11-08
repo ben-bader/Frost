@@ -26,30 +26,36 @@ export function generateRoutesModuleCode(routes: DiscoveredRoute[]): string {
     isDynamic: ${route.isDynamic},
     isCatchAll: ${route.isCatchAll},
     score: ${route.score},
-    layouts: ${JSON.stringify(route.layouts || [])}
+    layouts: ${JSON.stringify(route.layouts || [])},
+    errorBoundary: ${JSON.stringify(route.errorBoundary ?? null)}
   }`);
   });
 
-  // Layout modules are not routes, but the production handler resolves them
-  // through the same `routes` table by file path. Export them as kind
-  // "layout" entries so `loadModule` can find their compiled modules.
-  const layoutPaths = [
-    ...new Set(routes.flatMap((r) => r.layouts ?? [])),
+  // Layout and error-boundary modules are not routes, but the production
+  // handler resolves them through the same `routes` table by file path.
+  // Export them as kind "layout" entries so `loadModule` can find their
+  // compiled modules.
+  const auxPaths = [
+    ...new Set([
+      ...routes.flatMap((r) => r.layouts ?? []),
+      ...routes.map((r) => r.errorBoundary).filter((p): p is string => !!p),
+    ]),
   ];
-  layoutPaths.forEach((layoutPath) => {
-    const normalizedLayoutPath = layoutPath.replace(/\\/g, "/");
+  auxPaths.forEach((auxPath) => {
+    const normalizedAuxPath = auxPath.replace(/\\/g, "/");
     importers.push(
-      `  ${JSON.stringify(layoutPath)}: () => import(${JSON.stringify(normalizedLayoutPath)})`
+      `  ${JSON.stringify(auxPath)}: () => import(${JSON.stringify(normalizedAuxPath)})`
     );
     routeEntries.push(`  {
-    id: ${JSON.stringify(layoutPath)},
+    id: ${JSON.stringify(auxPath)},
     pattern: "",
-    filePath: ${JSON.stringify(layoutPath)},
+    filePath: ${JSON.stringify(auxPath)},
     kind: "layout",
     isDynamic: false,
     isCatchAll: false,
     score: 0,
-    layouts: []
+    layouts: [],
+    errorBoundary: null
   }`);
   });
 

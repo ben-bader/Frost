@@ -400,6 +400,7 @@ export function frost(userConfig: FrostConfig = {}, pluginOptions: FrostPluginOp
                 sendFrostEvent("frost:error", report);
               },
               checkDeterminism: config.dev.checkDeterminism,
+              lang: config.app.lang,
               loadModule: async (route) => {
                 return (await server.ssrLoadModule(route.filePath)) as any;
               },

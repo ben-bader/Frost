@@ -14,10 +14,11 @@ import {
   type ApiRouteModule,
   type ResolvedSecurityConfig,
 } from "@frostjs/core";
-import { renderRouteToHtml } from "./ssr.js";
+import { renderRouteToHtml, renderSimpleDocument } from "./ssr.js";
 import { dispatchApiRoute } from "./api.js";
 import { applySecurityHeaders } from "./security.js";
-import { html, json } from "./response.js";
+import { json } from "./response.js";
+import { validateCsrf } from "@frostjs/data";
 import { randomBytes } from "node:crypto";
 import {
   createErrorReport,
@@ -40,6 +41,8 @@ export interface RequestHandlerOptions {
   onError?: (report: FrostErrorReport) => void;
   /** Dev-only: render twice and warn on nondeterministic output (F19). */
   checkDeterminism?: boolean;
+  /** html lang attribute for rendered documents. */
+  lang?: string;
 }
 
 const PAGE_METHODS = ["GET", "HEAD"];
@@ -57,7 +60,38 @@ function methodNotAllowed(allow: string[]): Response {
 }
 
 export function createRequestHandler(options: RequestHandlerOptions) {
-  const { routes, loadModule, getAssetsForRoute, security, onError, checkDeterminism } = options;
+  const { routes, loadModule, getAssetsForRoute, security, onError, checkDeterminism, lang } = options;
+
+  // The global not-found route (app/not-found.tsx or app/_404.tsx) is
+  // discovered with kind "not-found" and never participates in matching.
+  const notFoundRoute = routes.find((r) => r.kind === "not-found");
+
+  const loadLayoutModules = async (
+    layoutPaths: string[] | undefined
+  ): Promise<RouteModule[]> => {
+    if (!layoutPaths || layoutPaths.length === 0) return [];
+    // Load all layout modules in parallel; a failing layout is skipped
+    // with a warning.
+    const results = await Promise.all(
+      layoutPaths.map(async (layoutPath) => {
+        try {
+          return (await loadModule({
+            id: layoutPath,
+            pattern: "",
+            filePath: layoutPath,
+            kind: "layout",
+            isDynamic: false,
+            isCatchAll: false,
+            score: 0,
+          })) as RouteModule;
+        } catch (layoutErr) {
+          console.warn(`[Frost] Could not load layout at ${layoutPath}:`, layoutErr);
+          return null;
+        }
+      })
+    );
+    return results.filter((m): m is RouteModule => m !== null);
+  };
 
   // Separate and compile API vs Page routes
   const apiRoutes: CompiledRoute<DiscoveredRoute>[] = [];
@@ -124,9 +158,14 @@ export function createRequestHandler(options: RequestHandlerOptions) {
         try {
           const mod = (await loadModule(pageMatch.route)) as RouteModule;
 
+          // Layout modules are needed for the method gate, actions, and rendering.
+          const layoutModules = await loadLayoutModules(pageMatch.route.layouts);
+
           // Method gate: pages allow GET/HEAD, plus mutations when the
-          // route exports an action. Everything else -> 405.
-          const allowed = mod.action
+          // route or one of its layouts exports an action.
+          const hasAction =
+            !!mod.action || layoutModules.some((l) => !!l.action);
+          const allowed = hasAction
             ? [...PAGE_METHODS, ...MUTATION_METHODS]
             : PAGE_METHODS;
           if (!allowed.includes(request.method.toUpperCase())) {
@@ -135,11 +174,34 @@ export function createRequestHandler(options: RequestHandlerOptions) {
             return response;
           }
 
-          // Handle page route actions on mutation methods (POST, PUT, DELETE, PATCH)
-          if (request.method !== "GET" && request.method !== "HEAD" && mod.action) {
+          // Handle page route actions on mutation methods (POST, PUT, DELETE, PATCH).
+          // The page's own action wins; otherwise the nearest layout action
+          // (leaf -> root) handles the mutation.
+          if (request.method !== "GET" && request.method !== "HEAD" && hasAction) {
+            try {
+              validateCsrf(request);
+            } catch (csrfErr) {
+              onError?.(
+                createErrorReport(csrfErr, {
+                  runtime: "server",
+                  route: pathname,
+                  code: FROST_ERROR_CODES.MIDDLEWARE,
+                })
+              );
+              response = json(
+                { error: "Forbidden", message: "CSRF validation failed" },
+                { status: 403 }
+              );
+              applySecurityHeaders(response.headers, secOptions);
+              return response;
+            }
+
+            const actionOwner = mod.action
+              ? mod
+              : [...layoutModules].reverse().find((l) => l.action);
             let actionResult: unknown;
             try {
-              actionResult = await mod.action({
+              actionResult = await actionOwner!.action!({
                 request,
                 params: pageMatch.params,
                 url,
@@ -160,37 +222,43 @@ export function createRequestHandler(options: RequestHandlerOptions) {
               applySecurityHeaders(actionResult.headers, secOptions);
               return actionResult;
             }
-            response = json(actionResult);
+            // Progressive enhancement: a plain <form method="post"> sends
+            // Accept: text/html — re-render the page with actionData so it
+            // works without client JS. Fetch/XHR clients get JSON.
+            const acceptsHtml = request.headers
+              .get("accept")
+              ?.includes("text/html");
+            if (acceptsHtml) {
+              const assets = await getAssetsForRoute?.(pageMatch.route);
+              response = await renderRouteToHtml({
+                routeModule: mod,
+                layoutModules,
+                params: pageMatch.params,
+                pathname,
+                request,
+                context,
+                assets,
+                actionData: actionResult,
+                errorBoundaryModule: pageMatch.route.errorBoundary
+                  ? ((await loadModule({
+                      id: pageMatch.route.errorBoundary,
+                      pattern: "",
+                      filePath: pageMatch.route.errorBoundary,
+                      kind: "layout",
+                      isDynamic: false,
+                      isCatchAll: false,
+                      score: 0,
+                    })) as RouteModule)
+                  : undefined,
+                lang,
+                onError,
+                checkDeterminism,
+              });
+            } else {
+              response = json(actionResult);
+            }
             applySecurityHeaders(response.headers, secOptions);
             return response;
-          }
-
-          const layoutModules: RouteModule[] = [];
-
-          if (pageMatch.route.layouts && pageMatch.route.layouts.length > 0) {
-            // Load all layout modules in parallel; a failing layout is
-            // skipped with a warning (same semantics as before).
-            const layoutResults = await Promise.all(
-              pageMatch.route.layouts.map(async (layoutPath) => {
-                try {
-                  return (await loadModule({
-                    id: layoutPath,
-                    pattern: "",
-                    filePath: layoutPath,
-                    kind: "layout",
-                    isDynamic: false,
-                    isCatchAll: false,
-                    score: 0,
-                  })) as RouteModule;
-                } catch (layoutErr) {
-                  console.warn(`[Frost] Could not load layout at ${layoutPath}:`, layoutErr);
-                  return null;
-                }
-              })
-            );
-            for (const layoutMod of layoutResults) {
-              if (layoutMod) layoutModules.push(layoutMod);
-            }
           }
 
           const assets = await getAssetsForRoute?.(pageMatch.route);
@@ -202,6 +270,18 @@ export function createRequestHandler(options: RequestHandlerOptions) {
             request,
             context,
             assets,
+            errorBoundaryModule: pageMatch.route.errorBoundary
+              ? ((await loadModule({
+                  id: pageMatch.route.errorBoundary,
+                  pattern: "",
+                  filePath: pageMatch.route.errorBoundary,
+                  kind: "layout",
+                  isDynamic: false,
+                  isCatchAll: false,
+                  score: 0,
+                })) as RouteModule)
+              : undefined,
+            lang,
             onError,
             checkDeterminism,
           });
@@ -235,19 +315,57 @@ export function createRequestHandler(options: RequestHandlerOptions) {
               })
             );
           }
-          response = html(
-            `<!DOCTYPE html><html><head><title>500 Internal Server Error</title></head><body><h1>Server Error</h1><p>${
-              err instanceof Error ? err.message : "Unknown error"
-            }</p></body></html>`,
-            { status: 500 }
-          );
+          response = renderSimpleDocument({
+            title: "Server Error",
+            heading: "Something went wrong",
+            detail: err instanceof Error ? err.message : "Unknown error",
+            status: 500,
+            lang,
+            context,
+          });
         }
       } else {
-        // 3. 404 Not Found
-        response = html(
-          `<!DOCTYPE html><html><head><title>404 Not Found</title></head><body><h1>404 Not Found</h1><p>No route matched URL: ${pathname}</p></body></html>`,
-          { status: 404 }
-        );
+        // 3. 404 Not Found — render app/not-found.tsx (or _404.tsx) inside
+        // the root layout when present, else a minimal styled document.
+        if (notFoundRoute) {
+          try {
+            const mod = (await loadModule(notFoundRoute)) as RouteModule;
+            const layoutModules = await loadLayoutModules(notFoundRoute.layouts);
+            const assets = await getAssetsForRoute?.(notFoundRoute);
+            response = await renderRouteToHtml({
+              routeModule: mod,
+              layoutModules,
+              params: {},
+              pathname,
+              request,
+              context,
+              assets,
+              status: 404,
+              lang,
+              onError,
+              checkDeterminism,
+            });
+          } catch (nfErr) {
+            console.error(`[Frost] Error rendering not-found route:`, nfErr);
+            response = renderSimpleDocument({
+              title: "404 Not Found",
+              heading: "404 Not Found",
+              detail: `No route matched URL: ${pathname}`,
+              status: 404,
+              lang,
+              context,
+            });
+          }
+        } else {
+          response = renderSimpleDocument({
+            title: "404 Not Found",
+            heading: "404 Not Found",
+            detail: `No route matched URL: ${pathname}`,
+            status: 404,
+            lang,
+            context,
+          });
+        }
       }
     }
 

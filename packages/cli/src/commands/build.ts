@@ -102,6 +102,7 @@ const importerById = new Map(Object.entries(routeImporters));
 export const handler = createRequestHandler({
   routes,
   security,
+  lang: ${JSON.stringify(config.app.lang)},
   loadModule: async (route) => {
     const importer = importerById.get(route.id);
     if (!importer) return null;
