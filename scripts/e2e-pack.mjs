@@ -179,11 +179,23 @@ try {
   );
   check("scaffold exit 0", scaffold.status === 0);
   check(
-    "scaffold output",
+    "scaffold output (starter template)",
     fs.existsSync(path.join(appDir, "package.json")) &&
       fs.existsSync(path.join(appDir, "src/app/playground/page.tsx")) &&
+      fs.existsSync(path.join(appDir, "src/components/bento/CounterTile.tsx")) &&
+      fs.existsSync(path.join(appDir, "postcss.config.mjs")) &&
       fs.existsSync(path.join(appDir, ".gitignore")),
   );
+
+  // the scaffolded package.json must be registry-ready: real semver
+  // ranges, no workspace:/file: specs (checked BEFORE the e2e rewrite)
+  {
+    const raw = fs.readFileSync(path.join(appDir, "package.json"), "utf8");
+    check(
+      "scaffolded package.json has no workspace:/file: ranges",
+      !/workspace:|"file:|'file:/.test(raw),
+    );
+  }
 
   // 4. rewrite deps -> local file: refs
   console.log("== rewrite deps ==");
@@ -218,17 +230,30 @@ try {
   // to auto-install it from the registry.
   addNeed("vite", "^6.2.0");
 
-  // BFS the dependency closure through installed packages
+  // BFS the dependency closure through installed packages.
+  // Optionality propagates: a dep reachable only through optional edges is
+  // optional (e.g. fsevents on Windows, @napi-rs/wasm-runtime via the WASI
+  // build of @tailwindcss/oxide). A name enqueued as required wins over an
+  // earlier optional sighting.
   const resolved = new Map(); // name -> {dir, version}
   const skipped = new Set();
-  const queue = [...needed.entries()].map(([n, r]) => ({ name: n, range: r, optional: false }));
+  const hardReq = new Set();
+  const queue = [];
+  const enqueue = (name, range, opt) => {
+    if (!opt) hardReq.add(name);
+    if (resolved.has(name)) return;
+    if (skipped.has(name) && !hardReq.has(name)) return;
+    queue.push({ name, range, opt });
+  };
+  for (const [n, r] of needed) enqueue(n, r, false);
   while (queue.length) {
-    const { name, range, optional } = queue.shift();
-    if (resolved.has(name) || skipped.has(name)) continue;
+    const { name, range, opt } = queue.shift();
+    if (resolved.has(name)) continue;
+    if (skipped.has(name) && !hardReq.has(name)) continue;
     const hit = resolveDep(name, range);
     if (!hit) {
-      if (optional) {
-        skipped.add(name); // e.g. fsevents on Windows
+      if (opt || !hardReq.has(name)) {
+        skipped.add(name);
         continue;
       }
       console.error(`  unresolved dependency: ${name}@${range}`);
@@ -247,16 +272,14 @@ try {
         (k) => pkg.peerDependenciesMeta[k]?.optional,
       ),
     );
-    for (const section of ["dependencies", "optionalDependencies"]) {
-      for (const [n, r] of Object.entries(pkg[section] ?? {})) {
-        if (!resolved.has(n) && !needed.has(n)) needed.set(n, r);
-        queue.push({ name: n, range: r, optional: section === "optionalDependencies" });
-      }
+    for (const [n, r] of Object.entries(pkg.dependencies ?? {})) {
+      enqueue(n, r, opt);
+    }
+    for (const [n, r] of Object.entries(pkg.optionalDependencies ?? {})) {
+      enqueue(n, r, true);
     }
     for (const [n, r] of Object.entries(pkg.peerDependencies ?? {})) {
-      if (optionalPeers.has(n)) continue;
-      if (!resolved.has(n) && !needed.has(n)) needed.set(n, r);
-      queue.push({ name: n, range: r, optional: false });
+      if (!optionalPeers.has(n)) enqueue(n, r, opt);
     }
   }
   check("dependency closure", true, `${resolved.size} packages resolved locally`);
@@ -369,15 +392,35 @@ try {
       (home.headers.get("content-type") ?? "").includes("text/html"),
       home.headers.get("content-type") ?? "",
     );
-    check("GET / hero content", home.body.includes("Hello, Frost"));
+    check("GET / hero content", home.body.includes("React rendering"));
     const enc = home.headers.get("content-encoding") ?? "";
     check("GET / compressed (br|gzip)", enc === "br" || enc === "gzip", enc || "none");
+
+    // stylesheet <link> must be present and serve real Tailwind CSS
+    const cssHref = home.body.match(/<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"/)?.[1]
+      ?? home.body.match(/<link[^>]+href="([^"]+\.css[^"]*)"[^>]+rel="stylesheet"/)?.[1];
+    check("GET / has stylesheet <link>", Boolean(cssHref), cssHref ?? "none found");
+    if (cssHref) {
+      const cssUrl = new URL(cssHref, base).href;
+      const css = await fetch(cssUrl, { headers: { "accept-encoding": "br, gzip" } });
+      const cssText = await css.text();
+      check("stylesheet -> 200", css.status === 200, `got ${css.status} for ${cssUrl}`);
+      check(
+        "stylesheet content-type css",
+        (css.headers.get("content-type") ?? "").includes("text/css"),
+        css.headers.get("content-type") ?? "",
+      );
+      check(
+        "stylesheet contains Tailwind token (--color-ink-hi)",
+        cssText.includes("--color-ink-hi") || cssText.includes("10e8c8"),
+      );
+    }
 
     const pg = await get("/playground");
     check("GET /playground -> 200", pg.status === 200, `got ${pg.status}`);
     check(
       "GET /playground markup",
-      pg.body.includes("Playground") && pg.body.includes("aria-live"),
+      pg.body.includes("Playground") && (pg.body.includes("Counter") || pg.body.includes("counter") || pg.body.includes("aria-live")),
     );
   }
 } catch (err) {
