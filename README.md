@@ -119,12 +119,12 @@ pnpm --dir examples/starter start
 The starter app ships two routes:
 
 - `/` — Demo: a hero-only landing page (headline, CTAs, dot cue) with the shared header.
-- `/playground` — Playground: a client-side counter and an error-log dialog that opens automatically once per visit.
+- `/playground` — Playground: a bento grid with a client counter, a fake terminal that types an error sequence, and a faux browser window showing the error dialog.
 
 ### What's in this starter
 
 - `/` demo page and `/playground` playground — route components live in `src/app/page.tsx` and `src/app/playground/page.tsx`; add a `loader` export in a route file when a page needs server data.
-- Shared chrome and client islands: `src/components/` (`Header`, `Counter`, `ErrorDialog`) — anything using `useState`/`useEffect` hydrates on the client.
+- Shared chrome and client islands: `src/components/` (`Header`, `Button`, `bento/` tiles) — anything using `useState`/`useEffect` hydrates on the client.
 - Design tokens live in the Tailwind `@theme` block and the only stylesheet is `src/styles/app.css` (processed by `@tailwindcss/postcss` via `postcss.config.mjs`).
 - Framework config: `frost.config.ts`; scripts in `package.json` (`dev`, `build`, `start`, `test`).
 

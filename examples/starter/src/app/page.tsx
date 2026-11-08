@@ -8,8 +8,6 @@ export const metadata: Route.Metadata = {
     "Frost keeps execution explicit: server loaders, client hydration, route contracts, and runtime boundaries stay visible, testable, and predictable.",
 };
 
-const cueDots = [1, 2, 4, 5, 6, 8]; // 3x3 grid, corners omitted
-
 export default function DemoPage(): React.JSX.Element {
   return (
     <section className="flex min-h-0 flex-1 items-center justify-center px-[clamp(20px,5vw,48px)] py-8" aria-labelledby="hero-title">
@@ -33,23 +31,8 @@ export default function DemoPage(): React.JSX.Element {
           <Link className={pillPrimary} to="/playground">Open playground</Link>
           <Link className={pillGhost} to="/playground">Run it locally</Link>
         </div>
-        {/* Decorative dot grid — aria-hidden, corners omitted */}
-        <div
-          className="mt-7 grid grid-cols-3 gap-1.5 motion-safe:animate-hero-rise [animation-delay:400ms]"
-          aria-hidden="true"
-        >
-          {Array.from({ length: 9 }, (_, i) =>
-            cueDots.includes(i) ? (
-              <span
-                key={i}
-                className="h-1.5 w-1.5 rounded-full bg-mint motion-safe:animate-cue-pulse"
-                style={{ animationDelay: `${(i % 3) * 120 + Math.floor(i / 3) * 200}ms` }}
-              />
-            ) : (
-              <span key={i} className="h-1.5 w-1.5" />
-            )
-          )}
-        </div>
+       
+     
       </div>
     </section>
   );

@@ -37,21 +37,22 @@ describe("starter routes", () => {
     expect(src).toContain("Run it locally");
   });
 
-  it("playground page wires counter and error dialog", () => {
+  it("playground page wires the bento tiles", () => {
     const src = readRoute("playground", "page.tsx");
-    expect(src).toContain("Counter");
-    expect(src).toContain("ErrorDialog");
-    expect(src).toContain("View error logs");
-    expect(src).toContain("setTimeout");
+    expect(src).toContain("CounterTile");
+    expect(src).toContain("TerminalTile");
+    expect(src).toContain("BrowserTile");
+    expect(src).toContain("runId");
   });
 
-  it("error dialog uses native dialog backed by typed demo data", () => {
-    const dialog = fs.readFileSync(path.join(SRC, "components", "ErrorDialog.tsx"), "utf-8");
-    const data = fs.readFileSync(path.join(SRC, "data", "errors.ts"), "utf-8");
-    expect(dialog).toContain("<dialog");
-    expect(dialog).toContain("Errors detected");
+  it("error demo renders terminal and dialog from typed data", () => {
+    const data = fs.readFileSync(path.join(SRC, "data", "playgroundError.ts"), "utf-8");
+    const terminal = fs.readFileSync(path.join(SRC, "components", "bento", "TerminalTile.tsx"), "utf-8");
+    const browser = fs.readFileSync(path.join(SRC, "components", "bento", "BrowserTile.tsx"), "utf-8");
+    expect(data).toContain("PLAYGROUND_ERROR");
     expect(data).toContain("HydrationError");
-    expect(data).toContain("missing field");
-    expect(data).toContain("PLAYGROUND_ERRORS");
+    expect(terminal).toContain("PLAYGROUND_ERROR");
+    expect(browser).toContain("PLAYGROUND_ERROR");
+    expect(browser).toContain('role="alertdialog"');
   });
 });
