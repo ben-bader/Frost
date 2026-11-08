@@ -19,6 +19,11 @@ import { dispatchApiRoute } from "./api.js";
 import { applySecurityHeaders } from "./security.js";
 import { html, json } from "./response.js";
 import { randomBytes } from "node:crypto";
+import {
+  createErrorReport,
+  FROST_ERROR_CODES,
+  type FrostErrorReport,
+} from "@frostjs/core";
 
 export interface LoadedRoute<T = RouteModule | ApiRouteModule> {
   discovered: DiscoveredRoute;
@@ -31,6 +36,10 @@ export interface RequestHandlerOptions {
   getAssetsForRoute?: (route: DiscoveredRoute) => FrostAssets | Promise<FrostAssets>;
   /** Resolved security config; enables CSP nonce + extra headers. */
   security?: ResolvedSecurityConfig;
+  /** Dev hook: receives structured error reports for overlay/terminal. */
+  onError?: (report: FrostErrorReport) => void;
+  /** Dev-only: render twice and warn on nondeterministic output (F19). */
+  checkDeterminism?: boolean;
 }
 
 const PAGE_METHODS = ["GET", "HEAD"];
@@ -48,7 +57,7 @@ function methodNotAllowed(allow: string[]): Response {
 }
 
 export function createRequestHandler(options: RequestHandlerOptions) {
-  const { routes, loadModule, getAssetsForRoute, security } = options;
+  const { routes, loadModule, getAssetsForRoute, security, onError, checkDeterminism } = options;
 
   // Separate and compile API vs Page routes
   const apiRoutes: CompiledRoute<DiscoveredRoute>[] = [];
@@ -93,9 +102,16 @@ export function createRequestHandler(options: RequestHandlerOptions) {
     if (apiMatch) {
       try {
         const mod = (await loadModule(apiMatch.route)) as ApiRouteModule;
-        response = await dispatchApiRoute(mod, request, context);
+        response = await dispatchApiRoute(mod, request, context, onError);
       } catch (err) {
         console.error(`[Frost] Error in API route ${pathname}:`, err);
+        onError?.(
+          createErrorReport(err, {
+            runtime: "server",
+            route: pathname,
+            code: FROST_ERROR_CODES.API,
+          })
+        );
         response = new Response(JSON.stringify({ error: "Internal Server Error" }), {
           status: 500,
           headers: { "Content-Type": "application/json" },
@@ -121,12 +137,25 @@ export function createRequestHandler(options: RequestHandlerOptions) {
 
           // Handle page route actions on mutation methods (POST, PUT, DELETE, PATCH)
           if (request.method !== "GET" && request.method !== "HEAD" && mod.action) {
-            const actionResult = await mod.action({
-              request,
-              params: pageMatch.params,
-              url,
-              context,
-            });
+            let actionResult: unknown;
+            try {
+              actionResult = await mod.action({
+                request,
+                params: pageMatch.params,
+                url,
+                context,
+              });
+            } catch (actionErr) {
+              onError?.(
+                createErrorReport(actionErr, {
+                  runtime: "server",
+                  route: pathname,
+                  code: FROST_ERROR_CODES.ACTION,
+                })
+              );
+              (actionErr as Record<string, unknown>)["__frostReported"] = true;
+              throw actionErr;
+            }
             if (actionResult instanceof Response) {
               applySecurityHeaders(actionResult.headers, secOptions);
               return actionResult;
@@ -173,6 +202,8 @@ export function createRequestHandler(options: RequestHandlerOptions) {
             request,
             context,
             assets,
+            onError,
+            checkDeterminism,
           });
 
           // Per-route headers export (static map or function).
@@ -195,6 +226,15 @@ export function createRequestHandler(options: RequestHandlerOptions) {
           }
         } catch (err) {
           console.error(`[Frost] Error rendering route ${pathname}:`, err);
+          if (!(err as Record<string, unknown>)?.["__frostReported"]) {
+            onError?.(
+              createErrorReport(err, {
+                runtime: "server",
+                route: pathname,
+                code: FROST_ERROR_CODES.RENDER,
+              })
+            );
+          }
           response = html(
             `<!DOCTYPE html><html><head><title>500 Internal Server Error</title></head><body><h1>Server Error</h1><p>${
               err instanceof Error ? err.message : "Unknown error"

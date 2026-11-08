@@ -1,4 +1,5 @@
 import { createServer } from "vite";
+import react from "@vitejs/plugin-react";
 import { frost } from "@frostjs/vite";
 import { resolveConfig, type FrostConfig } from "@frostjs/core";
 
@@ -8,6 +9,8 @@ export interface DevCommandOptions {
   rootDir?: string;
   /** User config (typically loaded from frost.config.ts by the CLI entry). */
   config?: FrostConfig;
+  /** Resolved path to frost.config.* — enables in-process restart on change. */
+  configFile?: string;
 }
 
 export async function devCommand(options: DevCommandOptions = {}): Promise<void> {
@@ -23,7 +26,22 @@ export async function devCommand(options: DevCommandOptions = {}): Promise<void>
       port,
       host,
     },
-    plugins: [frost(config)],
+    plugins: [
+      frost(config, {
+        configFile: options.configFile,
+        // Re-apply CLI flag overrides if the config file restarts the server.
+        cliOverrides: options.config,
+      }),
+      // Fast Refresh for React components. .server modules and files
+      // under api directories are excluded — they are server-only and
+      // must never become refresh boundaries. Route files that export
+      // loaders/actions alongside components fall back to a full reload
+      // automatically (plugin-react only refreshes pure-component modules).
+      react({
+        include: [/\.[jt]sx?$/],
+        exclude: [/\.server\.[jt]sx?$/, /[/\\]api[/\\]/],
+      }),
+    ],
   });
 
   await server.listen();

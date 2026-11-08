@@ -1,7 +1,13 @@
 import type { Plugin, ViteDevServer } from "vite";
-import type { EnvironmentModuleNode } from "vite";
+import { loadConfigFromFile, type EnvironmentModuleNode } from "vite";
 import * as path from "node:path";
-import { resolveConfig, type FrostConfig } from "@frostjs/core";
+import {
+  createErrorReport,
+  formatErrorReportTerminal,
+  resolveConfig,
+  type FrostConfig,
+  type FrostErrorReport,
+} from "@frostjs/core";
 import { discoverRoutes, type DiscoveredRoute } from "@frostjs/router";
 import { createRequestHandler } from "@frostjs/server";
 import { isSafeRequestTarget, nodeReqToWebRequest, sendWebResponseToNode } from "@frostjs/adapter-node";
@@ -12,10 +18,21 @@ import {
   generateRoutesModuleCode,
   generateClientEntryCode,
 } from "./virtual.js";
+import { DEV_CLIENT_CODE, DEV_CLIENT_ID, RESOLVED_DEV_CLIENT_ID } from "./dev-client.js";
 import { validateClientEnvAccess, validateModuleBoundary } from "./boundary.js";
 
-export function frost(userConfig: FrostConfig = {}): Plugin {
-  const config = resolveConfig(userConfig);
+export interface FrostPluginOptions {
+  /** Absolute path to the frost.config.* file — enables in-process restart on change. */
+  configFile?: string;
+  /** CLI flag overrides re-applied on top of the config file after a restart. */
+  cliOverrides?: FrostConfig;
+}
+
+const CONFIG_FILE_RE = /^frost\.config\.(ts|js|mts|mjs|cts|cjs)$/i;
+const SERVER_ONLY_RE = /(?:^|[/\\])(?:[^/\\]*\.server\.[jt]sx?|[^/\\]*api[/\\][^/\\]*\.[jt]sx?)$/i;
+
+export function frost(userConfig: FrostConfig = {}, pluginOptions: FrostPluginOptions = {}): Plugin {
+  let config = resolveConfig(userConfig);
   setBodyLimits(config.limits);
   let rootDir: string;
   let isClientBuild = true;
@@ -28,6 +45,8 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
   const devCssCache = new Map<string, string[]>();
   let routesInvalidationTimer: ReturnType<typeof setTimeout> | null = null;
   let cssInvalidationTimer: ReturnType<typeof setTimeout> | null = null;
+  let configRestartTimer: ReturnType<typeof setTimeout> | null = null;
+  let reloadPending = false;
 
   const scheduleRouteInvalidation = () => {
     if (routesInvalidationTimer) clearTimeout(routesInvalidationTimer);
@@ -60,6 +79,48 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
       });
     }
     return devRoutesCache;
+  };
+
+  // Applies a freshly loaded config file over CLI overrides, resets all
+  // caches, and restarts the dev server. Called on frost.config.* change.
+  const restartForConfigFile = async (server: ViteDevServer): Promise<void> => {
+    if (!pluginOptions.configFile) return;
+    try {
+      const result = await loadConfigFromFile(
+        { command: "serve", mode: "development" },
+        pluginOptions.configFile,
+        rootDir
+      );
+      const fileConfig = ((result?.config ?? {}) as FrostConfig) || {};
+      const cli = pluginOptions.cliOverrides;
+      const merged: FrostConfig = cli?.server
+        ? {
+            ...fileConfig,
+            server: {
+              ...fileConfig.server,
+              ...(cli.server.port !== undefined ? { port: cli.server.port } : {}),
+              ...(cli.server.host !== undefined ? { host: cli.server.host } : {}),
+            },
+          }
+        : fileConfig;
+      config = resolveConfig(merged);
+      setBodyLimits(config.limits);
+      devRoutesCache = null;
+      devCssCache.clear();
+      console.log("\n❄️  frost.config changed — restarting dev server…\n");
+      await server.restart();
+      // Browser reconnects via its backoff logic; force a reload once the
+      // new server is up by notifying before restart completes.
+      server.ws.send({ type: "custom", event: "frost:reload", data: { reason: "config" } });
+    } catch (err) {
+      const report = createErrorReport(err, {
+        runtime: "server",
+        route: "/",
+        code: "FROST_E_CONFIG",
+      });
+      console.error(formatErrorReportTerminal(report));
+      server.ws.send({ type: "custom", event: "frost:error", data: report });
+    }
   };
 
   return {
@@ -106,10 +167,26 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
       if (id === VIRTUAL_ROUTES_ID) {
         return RESOLVED_VIRTUAL_ROUTES_ID;
       }
+      if (id === DEV_CLIENT_ID || id === RESOLVED_DEV_CLIENT_ID) {
+        return RESOLVED_DEV_CLIENT_ID;
+      }
       if (id.startsWith("/@frost/client") || id.startsWith("@frost/client")) {
         return id;
       }
       return null;
+    },
+
+    // Inject the Frost dev client into every dev HTML document so the
+    // browser participates in the frost:* ws protocol (overlay, css hot
+    // update, reload). transformIndexHtml is called by our SSR middleware.
+    transformIndexHtml(html) {
+      if (!html.includes(DEV_CLIENT_ID)) {
+        return html.replace(
+          "</body>",
+          `<script type="module" src="${DEV_CLIENT_ID}"></script></body>`
+        );
+      }
+      return html;
     },
 
     transform(code, id, options) {
@@ -129,6 +206,9 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
     },
 
     load(id) {
+      if (id === RESOLVED_DEV_CLIENT_ID) {
+        return DEV_CLIENT_CODE;
+      }
       if (id === RESOLVED_VIRTUAL_ROUTES_ID) {
         cachedRoutes = discoverRoutes({
           appDirectory: config.appDirectory,
@@ -160,18 +240,109 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
     },
 
     configureServer(server: ViteDevServer) {
+      const sendFrostEvent = (event: string, data: unknown = {}) => {
+        server.ws.send({ type: "custom", event, data });
+      };
+
+      // If a config restart is pending, a (re)connecting client should
+      // reload once it is back.
+      try {
+        const wsAny = server.ws as unknown as {
+          on?: (event: string, cb: (socket: unknown) => void) => void;
+        };
+        wsAny.on?.("connection", () => {
+          if (reloadPending) {
+            reloadPending = false;
+            sendFrostEvent("frost:reload", { reason: "config" });
+          }
+        });
+      } catch {
+        // ws API differences across Vite versions — fallback timers below.
+      }
+
+      const scheduleConfigRestart = () => {
+        if (configRestartTimer) clearTimeout(configRestartTimer);
+        // Debounce longer than route invalidation: config saves often
+        // come in bursts and each restart is expensive.
+        configRestartTimer = setTimeout(() => {
+          configRestartTimer = null;
+          reloadPending = true;
+          void restartForConfigFile(server)
+            .catch(() => {})
+            .finally(() => {
+              // Fallback for clients already connected when the restart
+              // finished. With zero clients, leave reloadPending set so the
+              // ws connection hook reloads whoever reconnects.
+              setTimeout(() => {
+                const clients = (server.ws as unknown as { clients?: { size: number } })
+                  .clients;
+                if (reloadPending && (!clients || clients.size > 0)) {
+                  reloadPending = false;
+                  sendFrostEvent("frost:reload", { reason: "config" });
+                }
+              }, 1500);
+            });
+        }, 300);
+      };
+
       // Watcher is the single source of change events. Route-table changes
       // are scoped to the app/api directories; the CSS graph cache is
       // cleared for any in-project change since imports can live anywhere.
-      const appDir = path.resolve(rootDir, config.appDirectory);
-      const apiDir = path.resolve(rootDir, config.apiDirectory);
+      // Directories are resolved per event so a config restart that changes
+      // appDirectory/apiDirectory takes effect immediately.
       server.watcher.on("all", (event, file) => {
         if (event !== "change" && event !== "add" && event !== "unlink") return;
         const abs = path.resolve(file);
-        if (isInsideDir(appDir, abs) || isInsideDir(apiDir, abs)) {
-          scheduleRouteInvalidation();
+        const appDir = path.resolve(rootDir, config.appDirectory);
+        const apiDir = path.resolve(rootDir, config.apiDirectory);
+        const base = path.basename(abs);
+
+        // frost.config.* → restart the dev server in-process.
+        if (CONFIG_FILE_RE.test(base)) {
+          scheduleConfigRestart();
+          return;
+        }
+
+        const inAppScope = isInsideDir(appDir, abs) || isInsideDir(apiDir, abs);
+        if (inAppScope) {
+          if (event === "add" || event === "unlink") {
+            // Route table membership may have changed — invalidate
+            // synchronously so the reload below sees the new table.
+            devRoutesCache = null;
+            devCssCache.clear();
+            sendFrostEvent("frost:routes-changed", { file: abs });
+            sendFrostEvent("frost:reload", { reason: "routes" });
+          } else {
+            scheduleRouteInvalidation();
+          }
         }
         scheduleCssInvalidation();
+
+        if (event !== "change") return;
+
+        // Classify the change for the Frost ws protocol.
+        if (CSS_FILE_RE.test(abs)) {
+          sendFrostEvent("frost:css-update", { file: abs });
+          return;
+        }
+
+        const rel = path.relative(rootDir, abs);
+        if (rel.startsWith("..") || path.isAbsolute(rel)) return;
+        if (rel.split(path.sep).includes("node_modules")) return;
+
+        // Server-only modules (API routes, *.server.*, anything under the
+        // api directory) have no client importer, so Vite's HMR will not
+        // reload the page — do it explicitly.
+        const isApiDirFile = isInsideDir(apiDir, abs);
+        const isServerModule = SERVER_ONLY_RE.test(abs) || abs.includes(".server.");
+        const inClientGraph = hasClientModule(server, abs);
+        const inSsrGraph = hasSsrModule(server, abs);
+
+        if (isApiDirFile || isServerModule || (inSsrGraph && !inClientGraph)) {
+          sendFrostEvent("frost:reload", { reason: "server-module", file: abs });
+        }
+        // Client modules are handled by Vite's own HMR/full-reload and by
+        // @vitejs/plugin-react Fast Refresh — no Frost event needed.
       });
 
       // Pre-middleware (runs before Vite's internal middlewares): serves
@@ -221,6 +392,14 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
             const handler = createRequestHandler({
               routes: devRoutes,
               security: config.security,
+              // Dev error channel: structured reports go to the terminal
+              // (formatted block) and the browser overlay over the same
+              // frost:* ws protocol.
+              onError: (report: FrostErrorReport) => {
+                console.error(formatErrorReportTerminal(report));
+                sendFrostEvent("frost:error", report);
+              },
+              checkDeterminism: config.dev.checkDeterminism,
               loadModule: async (route) => {
                 return (await server.ssrLoadModule(route.filePath)) as any;
               },
@@ -254,6 +433,11 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
             const webRequest = nodeReqToWebRequest(req);
             let webResponse = await handler(webRequest);
 
+            // A successful document render clears any stale overlay.
+            if (webResponse.status < 400) {
+              sendFrostEvent("frost:error-clear");
+            }
+
             // In Vite dev mode, transform the generated SSR HTML through Vite to inject HMR scripts
             if (
               webResponse.headers.get("Content-Type")?.includes("text/html") &&
@@ -280,6 +464,26 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
 }
 
 const CSS_FILE_RE = /\.(css|less|sass|scss|styl|stylus|pcss|postcss)$/i;
+
+/** True when the file is in Vite's client module graph. */
+function hasClientModule(server: ViteDevServer, absFile: string): boolean {
+  const graph = server.environments?.client?.moduleGraph;
+  if (!graph) return false;
+  const mods =
+    graph.getModulesByFile(absFile.replace(/\\/g, "/")) ??
+    graph.getModulesByFile(absFile);
+  return !!mods && mods.size > 0;
+}
+
+/** True when the file is in Vite's SSR module graph. */
+function hasSsrModule(server: ViteDevServer, absFile: string): boolean {
+  const graph = server.environments?.ssr?.moduleGraph;
+  if (!graph) return false;
+  const mods =
+    graph.getModulesByFile(absFile.replace(/\\/g, "/")) ??
+    graph.getModulesByFile(absFile);
+  return !!mods && mods.size > 0;
+}
 
 /**
  * Walks the SSR module graph from the route entry files and returns the

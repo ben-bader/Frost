@@ -3,7 +3,7 @@ import { devCommand } from "./commands/dev.js";
 import { buildCommand } from "./commands/build.js";
 import { startCommand } from "./commands/start.js";
 import { routesCommand } from "./commands/routes.js";
-import { loadFrostConfig, mergeCliOverrides } from "./config.js";
+import { loadFrostConfig, mergeCliOverrides, findFrostConfigFile } from "./config.js";
 import type { FrostConfig } from "@frostjs/core";
 
 async function main() {
@@ -27,14 +27,16 @@ async function main() {
   // Load frost.config.{ts,js,mjs} once for every command. A missing file
   // falls back to defaults; a broken file fails fast with its path.
   let fileConfig: FrostConfig = {};
+  let configFile: string | undefined;
   if (command && command !== "--help" && command !== "-h") {
+    configFile = findFrostConfigFile({ rootDir, configPath });
     fileConfig = await loadFrostConfig({ rootDir, configPath });
   }
   const userConfig = mergeCliOverrides(fileConfig, { port, host });
 
   switch (command) {
     case "dev":
-      await devCommand({ port, host, config: userConfig });
+      await devCommand({ port, host, config: userConfig, configFile });
       break;
 
     case "build":

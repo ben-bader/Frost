@@ -1,7 +1,15 @@
 import type { ReactNode } from "react";
 import { renderToString } from "react-dom/server";
 import { FrostDocument, FrostProvider, FrostErrorBoundary, type FrostClientState } from "@frostjs/react";
-import type { FrostAssets, RouteModule, FrostRequestContext } from "@frostjs/core";
+import {
+  createErrorReport,
+  FROST_ERROR_CODES,
+  formatErrorReportTerminal,
+  type FrostAssets,
+  type FrostErrorReport,
+  type FrostRequestContext,
+  type RouteModule,
+} from "@frostjs/core";
 import { html } from "./response.js";
 
 export interface SsrRenderOptions {
@@ -12,10 +20,30 @@ export interface SsrRenderOptions {
   request: Request;
   context: FrostRequestContext;
   assets?: FrostAssets;
+  /** Dev hook: receives structured error reports for overlay/terminal. */
+  onError?: (report: FrostErrorReport) => void;
+  /** Dev-only: render twice and warn when output differs (F19). */
+  checkDeterminism?: boolean;
+}
+
+function firstDiffIndex(a: string, b: string): number {
+  const len = Math.min(a.length, b.length);
+  for (let i = 0; i < len; i++) {
+    if (a[i] !== b[i]) return i;
+  }
+  return len;
+}
+
+function formatErrorReportTerminalSafe(report: FrostErrorReport): string {
+  try {
+    return formatErrorReportTerminal(report);
+  } catch {
+    return `${report.code}: ${report.message}`;
+  }
 }
 
 export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Response> {
-  const { routeModule, params, pathname, request, context, assets } = options;
+  const { routeModule, params, pathname, request, context, assets, onError, checkDeterminism } = options;
 
   let loaderData: unknown = null;
 
@@ -41,6 +69,13 @@ export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Resp
         return err;
       }
       console.error(`[Frost] Error executing loader for route ${pathname}:`, err);
+      onError?.(
+        createErrorReport(err, {
+          runtime: "server",
+          route: pathname,
+          code: FROST_ERROR_CODES.LOADER,
+        })
+      );
       return html(
         `<!DOCTYPE html><html><head><title>500 Internal Server Error</title></head><body><h1>Loader Error</h1><p>${
           err instanceof Error ? err.message : "Internal Error"
@@ -159,6 +194,37 @@ export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Resp
       </FrostDocument>
     </FrostProvider>
   );
+
+  // Dev-only determinism check (F19): render twice and compare. A diff
+  // usually means Date.now/Math.random/locale formatting leaked into
+  // render output and will cause hydration mismatches.
+  if (checkDeterminism) {
+    try {
+      const second = renderToString(
+        <FrostProvider value={clientState}>
+          <FrostDocument title={title} head={head}>
+            <FrostErrorBoundary>
+              {renderedContent}
+            </FrostErrorBoundary>
+          </FrostDocument>
+        </FrostProvider>
+      );
+      if (second !== appHtml) {
+        const idx = firstDiffIndex(appHtml, second);
+        const line = appHtml.slice(0, idx).split("\n").length;
+        const report = createErrorReport(
+          new Error(
+            `Nondeterministic render output on ${pathname} (first difference at output line ${line}). Typical culprits: Date.now(), Math.random(), locale-dependent formatting.`
+          ),
+          { runtime: "server", route: pathname, code: FROST_ERROR_CODES.HYDRATION, severity: "warning" }
+        );
+        console.warn(`\n${formatErrorReportTerminalSafe(report)}\n`);
+        onError?.(report);
+      }
+    } catch {
+      // Determinism check must never break rendering.
+    }
+  }
 
   return html(`<!DOCTYPE html>\n${appHtml}`);
 }

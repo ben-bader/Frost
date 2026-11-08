@@ -16,6 +16,31 @@ export interface LoadConfigOptions {
 }
 
 /**
+ * Locates the Frost config file without loading it. Returns the resolved
+ * absolute path, or undefined when no config file exists. Throws when an
+ * explicit --config path does not exist.
+ */
+export function findFrostConfigFile(options: LoadConfigOptions = {}): string | undefined {
+  const rootDir = options.rootDir ?? process.cwd();
+
+  if (options.configPath) {
+    const resolved = path.resolve(rootDir, options.configPath);
+    if (!fs.existsSync(resolved)) {
+      throw new Error(`Frost config file not found: ${resolved}`);
+    }
+    return resolved;
+  }
+
+  for (const candidate of CONFIG_CANDIDATES) {
+    const full = path.join(rootDir, candidate);
+    if (fs.existsSync(full)) {
+      return full;
+    }
+  }
+  return undefined;
+}
+
+/**
  * Locates and loads the Frost config file for a project.
  *
  * Search order:
@@ -28,23 +53,7 @@ export interface LoadConfigOptions {
  */
 export async function loadFrostConfig(options: LoadConfigOptions = {}): Promise<FrostConfig> {
   const rootDir = options.rootDir ?? process.cwd();
-  let configFile: string | undefined;
-
-  if (options.configPath) {
-    const resolved = path.resolve(rootDir, options.configPath);
-    if (!fs.existsSync(resolved)) {
-      throw new Error(`Frost config file not found: ${resolved}`);
-    }
-    configFile = resolved;
-  } else {
-    for (const candidate of CONFIG_CANDIDATES) {
-      const full = path.join(rootDir, candidate);
-      if (fs.existsSync(full)) {
-        configFile = full;
-        break;
-      }
-    }
-  }
+  const configFile = findFrostConfigFile(options);
 
   if (!configFile) {
     return {};

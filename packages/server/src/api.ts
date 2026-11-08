@@ -1,4 +1,5 @@
-import type { ApiRouteModule, FrostRequestContext } from "@frostjs/core";
+import type { ApiRouteModule, FrostRequestContext, FrostErrorReport } from "@frostjs/core";
+import { createErrorReport, FROST_ERROR_CODES } from "@frostjs/core";
 import { json } from "./response.js";
 
 const API_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"];
@@ -12,7 +13,8 @@ function allowedMethods(module: ApiRouteModule): string[] {
 export async function dispatchApiRoute(
   module: ApiRouteModule,
   request: Request,
-  context: FrostRequestContext
+  context: FrostRequestContext,
+  onError?: (report: FrostErrorReport) => void
 ): Promise<Response> {
   const method = request.method.toUpperCase();
   let handler = module[method as keyof ApiRouteModule];
@@ -60,6 +62,13 @@ export async function dispatchApiRoute(
     return result;
   } catch (error) {
     console.error(`[Frost] Error executing API route ${request.method} ${request.url}:`, error);
+    onError?.(
+      createErrorReport(error, {
+        runtime: "server",
+        route: new URL(request.url).pathname,
+        code: FROST_ERROR_CODES.API,
+      })
+    );
     const status =
       typeof (error as { status?: unknown })?.status === "number"
         ? (error as { status: number }).status
