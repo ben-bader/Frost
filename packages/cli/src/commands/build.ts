@@ -2,11 +2,13 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { build as viteBuild } from "vite";
 import { frost, generateClientEntryCode } from "@frostjs/vite";
-import { resolveConfig, type FrostAssets } from "@frostjs/core";
+import { resolveConfig, type FrostAssets, type FrostConfig } from "@frostjs/core";
 import { discoverRoutes } from "@frostjs/router";
 
 export interface BuildCommandOptions {
   rootDir?: string;
+  /** User config (typically loaded from frost.config.ts by the CLI entry). */
+  config?: FrostConfig;
 }
 
 interface ViteManifestEntry {
@@ -20,11 +22,16 @@ type ViteManifest = Record<string, ViteManifestEntry>;
 
 export async function buildCommand(options: BuildCommandOptions = {}): Promise<void> {
   const rootDir = options.rootDir ?? process.cwd();
-  const config = resolveConfig();
+  const config = resolveConfig(options.config);
   const outDir = path.resolve(rootDir, config.build.outDir);
   const serverOutDir = path.join(outDir, "server");
   const clientOutDir = path.join(outDir, "client");
-  const clientEntriesDir = path.join(outDir, ".client-entries");
+  // Generated client entry shims live in the pnpm/npm cache dir inside
+  // node_modules — module resolution still works, they are never shipped
+  // in outDir, and they are removed in a finally block.
+  const cacheRoot = path.join(rootDir, "node_modules", ".cache", "frost");
+  fs.mkdirSync(cacheRoot, { recursive: true });
+  const clientEntriesDir = fs.mkdtempSync(path.join(cacheRoot, "client-entries-"));
 
   console.log("❄️  Building Frost application for production...");
 
@@ -60,24 +67,22 @@ export async function buildCommand(options: BuildCommandOptions = {}): Promise<v
       clientInputs[route.id] = entryFile;
     }
 
-    await viteBuild({
-      root: rootDir,
-      plugins: [frost(config)],
-      build: {
-        outDir: clientOutDir,
-        emptyOutDir: true,
-        manifest: true,
-        sourcemap: config.build.sourcemap,
-        rollupOptions: {
-          input: clientInputs,
-        },
-      },
-    });
-
     try {
+      await viteBuild({
+        root: rootDir,
+        plugins: [frost(config)],
+        build: {
+          outDir: clientOutDir,
+          emptyOutDir: true,
+          manifest: true,
+          sourcemap: config.build.sourcemap,
+          rollupOptions: {
+            input: clientInputs,
+          },
+        },
+      });
+    } finally {
       fs.rmSync(clientEntriesDir, { recursive: true, force: true });
-    } catch {
-      // best-effort cleanup of generated entries
     }
   }
 
@@ -90,13 +95,18 @@ export async function buildCommand(options: BuildCommandOptions = {}): Promise<v
   const serverEntryPath = path.join(outDir, "server-entry.ts");
   const serverEntrySource = `
 import { createRequestHandler } from "@frostjs/server";
+import { setBodyLimits } from "@frostjs/data";
 import { routes } from "virtual:frost/routes";
 import assetsManifest from "./assets.json";
 
+setBodyLimits(${JSON.stringify(config.limits)});
+
 const assetsByRoute = assetsManifest as Record<string, { scripts: string[]; css: string[]; preloads?: { href: string; as: string; type?: string; crossOrigin?: boolean }[] }>;
+const security = ${JSON.stringify(config.security)};
 
 export const handler = createRequestHandler({
   routes,
+  security,
   loadModule: async (route) => {
     const found = routes.find(r => r.id === route.id);
     return found ? found.module : null;

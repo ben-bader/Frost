@@ -3,10 +3,13 @@ import { devCommand } from "./commands/dev.js";
 import { buildCommand } from "./commands/build.js";
 import { startCommand } from "./commands/start.js";
 import { routesCommand } from "./commands/routes.js";
+import { loadFrostConfig, mergeCliOverrides } from "./config.js";
+import type { FrostConfig } from "@frostjs/core";
 
 async function main() {
   const args = process.argv.slice(2);
   const command = args[0];
+  const rootDir = process.cwd();
 
   function getFlag(name: string): string | undefined {
     const idx = args.indexOf(name);
@@ -19,22 +22,31 @@ async function main() {
   const portFlag = getFlag("--port") || getFlag("-p");
   const port = portFlag ? parseInt(portFlag, 10) : undefined;
   const host = getFlag("--host") || getFlag("-h");
+  const configPath = getFlag("--config");
+
+  // Load frost.config.{ts,js,mjs} once for every command. A missing file
+  // falls back to defaults; a broken file fails fast with its path.
+  let fileConfig: FrostConfig = {};
+  if (command && command !== "--help" && command !== "-h") {
+    fileConfig = await loadFrostConfig({ rootDir, configPath });
+  }
+  const userConfig = mergeCliOverrides(fileConfig, { port, host });
 
   switch (command) {
     case "dev":
-      await devCommand({ port, host });
+      await devCommand({ port, host, config: userConfig });
       break;
 
     case "build":
-      await buildCommand();
+      await buildCommand({ config: userConfig });
       break;
 
     case "start":
-      await startCommand({ port, host });
+      await startCommand({ port, host, config: userConfig });
       break;
 
     case "routes":
-      await routesCommand();
+      await routesCommand(rootDir, userConfig);
       break;
 
     default:
@@ -50,13 +62,13 @@ Usage:
 Options:
   --port, -p    Port number
   --host, -h    Host address
+  --config      Path to frost.config.{ts,js,mjs} (searched in project root by default)
 `);
       break;
   }
 }
 
 main().catch((err) => {
-  console.error("\n❌ CLI Error:", err);
+  console.error("\n❌ CLI Error:", err instanceof Error ? err.message : err);
   process.exit(1);
 });
-

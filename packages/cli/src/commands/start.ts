@@ -2,12 +2,14 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
 import { createNodeServer } from "@frostjs/adapter-node";
-import { resolveConfig } from "@frostjs/core";
+import { resolveConfig, type FrostConfig } from "@frostjs/core";
 
 export interface StartCommandOptions {
   port?: number;
   host?: string;
   rootDir?: string;
+  /** User config (typically loaded from frost.config.ts by the CLI entry). */
+  config?: FrostConfig;
 }
 
 export async function startCommand(options: StartCommandOptions = {}): Promise<void> {
@@ -16,7 +18,7 @@ export async function startCommand(options: StartCommandOptions = {}): Promise<v
   process.env.NODE_ENV ??= "production";
 
   const rootDir = options.rootDir ?? process.cwd();
-  const config = resolveConfig();
+  const config = resolveConfig(options.config);
   const port = options.port ?? config.server.port;
   const host = options.host ?? config.server.host;
   const outDir = path.resolve(rootDir, config.build.outDir);
@@ -52,8 +54,33 @@ export async function startCommand(options: StartCommandOptions = {}): Promise<v
     handleRequest: handler,
   });
 
-  server.listen(port, host, () => {
-    console.log(`\n🚀 Frost production server running at http://${host}:${port}/\n`);
-  });
+  // If the configured port is taken, fall back to the next free port with
+  // a clear message instead of an opaque EADDRINUSE stack trace.
+  const MAX_PORT_ATTEMPTS = 10;
+  const tryListen = (attemptPort: number, remaining: number): void => {
+    server.once("error", (err: NodeJS.ErrnoException) => {
+      if (err.code === "EADDRINUSE" && remaining > 0) {
+        const nextPort = attemptPort + 1;
+        console.warn(
+          `⚠️  Port ${attemptPort} is already in use, trying ${nextPort}...`
+        );
+        tryListen(nextPort, remaining - 1);
+        return;
+      }
+      console.error(`\n❌ Failed to start server: ${err.message}\n`);
+      process.exit(1);
+    });
+
+    server.listen(attemptPort, host, () => {
+      const address = server.address();
+      const boundPort =
+        typeof address === "object" && address ? address.port : attemptPort;
+      console.log(
+        `\n🚀 Frost production server running at http://${host}:${boundPort}/\n`
+      );
+    });
+  };
+
+  tryListen(port, MAX_PORT_ATTEMPTS);
 }
 

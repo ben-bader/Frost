@@ -1,11 +1,14 @@
 import { discoverRoutes } from "@frostjs/router";
-import { resolveConfig } from "@frostjs/core";
+import { resolveConfig, type FrostConfig } from "@frostjs/core";
 
-export async function routesCommand(rootDir = process.cwd()): Promise<void> {
-  const config = resolveConfig();
+export async function routesCommand(
+  rootDir = process.cwd(),
+  config?: FrostConfig
+): Promise<void> {
+  const resolved = resolveConfig(config);
   const routes = discoverRoutes({
-    appDirectory: config.appDirectory,
-    apiDirectory: config.apiDirectory,
+    appDirectory: resolved.appDirectory,
+    apiDirectory: resolved.apiDirectory,
     rootDir,
   });
 
