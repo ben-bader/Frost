@@ -47,6 +47,20 @@ browser tooling is used in this repo.
 5. Disable JS network (offline) and click a link.
    Expected: falls back to full document navigation.
 
+## Framework features (Phase 4-7)
+
+9. **Middleware header** — `curl -sI http://localhost:3000/ | grep x-frost`
+   Expected: `x-frost-middleware: active` on pages, 404s, and API routes.
+10. **Layout loader** — view source of `/`; the header nav renders from the
+    root layout loader (edit `src/config/nav.ts`, reload: nav updates).
+11. **Contract route** — visit `/hello/world` (200, typed greeting) and
+    `/hello/bad%20name` in dev (error boundary/400 contract report);
+    in prod validation is off unless `contracts.validateInProduction`.
+12. **Error + not-found pages** — visit `/definitely-not-a-route`.
+    Expected: styled 404 inside the root layout, status 404.
+13. **Server functions** — (when a route uses `createServerFn`) verify the
+    RPC call succeeds and a bad origin is rejected.
+
 ## Streaming SSR
 1. With `ssr.streaming` on (default), wrap a component in `<Suspense>`
    with a slow async child.

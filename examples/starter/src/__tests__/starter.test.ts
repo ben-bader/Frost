@@ -24,9 +24,9 @@ async function discoverRoutes(dir: string, prefix = ""): Promise<string[]> {
 }
 
 describe("starter routes", () => {
-  it("discovers exactly two pages", async () => {
+  it("discovers the demo, playground, and hello routes", async () => {
     const routes = await discoverRoutes(APP);
-    expect(routes).toEqual(["/", "/playground"]);
+    expect(routes).toEqual(["/", "/hello/[name]", "/playground"]);
   });
 
   it("home page renders the hero with Frost headline", () => {
