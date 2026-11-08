@@ -19,6 +19,7 @@ export function discoverRoutes(options: DiscoverOptions): DiscoveredRoute[] {
   const errorsByDir = new Map<string, string>();
   const pageRoutes: DiscoveredRoute[] = [];
   let notFoundFile: string | undefined;
+  let middlewareFile: string | undefined;
 
   if (fs.existsSync(appDir)) {
     scanDirectory(appDir, "", (relPath, fullPath) => {
@@ -38,6 +39,12 @@ export function discoverRoutes(options: DiscoverOptions): DiscoveredRoute[] {
         // ignored for now (documented limitation).
         if (path.dirname(relPath) === "." && !notFoundFile) {
           notFoundFile = fullPath;
+        }
+        return;
+      } else if (/^(_?middleware)\.[tj]sx?$/.test(filename)) {
+        // App-root middleware only (_middleware.ts or middleware.ts).
+        if (path.dirname(relPath) === "." && !middlewareFile) {
+          middlewareFile = fullPath;
         }
         return;
       }
@@ -114,6 +121,19 @@ export function discoverRoutes(options: DiscoverOptions): DiscoveredRoute[] {
         isCatchAll: false,
         score: -1,
         layouts: rootLayout ? [rootLayout] : [],
+      });
+    }
+
+    // App-root middleware (runs before routing for pages and APIs).
+    if (middlewareFile) {
+      routes.push({
+        id: path.basename(middlewareFile),
+        pattern: "",
+        filePath: middlewareFile,
+        kind: "middleware",
+        isDynamic: false,
+        isCatchAll: false,
+        score: -1,
       });
     }
   }

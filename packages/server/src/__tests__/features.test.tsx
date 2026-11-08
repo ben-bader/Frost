@@ -356,3 +356,104 @@ describe("SEO / head", () => {
     expect(html).toContain('property="og:type" content="website"');
   });
 });
+
+describe("Middleware", () => {
+  const mwRoute = (id: string): DiscoveredRoute => ({
+    id,
+    pattern: "",
+    filePath: "/virtual/_middleware.ts",
+    kind: "middleware",
+    isDynamic: false,
+    isCatchAll: false,
+    score: -1,
+  });
+
+  it("runs middleware before routing and can short-circuit with a Response", async () => {
+    const order: string[] = [];
+    const handler = handlerFor(
+      [
+        page("page.tsx", "/", "/virtual/page.tsx"),
+        mwRoute("_middleware.ts"),
+      ],
+      {
+        "/virtual/page.tsx": {
+          default: () => {
+            order.push("page");
+            return <p>hi</p>;
+          },
+        },
+        "/virtual/_middleware.ts": {
+          middleware: async (_req, _ctx, next) => {
+            order.push("middleware");
+            const res = await next();
+            if (res instanceof Response) {
+              res.headers.set("x-mw", "yes");
+            }
+            return res;
+          },
+        },
+      }
+    );
+    const res = await handler(get("/"));
+    expect(order).toEqual(["middleware", "page"]);
+    expect(res.headers.get("x-mw")).toBe("yes");
+    expect(await res.text()).toContain("hi");
+  });
+
+  it("supports multiple middlewares in order and early return", async () => {
+    const order: string[] = [];
+    const handler = handlerFor(
+      [
+        page("page.tsx", "/", "/virtual/page.tsx"),
+        mwRoute("_middleware.ts"),
+      ],
+      {
+        "/virtual/page.tsx": { default: () => <p>page</p> },
+        "/virtual/_middleware.ts": {
+          middleware: [
+            async () => {
+              order.push("first");
+              return new Response("blocked", { status: 401 });
+            },
+            async () => {
+              order.push("second");
+            },
+          ],
+        },
+      }
+    );
+    const res = await handler(get("/"));
+    expect(order).toEqual(["first"]);
+    expect(res.status).toBe(401);
+    expect(await res.text()).toBe("blocked");
+  });
+
+  it("runs middleware for API routes too", async () => {
+    const apiRoute: DiscoveredRoute = {
+      id: "api/hello.ts",
+      pattern: "api/hello",
+      filePath: "/virtual/api/hello.ts",
+      kind: "api",
+      isDynamic: false,
+      isCatchAll: false,
+      score: 100,
+    };
+    let ran = false;
+    const handler = handlerFor(
+      [apiRoute, mwRoute("_middleware.ts")],
+      {
+        "/virtual/api/hello.ts": {
+          GET: () => Response.json({ ok: true }),
+        } as RouteModule,
+        "/virtual/_middleware.ts": {
+          middleware: () => {
+            ran = true;
+          },
+        },
+      }
+    );
+    const res = await handler(get("/api/hello"));
+    expect(ran).toBe(true);
+    expect(res.status).toBe(200);
+  });
+});

@@ -1,4 +1,4 @@
-export type RouteKind = "page" | "layout" | "api" | "not-found";
+export type RouteKind = "page" | "layout" | "api" | "not-found" | "middleware";
 
 export interface DiscoveredRoute {
   id: string;

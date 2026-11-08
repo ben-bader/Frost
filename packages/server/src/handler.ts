@@ -24,6 +24,7 @@ import {
   createErrorReport,
   FROST_ERROR_CODES,
   type FrostErrorReport,
+  type FrostMiddleware,
 } from "@frostjs/core";
 
 export interface LoadedRoute<T = RouteModule | ApiRouteModule> {
@@ -65,6 +66,8 @@ export function createRequestHandler(options: RequestHandlerOptions) {
   // The global not-found route (app/not-found.tsx or app/_404.tsx) is
   // discovered with kind "not-found" and never participates in matching.
   const notFoundRoute = routes.find((r) => r.kind === "not-found");
+  // App-root middleware (app/_middleware.ts(x) or app/middleware.ts(x)).
+  const middlewareRoute = routes.find((r) => r.kind === "middleware");
 
   const loadLayoutModules = async (
     layoutPaths: string[] | undefined
@@ -129,6 +132,9 @@ export function createRequestHandler(options: RequestHandlerOptions) {
     });
     const secOptions = { security, nonce: context.cspNonce };
 
+    // The full routing pipeline (API -> page -> 404). Wrapped so
+    // middleware's next() can delegate to it.
+    const routeRequest = async (): Promise<Response> => {
     let response: Response;
 
     // 1. Try API routes first
@@ -371,5 +377,58 @@ export function createRequestHandler(options: RequestHandlerOptions) {
 
     applySecurityHeaders(response.headers, secOptions);
     return response;
+    };
+
+    // 0. Middleware chain (app/_middleware.ts or app/middleware.ts) runs
+    //    before routing for pages and APIs. Each middleware receives
+    //    (request, context, next); returning a Response short-circuits,
+    //    returning undefined continues the chain, and next() delegates to
+    //    the remaining middlewares then the router.
+    if (middlewareRoute) {
+      try {
+        const mwMod = (await loadModule(middlewareRoute)) as {
+          default?: unknown;
+          middleware?: unknown;
+        };
+        const candidates = Array.isArray(mwMod?.middleware)
+          ? mwMod.middleware
+          : [mwMod?.middleware ?? mwMod?.default];
+        const fns = candidates.filter(
+          (f): f is FrostMiddleware => typeof f === "function"
+        );
+        if (fns.length > 0) {
+          const dispatch = async (index: number): Promise<Response | void> => {
+            if (index >= fns.length) return routeRequest();
+            const result = await fns[index]!(request, context, () =>
+              dispatch(index + 1)
+            );
+            return result === undefined ? dispatch(index + 1) : result;
+          };
+          const mwResult = await dispatch(0);
+          const response =
+            mwResult instanceof Response ? mwResult : await routeRequest();
+          applySecurityHeaders(response.headers, secOptions);
+          return response;
+        }
+      } catch (err) {
+        onError?.(
+          createErrorReport(err, {
+            runtime: "server",
+            route: pathname,
+            code: FROST_ERROR_CODES.MIDDLEWARE,
+          })
+        );
+        return renderSimpleDocument({
+          title: "Server Error",
+          heading: "Something went wrong",
+          detail: err instanceof Error ? err.message : "Middleware error",
+          status: 500,
+          lang,
+          context,
+        });
+      }
+    }
+
+    return routeRequest();
   };
 }

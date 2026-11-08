@@ -125,6 +125,17 @@ export type RouteHeaders<TParams = Record<string, string>> =
   | Record<string, string>
   | ((args: RouteHeadersArgs<TParams>) => Promise<Record<string, string>> | Record<string, string>);
 
+/**
+ * App middleware signature: (request, context, next) => Response | void.
+ * Return a Response to short-circuit, call/return next() to continue the
+ * chain, or return undefined to pass to the next middleware.
+ */
+export type FrostMiddleware = (
+  request: Request,
+  context: FrostRequestContext,
+  next: () => Promise<Response | void>
+) => Response | void | Promise<Response | void>;
+
 export interface RouteModule {
   default?: RouteComponent;
   loader?: RouteLoader;
@@ -133,6 +144,8 @@ export interface RouteModule {
   rendering?: RenderingConfig;
   /** Static or per-request response headers applied to page responses. */
   headers?: RouteHeaders;
+  /** Middleware chain (used by app/_middleware modules). */
+  middleware?: FrostMiddleware | FrostMiddleware[];
 }
 
 export interface ApiRouteModule {
