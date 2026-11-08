@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode } from "react";
+import { useEffect, useState, type ComponentType, type ReactNode } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { FrostProvider, isFrostClientState, type FrostClientState } from "./context.js";
 import { FrostErrorBoundary } from "./error-boundary.js";
@@ -66,21 +66,74 @@ export type RouteComponent = ComponentType<{
   actionData?: unknown;
 }>;
 
-export function hydrateApp(
-  Component: RouteComponent,
-  layouts: RouteComponent[] = []
-): void {
-  const state = getClientState();
-  const rootElement = document.getElementById("__frost");
+interface HydratedAppProps {
+  Component: RouteComponent;
+  layouts: RouteComponent[];
+  state: FrostClientState;
+}
 
-  if (!rootElement) {
-    console.error("[Frost] Could not find #__frost root element for hydration.");
-    return;
-  }
+function HydratedApp({ Component, layouts, state }: HydratedAppProps) {
+  const [actionData, setActionData] = useState<unknown>(state.actionData);
+
+  // Progressive enhancement: intercept same-document <form method="post">
+  // submissions and upgrade them to fetch. The server returns JSON action
+  // data for non-HTML clients; we feed it back into React state so the
+  // page re-renders without a full document load. Any failure falls back
+  // to native form submission/navigation.
+  useEffect(() => {
+    const onSubmit = (event: SubmitEvent) => {
+      const form = event.target;
+      if (!(form instanceof HTMLFormElement)) return;
+      if (form.hasAttribute("data-no-enhance")) return;
+      const method = (form.getAttribute("method") ?? "get").toLowerCase();
+      if (method !== "post") return;
+
+      // Only enhance forms that post back to the current document.
+      const actionAttr = form.getAttribute("action");
+      let target = window.location.pathname + window.location.search;
+      if (actionAttr) {
+        try {
+          const url = new URL(actionAttr, window.location.href);
+          if (
+            url.origin !== window.location.origin ||
+            url.pathname !== window.location.pathname
+          ) {
+            return;
+          }
+          target = url.pathname + url.search;
+        } catch {
+          return;
+        }
+      }
+
+      event.preventDefault();
+      fetch(target, {
+        method: "POST",
+        body: new FormData(form),
+        credentials: "same-origin",
+        headers: { Accept: "application/json" },
+      })
+        .then(async (res) => {
+          const contentType = res.headers.get("content-type") ?? "";
+          if (contentType.includes("json")) {
+            setActionData(await res.json());
+          } else {
+            // Redirect or non-JSON response: navigate the document.
+            window.location.assign(res.url || target);
+          }
+        })
+        .catch(() => {
+          // Network failure: submit natively (bypasses this listener).
+          form.submit();
+        });
+    };
+    document.addEventListener("submit", onSubmit);
+    return () => document.removeEventListener("submit", onSubmit);
+  }, []);
 
   // Build component tree from page up through layout hierarchy to match SSR structure
   let appTree: ReactNode = (
-    <Component data={state.loaderData} actionData={state.actionData} params={state.params} />
+    <Component data={state.loaderData} actionData={actionData} params={state.params} />
   );
 
   if (Array.isArray(layouts) && layouts.length > 0) {
@@ -94,7 +147,7 @@ export function hydrateApp(
             ? state.layoutData[i]
             : state.loaderData;
         appTree = (
-          <LayoutComp data={layoutData} actionData={state.actionData} params={state.params}>
+          <LayoutComp data={layoutData} actionData={actionData} params={state.params}>
             {appTree}
           </LayoutComp>
         );
@@ -102,10 +155,25 @@ export function hydrateApp(
     }
   }
 
+  return <FrostErrorBoundary>{appTree}</FrostErrorBoundary>;
+}
+
+export function hydrateApp(
+  Component: RouteComponent,
+  layouts: RouteComponent[] = []
+): void {
+  const state = getClientState();
+  const rootElement = document.getElementById("__frost");
+
+  if (!rootElement) {
+    console.error("[Frost] Could not find #__frost root element for hydration.");
+    return;
+  }
+
   hydrateRoot(
     rootElement,
     <FrostProvider value={state}>
-      <FrostErrorBoundary>{appTree}</FrostErrorBoundary>
+      <HydratedApp Component={Component} layouts={layouts} state={state} />
     </FrostProvider>
   );
 }
