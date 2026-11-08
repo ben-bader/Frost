@@ -5,11 +5,28 @@
     "rootDir": "./src"
   },
   "references": [
-    { "path": "../core" },
-    { "path": "../router" },
-    { "path": "../server" },
-    { "path": "../react" },
-    { "path": "../adapter-node" }
+    {
+      "path": "../core"
+    },
+    {
+      "path": "../router"
+    },
+    {
+      "path": "../server"
+    },
+    {
+      "path": "../react"
+    },
+    {
+      "path": "../adapter-node"
+    }
   ],
-  "include": ["src/**/*"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "src/**/__tests__/**",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx"
+  ]
 }

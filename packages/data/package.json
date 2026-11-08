@@ -1,7 +1,7 @@
 {
   "name": "@frost.js/data",
   "version": "0.1.0",
-  "description": "Server-only data functions, request deduplication, form actions, and mutation contracts for Frost",
+  "description": "CSRF, form parsing, request memoization, and server functions for Frost",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -12,7 +12,7 @@
     }
   },
   "dependencies": {
-    "@frost.js/core": "workspace:*"
+    "@frost.js/core": "workspace:^"
   },
   "scripts": {
     "build": "tsc --build",
@@ -25,14 +25,14 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ben-bader/Frost.git",
-    "directory": "."
+    "directory": "packages/data"
   },
   "keywords": [
-    "frost",
-    "react",
-    "ssr",
     "framework",
-    "full-stack"
+    "frost",
+    "full-stack",
+    "react",
+    "ssr"
   ],
   "engines": {
     "node": ">=20"
@@ -40,5 +40,10 @@
   "sideEffects": false,
   "files": [
     "dist"
-  ]
+  ],
+  "author": "Frost contributors",
+  "homepage": "https://frostjs.dev",
+  "bugs": {
+    "url": "https://github.com/ben-bader/Frost/issues"
+  }
 }

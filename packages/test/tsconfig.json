@@ -6,10 +6,25 @@
     "jsx": "react-jsx"
   },
   "references": [
-    { "path": "../core" },
-    { "path": "../router" },
-    { "path": "../react" },
-    { "path": "../server" }
+    {
+      "path": "../core"
+    },
+    {
+      "path": "../router"
+    },
+    {
+      "path": "../react"
+    },
+    {
+      "path": "../server"
+    }
   ],
-  "include": ["src/**/*"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "src/**/__tests__/**",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx"
+  ]
 }

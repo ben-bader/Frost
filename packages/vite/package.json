@@ -1,7 +1,7 @@
 {
   "name": "@frost.js/vite",
   "version": "0.1.0",
-  "description": "Vite plugin integration, virtual route modules, and dev SSR middleware for Frost",
+  "description": "Vite plugin for Frost: dev SSR middleware, route CSS, client boundary checks, virtual modules",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -12,12 +12,12 @@
     }
   },
   "dependencies": {
-    "@frost.js/core": "workspace:*",
-    "@frost.js/router": "workspace:*",
-    "@frost.js/server": "workspace:*",
-    "@frost.js/react": "workspace:*",
-    "@frost.js/adapter-node": "workspace:*",
-    "@frost.js/data": "workspace:*"
+    "@frost.js/core": "workspace:^",
+    "@frost.js/router": "workspace:^",
+    "@frost.js/server": "workspace:^",
+    "@frost.js/react": "workspace:^",
+    "@frost.js/adapter-node": "workspace:^",
+    "@frost.js/data": "workspace:^"
   },
   "peerDependencies": {
     "vite": "^5.0.0 || ^6.0.0"
@@ -33,14 +33,14 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ben-bader/Frost.git",
-    "directory": "."
+    "directory": "packages/vite"
   },
   "keywords": [
-    "frost",
-    "react",
-    "ssr",
     "framework",
-    "full-stack"
+    "frost",
+    "full-stack",
+    "react",
+    "ssr"
   ],
   "engines": {
     "node": ">=20"
@@ -48,5 +48,10 @@
   "sideEffects": false,
   "files": [
     "dist"
-  ]
+  ],
+  "author": "Frost contributors",
+  "homepage": "https://frostjs.dev",
+  "bugs": {
+    "url": "https://github.com/ben-bader/Frost/issues"
+  }
 }

@@ -1,7 +1,7 @@
 {
   "name": "@frost.js/react",
   "version": "0.1.0",
-  "description": "React integration, SSR/hydration orchestration, and hooks for Frost",
+  "description": "React bindings for Frost: hydration, context, hooks, Link, document, error boundary, client router",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -16,8 +16,8 @@
     }
   },
   "dependencies": {
-    "@frost.js/core": "workspace:*",
-    "@frost.js/router": "workspace:*"
+    "@frost.js/core": "workspace:^",
+    "@frost.js/router": "workspace:^"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
@@ -34,14 +34,14 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ben-bader/Frost.git",
-    "directory": "."
+    "directory": "packages/react"
   },
   "keywords": [
-    "frost",
-    "react",
-    "ssr",
     "framework",
-    "full-stack"
+    "frost",
+    "full-stack",
+    "react",
+    "ssr"
   ],
   "engines": {
     "node": ">=20"
@@ -49,5 +49,10 @@
   "sideEffects": false,
   "files": [
     "dist"
-  ]
+  ],
+  "author": "Frost contributors",
+  "homepage": "https://frostjs.dev",
+  "bugs": {
+    "url": "https://github.com/ben-bader/Frost/issues"
+  }
 }

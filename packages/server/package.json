@@ -1,7 +1,7 @@
 {
   "name": "@frost.js/server",
   "version": "0.1.0",
-  "description": "Request lifecycle, HTTP responses, API routing, and SSR pipeline for Frost",
+  "description": "Request lifecycle, HTTP responses, API routing, SSR pipeline, and adapters for Frost",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -12,10 +12,10 @@
     }
   },
   "dependencies": {
-    "@frost.js/core": "workspace:*",
-    "@frost.js/data": "workspace:*",
-    "@frost.js/router": "workspace:*",
-    "@frost.js/react": "workspace:*"
+    "@frost.js/core": "workspace:^",
+    "@frost.js/data": "workspace:^",
+    "@frost.js/router": "workspace:^",
+    "@frost.js/react": "workspace:^"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
@@ -32,14 +32,14 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ben-bader/Frost.git",
-    "directory": "."
+    "directory": "packages/server"
   },
   "keywords": [
-    "frost",
-    "react",
-    "ssr",
     "framework",
-    "full-stack"
+    "frost",
+    "full-stack",
+    "react",
+    "ssr"
   ],
   "engines": {
     "node": ">=20"
@@ -47,5 +47,10 @@
   "sideEffects": false,
   "files": [
     "dist"
-  ]
+  ],
+  "author": "Frost contributors",
+  "homepage": "https://frostjs.dev",
+  "bugs": {
+    "url": "https://github.com/ben-bader/Frost/issues"
+  }
 }

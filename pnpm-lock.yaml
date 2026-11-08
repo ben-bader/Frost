@@ -215,28 +215,28 @@ importers:
         specifier: ^5.3.0
         version: 5.3.0
       '@frost.js/adapter-node':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/adapter-node
       '@frost.js/cli':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/cli
       '@frost.js/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/core
       '@frost.js/data':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/data
       '@frost.js/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/react
       '@frost.js/router':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/router
       '@frost.js/server':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/server
       '@frost.js/vite':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/vite
       '@tailwindcss/postcss':
         specifier: ^4.3.5
@@ -273,34 +273,34 @@ importers:
   packages/adapter-node:
     dependencies:
       '@frost.js/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@frost.js/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
       '@frost.js/router':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../router
       '@frost.js/server':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../server
 
   packages/cli:
     dependencies:
       '@frost.js/adapter-node':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../adapter-node
       '@frost.js/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@frost.js/router':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../router
       '@frost.js/server':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../server
       '@frost.js/vite':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../vite
       '@vitejs/plugin-react':
         specifier: ^4.7.0
@@ -311,19 +311,21 @@ importers:
 
   packages/core: {}
 
+  packages/create-frost: {}
+
   packages/data:
     dependencies:
       '@frost.js/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
 
   packages/react:
     dependencies:
       '@frost.js/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@frost.js/router':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../router
       react:
         specifier: ^18.0.0 || ^19.0.0
@@ -335,22 +337,22 @@ importers:
   packages/router:
     dependencies:
       '@frost.js/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
 
   packages/server:
     dependencies:
       '@frost.js/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@frost.js/data':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../data
       '@frost.js/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
       '@frost.js/router':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../router
       react:
         specifier: ^18.0.0 || ^19.0.0
@@ -362,16 +364,16 @@ importers:
   packages/test:
     dependencies:
       '@frost.js/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@frost.js/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
       '@frost.js/router':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../router
       '@frost.js/server':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../server
       react:
         specifier: ^18.0.0 || ^19.0.0
@@ -383,22 +385,22 @@ importers:
   packages/vite:
     dependencies:
       '@frost.js/adapter-node':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../adapter-node
       '@frost.js/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@frost.js/data':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../data
       '@frost.js/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../react
       '@frost.js/router':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../router
       '@frost.js/server':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../server
       vite:
         specifier: ^5.0.0 || ^6.0.0

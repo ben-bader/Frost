@@ -5,11 +5,28 @@
     "rootDir": "./src"
   },
   "references": [
-    { "path": "../core" },
-    { "path": "../router" },
-    { "path": "../server" },
-    { "path": "../adapter-node" },
-    { "path": "../vite" }
+    {
+      "path": "../core"
+    },
+    {
+      "path": "../router"
+    },
+    {
+      "path": "../server"
+    },
+    {
+      "path": "../adapter-node"
+    },
+    {
+      "path": "../vite"
+    }
   ],
-  "include": ["src/**/*"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "src/**/__tests__/**",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx"
+  ]
 }
