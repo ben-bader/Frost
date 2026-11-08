@@ -1,9 +1,9 @@
 // Build + pack every publishable package into ./release-tarballs,
 // in dependency order (leaf first, create-frost-app last).
-import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { run } from "./lib/run.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outDir = path.join(root, "release-tarballs");
@@ -23,29 +23,26 @@ const PACKAGES = [
   ["create-frost-app", "create-frost-app"],
 ];
 
-const run = (cmd, args, cwd) => {
-  const res = spawnSync(cmd, args, {
-    cwd,
-    stdio: "inherit",
-    shell: process.platform === "win32" && /^(pnpm|npm)(\.cmd)?$/.test(cmd),
-    windowsHide: true,
-  });
+// run from ./lib/run.mjs — cmd.exe /c shim on Windows, no
+// shell:true + args (avoids DEP0190). stdio inherit like before.
+const runStep = (cmd, args, cwd) => {
+  const res = run(cmd, args, { cwd, stdio: "inherit" });
   if (res.status !== 0) process.exit(res.status ?? 1);
 };
 
 console.log("Building all packages...");
-run("pnpm", ["-r", "run", "build"], root);
+runStep("pnpm", ["-r", "run", "build"], root);
 
 // Regenerate the starter template so tarballs always ship a fresh copy
 // (create-frost-app's prepack also does this; explicit here for clarity).
 console.log("Syncing create-frost-app template from examples/starter...");
-run("node", ["scripts/sync-template.mjs"], root);
+runStep("node", ["scripts/sync-template.mjs"], root);
 
 console.log("Packing into release-tarballs/ ...");
 for (const [name, dir] of PACKAGES) {
-  const dest = path.join(outDir, dir);
+  const dest = path.join(outDir, dir).split(path.sep).join("/");
   fs.mkdirSync(dest, { recursive: true });
   console.log(`  ${name}`);
-  run("pnpm", ["pack", "--pack-destination", dest], path.join(root, "packages", dir));
+  runStep("pnpm", ["pack", "--pack-destination", dest], path.join(root, "packages", dir));
 }
 console.log("\nDone. Tarballs are in release-tarballs/<package>/");
