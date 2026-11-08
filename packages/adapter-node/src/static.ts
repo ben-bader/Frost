@@ -7,6 +7,58 @@ export interface StaticServerOptions {
   staticDirs: string[];
 }
 
+/** True when `child` is `parent` or inside it (path-segment aware). */
+function isInsideDir(parent: string, child: string): boolean {
+  const rel = path.relative(parent, child);
+  return rel === "" || (!rel.startsWith("..") && !path.isAbsolute(rel));
+}
+
+/**
+ * Resolves a URL pathname to a real file inside `dir`, or null when the
+ * path escapes the root (traversal, absolute paths, drive letters, UNC,
+ * null bytes, or symlink escapes). Percent-escapes are decoded first.
+ */
+export function resolveStaticPath(dir: string, pathname: string): string | null {
+  if (!pathname || pathname.includes("\0") || pathname.includes("%00")) {
+    return null;
+  }
+
+  let decoded = pathname;
+  try {
+    decoded = decodeURIComponent(pathname);
+  } catch {
+    // malformed escape — reject rather than guess
+    return null;
+  }
+  if (decoded.includes("\0")) return null;
+
+  const root = path.resolve(dir);
+
+  // Strip query already handled by caller; drop leading separators so the
+  // result is always relative to root. Backslashes are separators on
+  // Windows and harmless-but-normalized elsewhere via path.resolve.
+  const rel = decoded.replace(/^[/\\]+/, "");
+  if (!rel) return null;
+
+  const candidate = path.resolve(root, rel);
+  if (!isInsideDir(root, candidate)) {
+    return null;
+  }
+
+  // Symlink escape check: compare real paths when the file exists.
+  try {
+    const realRoot = fs.realpathSync(root);
+    const realCandidate = fs.realpathSync(candidate);
+    if (!isInsideDir(realRoot, realCandidate)) {
+      return null;
+    }
+    return realCandidate;
+  } catch {
+    // Doesn't exist (or realpath failed) — fall through to existsSync below.
+    return candidate;
+  }
+}
+
 export function tryServeStaticFile(
   req: IncomingMessage,
   res: ServerResponse,
@@ -17,19 +69,11 @@ export function tryServeStaticFile(
   }
 
   const rawUrl = req.url ?? "/";
-  let pathname = rawUrl.split("?")[0]!;
-  // Decode percent-escapes so public assets with spaces/special chars resolve
-  try {
-    pathname = decodeURIComponent(pathname);
-  } catch {
-    // malformed escape — keep the raw path
-  }
-
-  // Prevent path traversal attacks
-  const safePath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, "");
+  const pathname = rawUrl.split("?")[0]!;
 
   for (const dir of options.staticDirs) {
-    const fullPath = path.join(dir, safePath);
+    const fullPath = resolveStaticPath(dir, pathname);
+    if (!fullPath) continue;
 
     if (fs.existsSync(fullPath)) {
       const stat = fs.statSync(fullPath);
@@ -50,7 +94,7 @@ export function tryServeStaticFile(
         res.setHeader("ETag", etag);
 
         // Immutable caching for hashed assets in /assets/
-        if (safePath.includes("/assets/")) {
+        if (pathname.includes("/assets/")) {
           res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
         } else {
           res.setHeader("Cache-Control", "public, max-age=3600, must-revalidate");
@@ -70,4 +114,3 @@ export function tryServeStaticFile(
 
   return false;
 }
-

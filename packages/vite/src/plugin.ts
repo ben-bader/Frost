@@ -3,17 +3,19 @@ import type { EnvironmentModuleNode } from "vite";
 import { resolveConfig, type FrostConfig } from "@frostjs/core";
 import { discoverRoutes, type DiscoveredRoute } from "@frostjs/router";
 import { createRequestHandler } from "@frostjs/server";
-import { nodeReqToWebRequest, sendWebResponseToNode } from "@frostjs/adapter-node";
+import { isSafeRequestTarget, nodeReqToWebRequest, sendWebResponseToNode } from "@frostjs/adapter-node";
+import { setBodyLimits } from "@frostjs/data";
 import {
   VIRTUAL_ROUTES_ID,
   RESOLVED_VIRTUAL_ROUTES_ID,
   generateRoutesModuleCode,
   generateClientEntryCode,
 } from "./virtual.js";
-import { validateModuleBoundary } from "./boundary.js";
+import { validateClientEnvAccess, validateModuleBoundary } from "./boundary.js";
 
 export function frost(userConfig: FrostConfig = {}): Plugin {
   const config = resolveConfig(userConfig);
+  setBodyLimits(config.limits);
   let rootDir: string;
   let isClientBuild = true;
   let cachedRoutes: DiscoveredRoute[] = [];
@@ -50,6 +52,22 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
       }
       if (id.startsWith("/@frost/client") || id.startsWith("@frost/client")) {
         return id;
+      }
+      return null;
+    },
+
+    transform(code, id, options) {
+      // Client-bound app code must not read server env vars. Skip
+      // dependencies (pre-bundled or not) and SSR transforms.
+      if (
+        isClientBuild &&
+        options?.ssr !== true &&
+        !id.includes("node_modules") &&
+        !id.startsWith("\\0") &&
+        !id.startsWith("/virtual:") &&
+        /\.[jt]sx?$/.test(id.split("?")[0] ?? id)
+      ) {
+        validateClientEnvAccess(code, id);
       }
       return null;
     },
@@ -117,8 +135,16 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
             req.url = req.url.replace(/^\/index\.html/, "/") || "/";
           }
 
+          if (!isSafeRequestTarget(req.url)) {
+            res.statusCode = 400;
+            res.setHeader("Content-Type", "text/plain; charset=utf-8");
+            res.end("Bad Request");
+            return;
+          }
+
           try {
-            // Re-discover routes on demand in dev for instant file-based route HMR
+            // Routes are re-discovered per request in dev so file-based
+            // route changes are picked up without a server restart.
             cachedRoutes = discoverRoutes({
               appDirectory: config.appDirectory,
               apiDirectory: config.apiDirectory,
@@ -128,6 +154,7 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
             // Create request handler using Vite's ssrLoadModule
             const handler = createRequestHandler({
               routes: cachedRoutes,
+              security: config.security,
               loadModule: async (route) => {
                 return (await server.ssrLoadModule(route.filePath)) as any;
               },

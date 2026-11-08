@@ -27,6 +27,8 @@ export interface FrostRequestContext {
   readonly memo: Map<string, unknown>;
   readonly clientIp?: string;
   readonly userAgent?: string;
+  /** Per-request CSP nonce, present when security.csp is enabled. */
+  readonly cspNonce?: string;
 }
 
 export namespace Route {

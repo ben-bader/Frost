@@ -7,6 +7,9 @@ export type ErrorCode =
   | "FS1006" // Route not found
   | "FS1007" // Method not allowed
   | "FS1008" // Hydration mismatch
+  | "FS1009" // Server-only environment variable read in client code
+  | "FS1010" // Route contract violation
+  | "FS1011" // Request body too large
 
 export interface FrostErrorOptions extends ErrorOptions {
   code: ErrorCode;
@@ -14,6 +17,8 @@ export interface FrostErrorOptions extends ErrorOptions {
   target?: string;
   hint?: string;
   docsUrl?: string;
+  /** HTTP status the error should surface as when thrown in a handler. */
+  status?: number;
 }
 
 export class FrostError extends Error {
@@ -22,6 +27,7 @@ export class FrostError extends Error {
   public readonly target?: string;
   public readonly hint?: string;
   public readonly docsUrl?: string;
+  public readonly status?: number;
 
   constructor(message: string, options: FrostErrorOptions) {
     super(message, options);
@@ -31,6 +37,7 @@ export class FrostError extends Error {
     this.target = options.target;
     this.hint = options.hint;
     this.docsUrl = options.docsUrl;
+    this.status = options.status;
   }
 
   public toDiagnosticString(): string {

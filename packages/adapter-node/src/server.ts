@@ -1,5 +1,5 @@
 import * as http from "node:http";
-import { nodeReqToWebRequest, sendWebResponseToNode } from "./bridge.js";
+import { isSafeRequestTarget, nodeReqToWebRequest, sendWebResponseToNode } from "./bridge.js";
 import { tryServeStaticFile } from "./static.js";
 
 export interface NodeServerOptions {
@@ -22,12 +22,20 @@ export function createNodeServer(options: NodeServerOptions): http.Server {
         return;
       }
 
-      // 2. Try static asset serving
+      // 2. Reject malformed request targets before bridging (never throw).
+      if (!isSafeRequestTarget(req.url)) {
+        res.statusCode = 400;
+        res.setHeader("Content-Type", "text/plain; charset=utf-8");
+        res.end("Bad Request");
+        return;
+      }
+
+      // 3. Try static asset serving
       if (tryServeStaticFile(req, res, { staticDirs })) {
         return;
       }
 
-      // 3. Dispatch to Web standard request handler
+      // 4. Dispatch to Web standard request handler
       const webRequest = nodeReqToWebRequest(req, `${host}:${port}`);
       const webResponse = await handleRequest(webRequest);
 

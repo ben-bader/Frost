@@ -55,3 +55,41 @@ export function validateModuleBoundary(
   }
 }
 
+const ENV_DOT_RE = /\bprocess\.env\.([A-Za-z_$][A-Za-z0-9_$]*)/g;
+const ENV_BRACKET_RE = /\bprocess\.env\[\s*["'`]([A-Za-z_$][A-Za-z0-9_$]*)["'`]\s*\]/g;
+/** Variables safe to read in client code: NODE_ENV plus the public prefix. */
+const ENV_ALLOW_PREFIX = "FROST_PUBLIC_";
+const ENV_ALLOW_EXACT = new Set(["NODE_ENV"]);
+
+/**
+ * Scans client-bound module source for `process.env.*` reads. Only
+ * NODE_ENV and variables prefixed with FROST_PUBLIC_ are allowed —
+ * everything else would either crash at runtime or leak a secret into
+ * the browser bundle.
+ */
+export function validateClientEnvAccess(code: string, id: string): void {
+  const offenders = new Set<string>();
+  for (const re of [ENV_DOT_RE, ENV_BRACKET_RE]) {
+    re.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(code)) !== null) {
+      const name = m[1]!;
+      if (!ENV_ALLOW_EXACT.has(name) && !name.startsWith(ENV_ALLOW_PREFIX)) {
+        offenders.add(name);
+      }
+    }
+  }
+  if (offenders.size > 0) {
+    const names = [...offenders].sort().join(", ");
+    throw new FrostError(
+      `Client code reads disallowed environment variable(s): ${names}.`,
+      {
+        code: "FS1009",
+        importer: id,
+        hint: `Only NODE_ENV and ${ENV_ALLOW_PREFIX}* variables may be read in client code. Move other env access into a loader, action, or .server module.`,
+        docsUrl: "https://frostjs.dev/docs/errors/FS1009",
+      }
+    );
+  }
+}
+

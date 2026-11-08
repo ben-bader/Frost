@@ -7,6 +7,8 @@ export interface FrostClientState {
   loaderData: unknown;
   error?: { message: string; stack?: string };
   assets?: FrostAssets;
+  /** Per-request CSP nonce echoed into inline script tags. */
+  cspNonce?: string;
 }
 
 export function isFrostClientState(val: unknown): val is FrostClientState {

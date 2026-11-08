@@ -26,6 +26,36 @@ export function normalizePathname(pathname: string): string {
 }
 
 /**
+ * Decodes percent-escapes in a URL pathname one segment at a time.
+ * Encoded slashes (%2F) are preserved as the literal text "%2F" inside
+ * their segment so they cannot alter the route's segment structure;
+ * route param decoding downstream turns them into "/" values.
+ * Returns null when any segment contains a malformed escape sequence.
+ */
+export function decodePathname(pathname: string): string | null {
+  const SLASH_SENTINEL = "\u0000FROST_SLASH\u0000";
+  const segments = pathname.split("/");
+  const decoded: string[] = [];
+
+  for (const segment of segments) {
+    if (!segment) {
+      decoded.push(segment);
+      continue;
+    }
+    const protectedSegment = segment.replace(/%2f/gi, SLASH_SENTINEL);
+    try {
+      decoded.push(
+        decodeURIComponent(protectedSegment).replaceAll(SLASH_SENTINEL, "%2F")
+      );
+    } catch {
+      return null;
+    }
+  }
+
+  return decoded.join("/");
+}
+
+/**
  * Converts a file-system relative path (e.g., "users/[id]/page.tsx" or "api/health.ts")
  * into a URL pattern (e.g., "/users/:id" or "/api/health").
  */

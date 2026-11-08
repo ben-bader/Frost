@@ -4,6 +4,7 @@ import {
   compilePattern,
   matchRoutes,
   normalizePathname,
+  decodePathname,
 } from "@frostjs/router";
 import {
   createRequestContext,
@@ -11,11 +12,13 @@ import {
   type FrostAssets,
   type RouteModule,
   type ApiRouteModule,
+  type ResolvedSecurityConfig,
 } from "@frostjs/core";
 import { renderRouteToHtml } from "./ssr.js";
 import { dispatchApiRoute } from "./api.js";
 import { applySecurityHeaders } from "./security.js";
 import { html, json } from "./response.js";
+import { randomBytes } from "node:crypto";
 
 export interface LoadedRoute<T = RouteModule | ApiRouteModule> {
   discovered: DiscoveredRoute;
@@ -26,10 +29,26 @@ export interface RequestHandlerOptions {
   routes: DiscoveredRoute[];
   loadModule: (route: DiscoveredRoute) => Promise<RouteModule | ApiRouteModule>;
   getAssetsForRoute?: (route: DiscoveredRoute) => FrostAssets | Promise<FrostAssets>;
+  /** Resolved security config; enables CSP nonce + extra headers. */
+  security?: ResolvedSecurityConfig;
+}
+
+const PAGE_METHODS = ["GET", "HEAD"];
+const MUTATION_METHODS = ["POST", "PUT", "PATCH", "DELETE"];
+
+function generateNonce(): string {
+  return randomBytes(16).toString("base64url");
+}
+
+function methodNotAllowed(allow: string[]): Response {
+  return json(
+    { error: "Method Not Allowed", allowedMethods: allow },
+    { status: 405, headers: { Allow: allow.join(", ") } }
+  );
 }
 
 export function createRequestHandler(options: RequestHandlerOptions) {
-  const { routes, loadModule, getAssetsForRoute } = options;
+  const { routes, loadModule, getAssetsForRoute, security } = options;
 
   // Separate and compile API vs Page routes
   const apiRoutes: CompiledRoute<DiscoveredRoute>[] = [];
@@ -49,8 +68,23 @@ export function createRequestHandler(options: RequestHandlerOptions) {
     contextOverrides?: Partial<FrostRequestContext>
   ): Promise<Response> {
     const url = new URL(request.url);
-    const pathname = normalizePathname(url.pathname);
-    const context = createRequestContext(request, contextOverrides);
+
+    // Decode percent-escapes per segment so %70-style escapes match routes,
+    // while %2F stays inside its segment. Malformed escapes -> 400.
+    const decodedPath = decodePathname(url.pathname);
+    if (decodedPath === null) {
+      const res = json({ error: "Bad Request", message: "Malformed percent-encoding in URL" }, { status: 400 });
+      applySecurityHeaders(res.headers, { security });
+      return res;
+    }
+    const pathname = normalizePathname(decodedPath);
+
+    const cspNonce = security?.csp ? generateNonce() : undefined;
+    const context = createRequestContext(request, {
+      ...contextOverrides,
+      cspNonce: contextOverrides?.cspNonce ?? cspNonce,
+    });
+    const secOptions = { security, nonce: context.cspNonce };
 
     let response: Response;
 
@@ -74,6 +108,17 @@ export function createRequestHandler(options: RequestHandlerOptions) {
         try {
           const mod = (await loadModule(pageMatch.route)) as RouteModule;
 
+          // Method gate: pages allow GET/HEAD, plus mutations when the
+          // route exports an action. Everything else -> 405.
+          const allowed = mod.action
+            ? [...PAGE_METHODS, ...MUTATION_METHODS]
+            : PAGE_METHODS;
+          if (!allowed.includes(request.method.toUpperCase())) {
+            response = methodNotAllowed(allowed);
+            applySecurityHeaders(response.headers, secOptions);
+            return response;
+          }
+
           // Handle page route actions on mutation methods (POST, PUT, DELETE, PATCH)
           if (request.method !== "GET" && request.method !== "HEAD" && mod.action) {
             const actionResult = await mod.action({
@@ -83,10 +128,12 @@ export function createRequestHandler(options: RequestHandlerOptions) {
               context,
             });
             if (actionResult instanceof Response) {
-              applySecurityHeaders(actionResult.headers);
+              applySecurityHeaders(actionResult.headers, secOptions);
               return actionResult;
             }
-            return json(actionResult);
+            response = json(actionResult);
+            applySecurityHeaders(response.headers, secOptions);
+            return response;
           }
 
           const layoutModules: RouteModule[] = [];
@@ -140,8 +187,7 @@ export function createRequestHandler(options: RequestHandlerOptions) {
       }
     }
 
-    applySecurityHeaders(response.headers);
+    applySecurityHeaders(response.headers, secOptions);
     return response;
   };
 }
-

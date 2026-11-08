@@ -16,7 +16,8 @@
     "@frostjs/router": "workspace:*",
     "@frostjs/server": "workspace:*",
     "@frostjs/react": "workspace:*",
-    "@frostjs/adapter-node": "workspace:*"
+    "@frostjs/adapter-node": "workspace:*",
+    "@frostjs/data": "workspace:*"
   },
   "peerDependencies": {
     "vite": "^5.0.0 || ^6.0.0"

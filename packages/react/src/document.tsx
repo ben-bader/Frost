@@ -46,10 +46,11 @@ export function FrostDocument({ children, title, head }: FrostDocumentProps): Re
         <script
           id="__FROST_DATA__"
           type="application/json"
+          nonce={ctx.cspNonce}
           dangerouslySetInnerHTML={{ __html: serializedState }}
         />
         {ctx.assets?.scripts?.map((src) => (
-          <script key={src} type="module" src={src} />
+          <script key={src} type="module" src={src} nonce={ctx.cspNonce} />
         ))}
       </body>
     </html>

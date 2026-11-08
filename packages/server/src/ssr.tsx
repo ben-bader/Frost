@@ -84,13 +84,28 @@ export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Resp
       });
       meta.scripts?.forEach((s, i) => {
         if (s.src) {
-          nodes.push(<script key={`script-${i}`} src={s.src} type={s.type} async={s.async} />);
+          nodes.push(
+            <script
+              key={`script-${i}`}
+              src={s.src}
+              type={s.type}
+              async={s.async}
+              nonce={context.cspNonce}
+            />
+          );
         } else if (s.content) {
           nodes.push(
             <script
               key={`script-${i}`}
               type={s.type ?? "text/javascript"}
-              dangerouslySetInnerHTML={{ __html: s.content }}
+              nonce={context.cspNonce}
+              // Escape sequences that could terminate the script element or
+              // open an HTML comment inside inline script content.
+              dangerouslySetInnerHTML={{
+                __html: s.content
+                  .replace(/<\/script/gi, "<\\/script")
+                  .replace(/<!--/g, "<\\!--"),
+              }}
             />
           );
         }
@@ -132,6 +147,7 @@ export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Resp
     params,
     loaderData,
     assets,
+    cspNonce: context.cspNonce,
   };
 
   const appHtml = renderToString(

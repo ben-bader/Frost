@@ -13,6 +13,7 @@ export function createRequestContext(req?: Request, overrides?: Partial<FrostReq
     memo: overrides?.memo ?? new Map<string, unknown>(),
     clientIp: overrides?.clientIp ?? req?.headers.get("x-forwarded-for") ?? undefined,
     userAgent: overrides?.userAgent ?? req?.headers.get("user-agent") ?? undefined,
+    cspNonce: overrides?.cspNonce,
   };
 }
 
