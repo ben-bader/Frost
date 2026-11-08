@@ -1,6 +1,6 @@
 {
   "name": "@frost.js/react",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "React bindings for Frost: hydration, context, hooks, Link, document, error boundary, client router",
   "type": "module",
   "main": "./dist/index.js",

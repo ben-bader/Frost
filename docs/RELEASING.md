@@ -1,6 +1,6 @@
 # Releasing Frost
 
-This runbook covers the **first** npm release (all packages at `0.1.0`)
+This runbook covers the **first** npm release (all packages at `0.1.1`)
 and every release after it. Written for Windows + Git Bash; everything
 also works in Linux/macOS terminals.
 
@@ -48,16 +48,16 @@ Then publish **in this exact order** — each command will prompt for
 your 2FA code:
 
 ```bash
-npm publish release-tarballs/core/frost.js-core-0.1.0.tgz --access public
-npm publish release-tarballs/router/frost.js-router-0.1.0.tgz --access public
-npm publish release-tarballs/data/frost.js-data-0.1.0.tgz --access public
-npm publish release-tarballs/react/frost.js-react-0.1.0.tgz --access public
-npm publish release-tarballs/server/frost.js-server-0.1.0.tgz --access public
-npm publish release-tarballs/adapter-node/frost.js-adapter-node-0.1.0.tgz --access public
-npm publish release-tarballs/vite/frost.js-vite-0.1.0.tgz --access public
-npm publish release-tarballs/test/frost.js-test-0.1.0.tgz --access public
-npm publish release-tarballs/cli/frost.js-cli-0.1.0.tgz --access public
-npm publish release-tarballs/create-frost-app/create-frost-app-0.1.0.tgz --access public
+npm publish release-tarballs/core/frost.js-core-0.1.1.tgz --access public
+npm publish release-tarballs/router/frost.js-router-0.1.1.tgz --access public
+npm publish release-tarballs/data/frost.js-data-0.1.1.tgz --access public
+npm publish release-tarballs/react/frost.js-react-0.1.1.tgz --access public
+npm publish release-tarballs/server/frost.js-server-0.1.1.tgz --access public
+npm publish release-tarballs/adapter-node/frost.js-adapter-node-0.1.1.tgz --access public
+npm publish release-tarballs/vite/frost.js-vite-0.1.1.tgz --access public
+npm publish release-tarballs/test/frost.js-test-0.1.1.tgz --access public
+npm publish release-tarballs/cli/frost.js-cli-0.1.1.tgz --access public
+npm publish release-tarballs/create-frost-app/create-frost-app-0.1.1.tgz --access public
 ```
 
 (Exact tarball filenames may differ if versions change; `ls
@@ -156,7 +156,7 @@ pnpm release:pack    # produces ./release-tarballs for a manual publish
   recent npm). Confirm the trusted publisher entry on npmjs.com matches
   owner `ben-bader`, repo `Frost`, workflow `release.yml` exactly.
 - **Published versions can't be reused**: npm versions are immutable.
-  If you published a broken `0.1.0`, bump to `0.1.1` (or `0.2.0`) via
+  If you published a broken `0.1.1`, bump to `0.1.2` (or `0.2.0`) via
   changesets and publish that instead — never try to overwrite.
 - **`pnpm pack` fails with `ERR_PNPM_BIN_CRLF`**: a bin file has CRLF
   line endings. `.gitattributes` forces LF for `bin.js`; renormalize

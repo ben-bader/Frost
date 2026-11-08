@@ -1,6 +1,6 @@
 {
   "name": "@frost.js/server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Request lifecycle, HTTP responses, API routing, SSR pipeline, and adapters for Frost",
   "type": "module",
   "main": "./dist/index.js",

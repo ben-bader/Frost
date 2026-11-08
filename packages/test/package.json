@@ -1,6 +1,6 @@
 {
   "name": "@frost.js/test",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Test utilities for Frost: mock-request handlers, route rendering, loader/action callers",
   "type": "module",
   "main": "./dist/index.js",
