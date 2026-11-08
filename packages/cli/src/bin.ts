@@ -4,6 +4,7 @@ import { buildCommand } from "./commands/build.js";
 import { startCommand } from "./commands/start.js";
 import { routesCommand } from "./commands/routes.js";
 import { loadFrostConfig, mergeCliOverrides, findFrostConfigFile } from "./config.js";
+import { loadEnvFiles, missingEnvVars } from "@frostjs/core";
 import type { FrostConfig } from "@frostjs/core";
 
 async function main() {
@@ -33,6 +34,20 @@ async function main() {
     fileConfig = await loadFrostConfig({ rootDir, configPath });
   }
   const userConfig = mergeCliOverrides(fileConfig, { port, host });
+
+  // Load .env files and fail fast on missing required variables.
+  if (command && command !== "--help" && command !== "-h") {
+    const mode = command === "dev" ? "development" : "production";
+    await loadEnvFiles(rootDir, mode);
+    const resolved = userConfig.env?.required ?? [];
+    const missing = missingEnvVars(resolved);
+    if (missing.length > 0) {
+      throw new Error(
+        `Missing required environment variable(s): ${missing.join(", ")}. ` +
+          `Set them in the environment or a .env file (see config.env.required).`
+      );
+    }
+  }
 
   switch (command) {
     case "dev":

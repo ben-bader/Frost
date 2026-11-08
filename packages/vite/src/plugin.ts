@@ -128,7 +128,18 @@ export function frost(userConfig: FrostConfig = {}, pluginOptions: FrostPluginOp
     enforce: "pre",
 
     config() {
+      // Expose FROST_PUBLIC_* variables to client code as
+      // process.env.NAME literals so boundary-allowed reads work in the
+      // browser. Non-public vars are never defined.
+      const define: Record<string, string> = {};
+      const prefix = config.env.publicPrefix;
+      for (const [key, value] of Object.entries(process.env)) {
+        if (key.startsWith(prefix) && value !== undefined) {
+          define[`process.env.${key}`] = JSON.stringify(value);
+        }
+      }
       return {
+        define,
         appType: "custom",
         server: {
           watch: {
