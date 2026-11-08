@@ -1,11 +1,13 @@
 import type { Plugin, ViteDevServer } from "vite";
 import { loadConfigFromFile, type EnvironmentModuleNode } from "vite";
+import * as fs from "node:fs";
 import * as path from "node:path";
 import {
   createErrorReport,
   createLogger,
   formatErrorReportTerminal,
   resolveConfig,
+  routeTypesDeclaration,
   type FrostConfig,
   type FrostErrorReport,
 } from "@frostjs/core";
@@ -71,6 +73,21 @@ export function frost(userConfig: FrostConfig = {}, pluginOptions: FrostPluginOp
     return rel !== "" && !rel.startsWith("..") && !path.isAbsolute(rel);
   };
 
+  // Writes .frost/types/routes.d.ts so Link hrefs get typed autocomplete.
+  const writeRouteTypes = (routes: DiscoveredRoute[]) => {
+    try {
+      const typesDir = path.resolve(rootDir, config.build.outDir, "types");
+      fs.mkdirSync(typesDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(typesDir, "routes.d.ts"),
+        routeTypesDeclaration(routes),
+        "utf-8"
+      );
+    } catch {
+      // Route types are best-effort; never break dev/build for them.
+    }
+  };
+
   const getDevRoutes = (): DiscoveredRoute[] => {
     if (!devRoutesCache) {
       devRoutesCache = discoverRoutes({
@@ -78,6 +95,7 @@ export function frost(userConfig: FrostConfig = {}, pluginOptions: FrostPluginOp
         apiDirectory: config.apiDirectory,
         rootDir,
       });
+      writeRouteTypes(devRoutesCache);
     }
     return devRoutesCache;
   };
@@ -412,6 +430,7 @@ export function frost(userConfig: FrostConfig = {}, pluginOptions: FrostPluginOp
                 sendFrostEvent("frost:error", report);
               },
               checkDeterminism: config.dev.checkDeterminism,
+              validateContracts: true, // contracts always validate in dev
               lang: config.app.lang,
               logger: createLogger(config.logging),
               logRequests: config.logging.requestLogs,

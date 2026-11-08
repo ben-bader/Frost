@@ -1,8 +1,20 @@
 import { type AnchorHTMLAttributes, forwardRef } from "react";
 
+/**
+ * Route map for typed links. Frost generates `.frost/types/routes.d.ts`
+ * which augly augments this interface with concrete route paths, giving
+ * `Link`/`href` autocomplete. `(string & {})` keeps arbitrary strings
+ * assignable for dynamic routes and external URLs.
+ */
+export interface FrostRouteMap {}
+
+export type FrostHref = [keyof FrostRouteMap] extends [never]
+  ? string
+  : (keyof FrostRouteMap & string) | (string & {});
+
 export interface LinkProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
-  to?: string;
-  href?: string;
+  to?: FrostHref;
+  href?: FrostHref;
   prefetch?: boolean;
 }
 

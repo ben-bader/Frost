@@ -27,6 +27,12 @@ import {
   type FrostLogger,
   type FrostMiddleware,
   logRequest,
+  validateContractValue,
+  formatContractIssues,
+  searchParamsToObject,
+  formDataToObject,
+  createContractError,
+  type RouteContract,
 } from "@frostjs/core";
 
 export interface LoadedRoute<T = RouteModule | ApiRouteModule> {
@@ -50,6 +56,8 @@ export interface RequestHandlerOptions {
   logger?: FrostLogger;
   /** Log one line per request (method, path, status, ms). */
   logRequests?: boolean;
+  /** Validate route contracts (params/search/loader/action/headers). */
+  validateContracts?: boolean;
 }
 
 const PAGE_METHODS = ["GET", "HEAD"];
@@ -67,7 +75,7 @@ function methodNotAllowed(allow: string[]): Response {
 }
 
 export function createRequestHandler(options: RequestHandlerOptions) {
-  const { routes, loadModule, getAssetsForRoute, security, onError, checkDeterminism, lang, logger, logRequests } = options;
+  const { routes, loadModule, getAssetsForRoute, security, onError, checkDeterminism, lang, logger, logRequests, validateContracts } = options;
 
   // The global not-found route (app/not-found.tsx or app/_404.tsx) is
   // discovered with kind "not-found" and never participates in matching.
@@ -115,6 +123,48 @@ export function createRequestHandler(options: RequestHandlerOptions) {
     }
   }
 
+  /** Validates contract.params and contract.search; returns an issue
+   *  description or null. */
+  const paramsSearchContractError = (
+    contract: RouteContract | undefined,
+    params: Record<string, string>,
+    url: URL
+  ): string | null => {
+    if (!validateContracts || !contract) return null;
+    if (contract.params) {
+      const r = validateContractValue(contract.params, params);
+      if (!r.ok) return `params: ${formatContractIssues(r.issues)}`;
+    }
+    if (contract.search) {
+      const r = validateContractValue(
+        contract.search,
+        searchParamsToObject(url.searchParams)
+      );
+      if (!r.ok) return `search: ${formatContractIssues(r.issues)}`;
+    }
+    return null;
+  };
+
+  /** Parses an action request body into a plain object for contract
+   *  validation. Returns undefined when the body can't be parsed. */
+  const parseActionInput = async (request: Request): Promise<unknown> => {
+    const contentType = request.headers.get("content-type") ?? "";
+    try {
+      if (contentType.includes("application/json")) {
+        return await request.clone().json();
+      }
+      if (
+        contentType.includes("multipart/form-data") ||
+        contentType.includes("application/x-www-form-urlencoded")
+      ) {
+        return formDataToObject(await request.clone().formData());
+      }
+    } catch {
+      // Unparseable body — skip contract validation, let the action decide.
+    }
+    return undefined;
+  };
+
   const handleRequest = async (
     request: Request,
     contextOverrides?: Partial<FrostRequestContext>
@@ -148,6 +198,27 @@ export function createRequestHandler(options: RequestHandlerOptions) {
     if (apiMatch) {
       try {
         const mod = (await loadModule(apiMatch.route)) as ApiRouteModule;
+        const contractIssue = paramsSearchContractError(
+          mod.contract,
+          apiMatch.params,
+          url
+        );
+        if (contractIssue) {
+          onError?.(
+            createErrorReport(
+              createContractError("params/search", [
+                { message: contractIssue },
+              ]),
+              { runtime: "server", route: pathname }
+            )
+          );
+          response = json(
+            { error: "Bad Request", message: `Contract violation: ${contractIssue}` },
+            { status: 400 }
+          );
+          applySecurityHeaders(response.headers, secOptions);
+          return response;
+        }
         response = await dispatchApiRoute(mod, request, context, onError);
       } catch (err) {
         console.error(`[Frost] Error in API route ${pathname}:`, err);
@@ -169,6 +240,32 @@ export function createRequestHandler(options: RequestHandlerOptions) {
       if (pageMatch) {
         try {
           const mod = (await loadModule(pageMatch.route)) as RouteModule;
+
+          const contractIssue = paramsSearchContractError(
+            mod.contract,
+            pageMatch.params,
+            url
+          );
+          if (contractIssue) {
+            onError?.(
+              createErrorReport(
+                createContractError("params/search", [
+                  { message: contractIssue },
+                ]),
+                { runtime: "server", route: pathname }
+              )
+            );
+            response = renderSimpleDocument({
+              title: "Bad Request",
+              heading: "Invalid request",
+              detail: `Contract violation: ${contractIssue}`,
+              status: 400,
+              lang,
+              context,
+            });
+            applySecurityHeaders(response.headers, secOptions);
+            return response;
+          }
 
           // Layout modules are needed for the method gate, actions, and rendering.
           const layoutModules = await loadLayoutModules(pageMatch.route.layouts);
@@ -211,6 +308,35 @@ export function createRequestHandler(options: RequestHandlerOptions) {
             const actionOwner = mod.action
               ? mod
               : [...layoutModules].reverse().find((l) => l.action);
+
+            // contract.action validates the parsed request input
+            // (JSON body or form fields). The page contract wins; a
+            // layout action falls back to its own contract.
+            const actionContract = mod.contract?.action
+              ? mod.contract
+              : actionOwner?.contract;
+            if (validateContracts && actionContract?.action) {
+              const input = await parseActionInput(request);
+              if (input !== undefined) {
+                const v = validateContractValue(actionContract.action, input);
+                if (!v.ok) {
+                  const err = createContractError("action", v.issues);
+                  onError?.(
+                    createErrorReport(err, {
+                      runtime: "server",
+                      route: pathname,
+                    })
+                  );
+                  response = json(
+                    { error: "Bad Request", message: err.message },
+                    { status: 400 }
+                  );
+                  applySecurityHeaders(response.headers, secOptions);
+                  return response;
+                }
+              }
+            }
+
             let actionResult: unknown;
             try {
               actionResult = await actionOwner!.action!({
@@ -265,6 +391,7 @@ export function createRequestHandler(options: RequestHandlerOptions) {
                 lang,
                 onError,
                 checkDeterminism,
+                validateContracts,
               });
             } else {
               response = json(actionResult);
@@ -296,6 +423,7 @@ export function createRequestHandler(options: RequestHandlerOptions) {
             lang,
             onError,
             checkDeterminism,
+            validateContracts,
           });
 
           // Per-route headers export (static map or function).
@@ -306,6 +434,12 @@ export function createRequestHandler(options: RequestHandlerOptions) {
                 : mod.headers;
             for (const [key, value] of Object.entries(routeHeaders)) {
               response.headers.set(key, value);
+            }
+            if (validateContracts && mod.contract?.headers) {
+              const v = validateContractValue(mod.contract.headers, routeHeaders);
+              if (!v.ok) {
+                throw createContractError("headers", v.issues);
+              }
             }
           }
 
@@ -356,6 +490,7 @@ export function createRequestHandler(options: RequestHandlerOptions) {
               lang,
               onError,
               checkDeterminism,
+              validateContracts,
             });
           } catch (nfErr) {
             console.error(`[Frost] Error rendering not-found route:`, nfErr);

@@ -3,7 +3,7 @@ import * as path from "node:path";
 import * as zlib from "node:zlib";
 import { build as viteBuild } from "vite";
 import { frost, generateClientEntryCode } from "@frostjs/vite";
-import { resolveConfig, type FrostAssets, type FrostConfig } from "@frostjs/core";
+import { resolveConfig, routeTypesDeclaration, type FrostAssets, type FrostConfig } from "@frostjs/core";
 import { discoverRoutes } from "@frostjs/router";
 
 export interface BuildCommandOptions {
@@ -56,6 +56,19 @@ export async function buildCommand(options: BuildCommandOptions = {}): Promise<v
       rootDir,
     });
     const pageRoutes = routes.filter((r) => r.kind === "page");
+
+    // Generated route types for typed Link hrefs (.frost/types/routes.d.ts).
+    try {
+      const typesDir = path.join(outDir, "types");
+      fs.mkdirSync(typesDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(typesDir, "routes.d.ts"),
+        routeTypesDeclaration(routes),
+        "utf-8"
+      );
+    } catch {
+      // best-effort
+    }
 
     if (!fs.existsSync(outDir)) {
       fs.mkdirSync(outDir, { recursive: true });
@@ -112,6 +125,7 @@ export const handler = createRequestHandler({
   lang: ${JSON.stringify(config.app.lang)},
   logger: createLogger(${JSON.stringify(prodLogging)}),
   logRequests: ${config.logging.requestLogs},
+  validateContracts: ${config.contracts.validateInProduction},
   loadModule: async (route) => {
     const importer = importerById.get(route.id);
     if (!importer) return null;

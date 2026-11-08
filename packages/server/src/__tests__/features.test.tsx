@@ -457,3 +457,158 @@ describe("Middleware", () => {
     expect(res.status).toBe(200);
   });
 });
+
+// --- Minimal Standard Schema implementation for tests (no zod dep) ---
+const schema = {
+  string: () =>
+    ({
+      "~standard": {
+        version: 1 as const,
+        vendor: "test",
+        validate: (v: unknown) =>
+          typeof v === "string"
+            ? { value: v }
+            : { issues: [{ message: "expected string" }] },
+      },
+    }) as any,
+  object: (shape: Record<string, any>) =>
+    ({
+      "~standard": {
+        version: 1 as const,
+        vendor: "test",
+        validate: (v: unknown) => {
+          if (typeof v !== "object" || v === null)
+            return { issues: [{ message: "expected object" }] };
+          const issues: any[] = [];
+          const out: Record<string, unknown> = {};
+          for (const [key, s] of Object.entries(shape)) {
+            const r = s["~standard"].validate((v as any)[key]);
+            if (r.issues) {
+              for (const i of r.issues)
+                issues.push({ ...i, path: [key, ...(i.path ?? [])] });
+            } else out[key] = r.value;
+          }
+          return issues.length ? { issues } : { value: out };
+        },
+      },
+    }) as any,
+};
+
+describe("Route contracts", () => {
+  const contractHandler = (
+    routes: DiscoveredRoute[],
+    modules: Record<string, RouteModule>
+  ) =>
+    createRequestHandler({
+      routes,
+      loadModule: async (r) => modules[r.filePath] as RouteModule,
+      security,
+      lang: "en",
+      validateContracts: true,
+    });
+
+  it("returns 400 when params violate the contract", async () => {
+    const dyn: DiscoveredRoute = {
+      id: "user/[id]/page.tsx",
+      pattern: "user/:id",
+      filePath: "/virtual/user/[id]/page.tsx",
+      kind: "page",
+      isDynamic: true,
+      isCatchAll: false,
+      score: 110,
+    };
+    const handler = contractHandler([dyn], {
+      "/virtual/user/[id]/page.tsx": {
+        default: () => <p>user</p>,
+        contract: {
+          params: schema.object({ id: schema.string() }),
+          search: schema.object({ page: schema.string() }),
+        },
+      },
+    });
+    // /user/42 missing ?page -> search contract fails -> 400
+    const res = await handler(get("/user/42"));
+    expect(res.status).toBe(400);
+    expect(await res.text()).toContain("Contract violation");
+    // with ?page it passes
+    const ok = await handler(get("/user/42?page=1"));
+    expect(ok.status).toBe(200);
+  });
+
+  it("turns a loader contract violation into a contract error", async () => {
+    const errors: any[] = [];
+    const handler = createRequestHandler({
+      routes: [page("page.tsx", "/", "/virtual/page.tsx")],
+      loadModule: async () =>
+        ({
+          default: () => <p>never</p>,
+          loader: () => ({ wrong: 1 }),
+          contract: { loader: schema.object({ title: schema.string() }) },
+        }) as RouteModule,
+      security,
+      lang: "en",
+      validateContracts: true,
+      onError: (r) => errors.push(r),
+    });
+    const res = await handler(get("/"));
+    expect(res.status).toBe(500);
+    expect(errors[0]?.code).toBe("FROST_E_CONTRACT");
+    expect(errors[0]?.message).toContain("title");
+  });
+
+  it("validates action input and returns 400 on violation", async () => {
+    const handler = contractHandler(
+      [page("page.tsx", "/", "/virtual/page.tsx")],
+      {
+        "/virtual/page.tsx": {
+          default: () => <p>form</p>,
+          action: () => ({ saved: true }),
+          contract: {
+            action: schema.object({ name: schema.string() }),
+          },
+        },
+      }
+    );
+    const bad = await handler(
+      new Request("http://localhost/", {
+        method: "POST",
+        headers: {
+          "content-type": "application/x-www-form-urlencoded",
+          origin: "http://localhost",
+        },
+        body: "age=42",
+      })
+    );
+    expect(bad.status).toBe(400);
+    expect(await bad.text()).toContain("name");
+
+    const good = await handler(
+      new Request("http://localhost/", {
+        method: "POST",
+        headers: {
+          "content-type": "application/x-www-form-urlencoded",
+          origin: "http://localhost",
+        },
+        body: "name=frost",
+      })
+    );
+    expect(good.status).toBe(200);
+  });
+
+  it("skips validation when validateContracts is off", async () => {
+    const handler = createRequestHandler({
+      routes: [page("page.tsx", "/", "/virtual/page.tsx")],
+      loadModule: async () =>
+        ({
+          default: () => <p>ok</p>,
+          loader: () => ({ wrong: 1 }),
+          contract: { loader: schema.object({ title: schema.string() }) },
+        }) as RouteModule,
+      security,
+      lang: "en",
+      // validateContracts omitted -> off
+    });
+    const res = await handler(get("/"));
+    expect(res.status).toBe(200);
+  });
+});

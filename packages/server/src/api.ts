@@ -17,7 +17,12 @@ export async function dispatchApiRoute(
   onError?: (report: FrostErrorReport) => void
 ): Promise<Response> {
   const method = request.method.toUpperCase();
-  let handler = module[method as keyof ApiRouteModule];
+  type ApiHandler = NonNullable<ApiRouteModule["GET"]>;
+  let handler: ApiHandler | undefined = API_METHODS.includes(method)
+    ? ((module as unknown as Record<string, unknown>)[method] as
+        | ApiHandler
+        | undefined)
+    : undefined;
 
   // Automatic OPTIONS: advertise allowed methods when the route doesn't
   // define its own handler.

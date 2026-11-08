@@ -137,9 +137,13 @@ export interface RouteModule {
   headers?: RouteHeaders;
   /** Middleware chain (used by app/_middleware modules). */
   middleware?: FrostMiddleware | FrostMiddleware[];
+  /** Runtime contract: params/search/loader/action/headers schemas. */
+  contract?: import("./contracts.js").RouteContract;
 }
 
 export interface ApiRouteModule {
+  /** Runtime contract for params/search validation. */
+  contract?: import("./contracts.js").RouteContract;
   GET?: (request: Request, context: FrostRequestContext) => Promise<Response> | Response;
   POST?: (request: Request, context: FrostRequestContext) => Promise<Response> | Response;
   PUT?: (request: Request, context: FrostRequestContext) => Promise<Response> | Response;

@@ -3,6 +3,8 @@ import { renderToString } from "react-dom/server";
 import { FrostDocument, FrostProvider, FrostErrorBoundary, type FrostClientState } from "@frostjs/react";
 import {
   createErrorReport,
+  createContractError,
+  validateContractValue,
   FROST_ERROR_CODES,
   formatErrorReportTerminal,
   type FrostAssets,
@@ -33,6 +35,8 @@ export interface SsrRenderOptions {
   onError?: (report: FrostErrorReport) => void;
   /** Dev-only: render twice and warn on nondeterministic output (F19). */
   checkDeterminism?: boolean;
+  /** Validate loader return values against route contracts. */
+  validateContracts?: boolean;
 }
 
 type Settled<T> =
@@ -273,6 +277,7 @@ export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Resp
     lang,
     onError,
     checkDeterminism,
+    validateContracts,
   } = options;
 
   const url = new URL(request.url);
@@ -301,6 +306,24 @@ export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Resp
         );
     })
   );
+
+  // Contract validation: a loader return that violates its schema becomes
+  // a FROST_E_CONTRACT error (surfaced through the error boundary).
+  if (validateContracts) {
+    for (let i = 0; i < settled.length; i++) {
+      const s = settled[i]!;
+      if (s.status !== "ok" || s.value instanceof Response) continue;
+      const contract = specs[i]!.module.contract;
+      if (!contract?.loader) continue;
+      const v = validateContractValue(contract.loader, s.value);
+      if (!v.ok) {
+        settled[i] = {
+          status: "err",
+          error: createContractError("loader", v.issues),
+        };
+      }
+    }
+  }
 
   const routeSettled = settled[0]!;
 
