@@ -411,6 +411,35 @@ describe("Middleware", () => {
     expect(await res.text()).toBe("blocked");
   });
 
+  it("memoizes next() so undefined return does not re-run routing", async () => {
+    let loaderCalls = 0;
+    const handler = handlerFor(
+      [page("page.tsx", "/", "/virtual/page.tsx"), mwRoute("_middleware.ts")],
+      {
+        "/virtual/page.tsx": {
+          default: ({ data }: any) => <p>{String(data)}</p>,
+          loader: () => {
+            loaderCalls++;
+            return "loaded";
+          },
+        },
+        "/virtual/_middleware.ts": {
+          middleware: async (_req, _ctx, next) => {
+            const res = await next();
+            if (res instanceof Response) {
+              res.headers.set("x-mw-undefined", "yes");
+            }
+            // Intentionally returns undefined after calling next().
+          },
+        },
+      },
+    );
+    const res = await handler(get("/"));
+    expect(res.headers.get("x-mw-undefined")).toBe("yes");
+    expect(await res.text()).toContain("loaded");
+    expect(loaderCalls).toBe(1);
+  });
+
   it("runs middleware for API routes too", async () => {
     const apiRoute: DiscoveredRoute = {
       id: "api/hello.ts",

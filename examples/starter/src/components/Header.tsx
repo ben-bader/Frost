@@ -1,11 +1,7 @@
 import { Link, usePathname } from "@frostjs/react";
 import { pillPrimary } from "./Button.js";
 import { SITE } from "../config/site.js";
-
-const navItems = [
-  { label: "Demo", href: "/" },
-  { label: "Playground", href: "/playground" },
-];
+import { NAV_ITEMS, type NavItem } from "../config/nav.js";
 
 function isActive(pathname: string, href: string): boolean {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -14,7 +10,7 @@ function isActive(pathname: string, href: string): boolean {
 const navLinkBase =
   "relative inline-flex items-center min-h-10 font-sans text-[0.9375rem] font-medium text-ink-hi transition-colors duration-150 hover:text-mint after:absolute after:left-1/2 after:top-[calc(100%+2px)] after:h-1 after:w-1 after:-translate-x-1/2 after:rounded-full after:bg-ink-hi after:scale-0 after:transition-transform after:duration-150";
 
-export function Header(): React.JSX.Element {
+export function Header({ items = NAV_ITEMS }: { items?: NavItem[] }): React.JSX.Element {
   const pathname = usePathname();
 
   return (
@@ -39,7 +35,7 @@ export function Header(): React.JSX.Element {
           className="hidden items-center gap-8 justify-self-center min-[640px]:flex"
           aria-label="Primary"
         >
-          {navItems.map((item) => {
+          {items.map((item) => {
             const active = isActive(pathname, item.href);
             return (
               <Link

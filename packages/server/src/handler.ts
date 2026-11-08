@@ -651,8 +651,13 @@ export function createRequestHandler(options: RequestHandlerOptions) {
         if (fns.length > 0) {
           const dispatch = async (index: number): Promise<Response | void> => {
             if (index >= fns.length) return routeRequest();
-            const result = await fns[index]!(request, context, () => dispatch(index + 1));
-            return result === undefined ? dispatch(index + 1) : result;
+            // Memoize next() so a middleware that calls next() and then
+            // returns undefined reuses the same downstream response
+            // instead of re-running the entire routing pipeline.
+            let downstream: Promise<Response | void> | undefined;
+            const next = () => (downstream ??= dispatch(index + 1));
+            const result = await fns[index]!(request, context, next);
+            return result === undefined ? next() : result;
           };
           const mwResult = await dispatch(0);
           const response = mwResult instanceof Response ? mwResult : await routeRequest();
