@@ -8,7 +8,7 @@
  * runtime if invoked in the browser).
  */
 
-const IMPORT_RE = /import\s*\{[^}]*\bcreateServerFn\b[^}]*\}\s*from\s*["']@frostjs\/data["']/;
+const IMPORT_RE = /import\s*\{[^}]*\bcreateServerFn\b[^}]*\}\s*from\s*["']@frost.js\/data["']/;
 const NAME_RE = /\bname\s*:\s*(["'`])([^"'`]+)\1/;
 
 /** Finds the index of the paren matching the '(' at `open`. */

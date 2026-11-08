@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { parseFormData, parseJson, setBodyLimits, getBodyLimits } from "../form.js";
-import { FrostError } from "@frostjs/core";
+import { FrostError } from "@frost.js/core";
 
 function formRequest(body: string, contentLength?: string): Request {
   const headers: Record<string, string> = { "Content-Type": "application/x-www-form-urlencoded" };

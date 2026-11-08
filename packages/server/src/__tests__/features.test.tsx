@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { createRequestHandler } from "../handler.js";
-import { resolveConfig } from "@frostjs/core";
-import type { DiscoveredRoute } from "@frostjs/router";
-import type { RouteModule } from "@frostjs/core";
+import { resolveConfig } from "@frost.js/core";
+import type { DiscoveredRoute } from "@frost.js/router";
+import type { RouteModule } from "@frost.js/core";
 
 function page(
   id: string,

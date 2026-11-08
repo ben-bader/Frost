@@ -3,7 +3,7 @@
 // src/components/bento/ and hydrate on the client.
 
 import { useState } from "react";
-import type { Route } from "@frostjs/core";
+import type { Route } from "@frost.js/core";
 import { CounterTile } from "../../components/bento/CounterTile.js";
 import { TerminalTile } from "../../components/bento/TerminalTile.js";
 import { BrowserTile } from "../../components/bento/BrowserTile.js";

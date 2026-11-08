@@ -1,5 +1,5 @@
 {
-  "name": "@frostjs/cli",
+  "name": "@frost.js/cli",
   "version": "0.1.0",
   "description": "Unified CLI toolchain for Frost (dev, build, start, routes)",
   "type": "module",
@@ -15,11 +15,11 @@
     }
   },
   "dependencies": {
-    "@frostjs/adapter-node": "workspace:*",
-    "@frostjs/core": "workspace:*",
-    "@frostjs/router": "workspace:*",
-    "@frostjs/server": "workspace:*",
-    "@frostjs/vite": "workspace:*",
+    "@frost.js/adapter-node": "workspace:*",
+    "@frost.js/core": "workspace:*",
+    "@frost.js/router": "workspace:*",
+    "@frost.js/server": "workspace:*",
+    "@frost.js/vite": "workspace:*",
     "@vitejs/plugin-react": "^4.7.0",
     "vite": "^6.2.0"
   },

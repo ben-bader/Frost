@@ -1,4 +1,4 @@
-import type { Route, StandardSchemaV1 } from "@frostjs/core";
+import type { Route, StandardSchemaV1 } from "@frost.js/core";
 
 interface HelloData {
   greeting: string;

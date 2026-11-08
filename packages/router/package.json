@@ -1,5 +1,5 @@
 {
-  "name": "@frostjs/router",
+  "name": "@frost.js/router",
   "version": "0.1.0",
   "description": "File-based route discovery, URL matching, and parameter decoding for Frost",
   "type": "module",
@@ -12,7 +12,7 @@
     }
   },
   "dependencies": {
-    "@frostjs/core": "workspace:*"
+    "@frost.js/core": "workspace:*"
   },
   "scripts": {
     "build": "tsc --build",

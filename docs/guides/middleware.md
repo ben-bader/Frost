@@ -4,7 +4,7 @@ Place `app/_middleware.ts` (or `app/middleware.ts`) at the app root. It
 runs **before routing** for pages and APIs:
 
 ```ts
-import type { FrostMiddleware } from "@frostjs/core";
+import type { FrostMiddleware } from "@frost.js/core";
 
 export const middleware: FrostMiddleware = async (request, context, next) => {
   // Guard: short-circuit with a Response

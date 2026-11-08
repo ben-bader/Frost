@@ -49,13 +49,13 @@ frost/
 
 The main building blocks are:
 
-- `@frostjs/core`: shared framework contracts and runtime primitives.
-- `@frostjs/router`: route discovery and matching.
-- `@frostjs/server`: server request lifecycle and response generation.
-- `@frostjs/react`: React SSR and hydration helpers.
-- `@frostjs/data`: data loaders/actions and request-level execution.
-- `@frostjs/vite`: Vite integration and framework runtime behavior.
-- `@frostjs/adapter-node`: Node.js hosting adapter.
+- `@frost.js/core`: shared framework contracts and runtime primitives.
+- `@frost.js/router`: route discovery and matching.
+- `@frost.js/server`: server request lifecycle and response generation.
+- `@frost.js/react`: React SSR and hydration helpers.
+- `@frost.js/data`: data loaders/actions and request-level execution.
+- `@frost.js/vite`: Vite integration and framework runtime behavior.
+- `@frost.js/adapter-node`: Node.js hosting adapter.
 
 ## Installation
 
@@ -163,7 +163,7 @@ One of Frost's central guarantees is that server-only code stays server-only. Th
 
 ## Error handling
 
-`@frostjs/react` ships a `FrostErrorBoundary` that captures render errors with route, phase, component stack, and source location when available. In development it renders a diagnostic dialog with the error type, message, source file/line, expandable stack traces, copy-message/copy-report actions, and dismiss/retry recovery. In production it falls back to a safe message without leaking filesystem paths or internals.
+`@frost.js/react` ships a `FrostErrorBoundary` that captures render errors with route, phase, component stack, and source location when available. In development it renders a diagnostic dialog with the error type, message, source file/line, expandable stack traces, copy-message/copy-report actions, and dismiss/retry recovery. In production it falls back to a safe message without leaking filesystem paths or internals.
 
 Note: React error boundaries catch render errors only — not event-handler or asynchronous errors.
 

@@ -1,5 +1,5 @@
 {
-  "name": "@frostjs/core",
+  "name": "@frost.js/core",
   "version": "0.1.0",
   "description": "Core configuration, contracts, and shared types for Frost",
   "type": "module",

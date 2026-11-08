@@ -1,5 +1,5 @@
 {
-  "name": "@frostjs/adapter-node",
+  "name": "@frost.js/adapter-node",
   "version": "0.1.0",
   "description": "Production Node.js HTTP adapter, static asset server, and SSR runner for Frost",
   "type": "module",
@@ -12,10 +12,10 @@
     }
   },
   "dependencies": {
-    "@frostjs/core": "workspace:*",
-    "@frostjs/router": "workspace:*",
-    "@frostjs/server": "workspace:*",
-    "@frostjs/react": "workspace:*"
+    "@frost.js/core": "workspace:*",
+    "@frost.js/router": "workspace:*",
+    "@frost.js/server": "workspace:*",
+    "@frost.js/react": "workspace:*"
   },
   "scripts": {
     "build": "tsc --build",

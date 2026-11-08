@@ -1,6 +1,6 @@
 ﻿import { useState } from "react";
-import type { Route } from "@frostjs/core";
-import { Link } from "@frostjs/react";
+import type { Route } from "@frost.js/core";
+import { Link } from "@frost.js/react";
 import { pillGhost, pillPrimary } from "../components/Button.js";
 import { RunLocallyDialog } from "../components/RunLocallyDialog.js";
 

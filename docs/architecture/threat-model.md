@@ -22,7 +22,7 @@ This document identifies security boundaries, threat vectors, mitigations, and n
 
 | Threat ID | Threat Description | Attack Vector | Mitigation in Frost |
 |---|---|---|---|
-| **TH-01** | Server Secret Leakage | Developer imports a database config or uses `process.env.SECRET` in a component that is bundled for the browser. | AST analysis in `@frostjs/vite` rejects `.server.*` imports into client entries with code `FS1004`. Build env injector only exposes `FROST_PUBLIC_*`. |
+| **TH-01** | Server Secret Leakage | Developer imports a database config or uses `process.env.SECRET` in a component that is bundled for the browser. | AST analysis in `@frost.js/vite` rejects `.server.*` imports into client entries with code `FS1004`. Build env injector only exposes `FROST_PUBLIC_*`. |
 | **TH-02** | Cross-User Cache Contamination | Route returns authenticated user profile and gets cached into a shared CDN or in-memory application cache. | Frost caches are `no-store` by default. Caching is opt-in. Routes with `cookies()` or session access require explicit user-scoped cache keys. |
 | **TH-03** | CSRF (Cross-Site Request Forgery) | An external origin submits a mutation `POST` request to a Frost `action()`. | Automatic CSRF token validation or `Origin`/`Sec-Fetch-Site` header verification on mutation requests with cookies. |
 | **TH-04** | Parameter Injection / Over-posting | Malicious JSON payload with prototype pollution or unauthorized fields sent to an action. | Form/JSON parser enforces body size limits (`1MB` default) and validates keys against structured schemas. |

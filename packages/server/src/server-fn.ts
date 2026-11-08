@@ -3,8 +3,8 @@ import {
   FROST_ERROR_CODES,
   type FrostErrorReport,
   type FrostRequestContext,
-} from "@frostjs/core";
-import { getServerFn, parseJson, validateCsrf } from "@frostjs/data";
+} from "@frost.js/core";
+import { getServerFn, parseJson, validateCsrf } from "@frost.js/data";
 import { json } from "./response.js";
 
 export interface ServerFnDispatchOptions {

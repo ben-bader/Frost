@@ -8,9 +8,9 @@ Frameworks that tie themselves tightly to proprietary cloud runtimes create vend
 
 ## Decision
 1. **Core Runtime Independence:**
-   - The core request handler (`@frostjs/server`) operates on web standard request/response primitives (`Request`, `Response`, `Headers`).
+   - The core request handler (`@frost.js/server`) operates on web standard request/response primitives (`Request`, `Response`, `Headers`).
    - Does not assume proprietary cloud headers, proprietary cache storage, or proprietary file system layouts.
-2. **First-Class Node.js Adapter (`@frostjs/adapter-node`):**
+2. **First-Class Node.js Adapter (`@frost.js/adapter-node`):**
    - Implements a production-ready HTTP/HTTPS server using Node.js built-in `node:http`.
    - Bridges Node.js `IncomingMessage` and `ServerResponse` to standard Web API `Request` and `Response`.
    - Handles static asset delivery with proper `Content-Type`, `ETag`, and `Cache-Control` headers.

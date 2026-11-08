@@ -1,7 +1,7 @@
 import { createServer } from "vite";
 import react from "@vitejs/plugin-react";
-import { frost } from "@frostjs/vite";
-import { resolveConfig, type FrostConfig } from "@frostjs/core";
+import { frost } from "@frost.js/vite";
+import { resolveConfig, type FrostConfig } from "@frost.js/core";
 
 export interface DevCommandOptions {
   port?: number;

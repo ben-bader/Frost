@@ -28,7 +28,7 @@ export const contract = {
 
 ## defineRoute
 
-`defineRoute()` from `@frostjs/core` gives inferred types for loader
+`defineRoute()` from `@frost.js/core` gives inferred types for loader
 data, params, and action input so components receive typed `data`
 instead of `any`. `frost build`/`dev` also emit `.frost/types/routes.d.ts`
 for typed `Link` hrefs — include it in `tsconfig.json` `include`.

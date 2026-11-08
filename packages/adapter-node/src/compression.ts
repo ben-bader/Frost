@@ -1,5 +1,5 @@
 import * as zlib from "node:zlib";
-import type { CompressionConfig } from "@frostjs/core";
+import type { CompressionConfig } from "@frost.js/core";
 
 export interface CompressionOptions {
   enabled: boolean;

@@ -1,5 +1,5 @@
 {
-  "name": "@frostjs/test",
+  "name": "@frost.js/test",
   "version": "0.1.0",
   "description": "Test utilities for Frost: render routes and call loaders/actions with mock requests",
   "type": "module",
@@ -12,10 +12,10 @@
     }
   },
   "dependencies": {
-    "@frostjs/core": "workspace:*",
-    "@frostjs/react": "workspace:*",
-    "@frostjs/router": "workspace:*",
-    "@frostjs/server": "workspace:*"
+    "@frost.js/core": "workspace:*",
+    "@frost.js/react": "workspace:*",
+    "@frost.js/router": "workspace:*",
+    "@frost.js/server": "workspace:*"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",

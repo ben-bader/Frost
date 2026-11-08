@@ -1,4 +1,4 @@
-import type { ResolvedSecurityConfig } from "@frostjs/core";
+import type { ResolvedSecurityConfig } from "@frost.js/core";
 
 export interface SecurityHeadersOptions {
   security?: ResolvedSecurityConfig;

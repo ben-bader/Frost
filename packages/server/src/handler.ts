@@ -5,7 +5,7 @@ import {
   matchRoutes,
   normalizePathname,
   decodePathname,
-} from "@frostjs/router";
+} from "@frost.js/router";
 import {
   createRequestContext,
   type FrostRequestContext,
@@ -13,12 +13,12 @@ import {
   type RouteModule,
   type ApiRouteModule,
   type ResolvedSecurityConfig,
-} from "@frostjs/core";
+} from "@frost.js/core";
 import { renderRouteToHtml, renderSimpleDocument } from "./ssr.js";
 import { dispatchApiRoute } from "./api.js";
 import { applySecurityHeaders } from "./security.js";
 import { json } from "./response.js";
-import { validateCsrf } from "@frostjs/data";
+import { validateCsrf } from "@frost.js/data";
 import { dispatchServerFn } from "./server-fn.js";
 import { runRouteLoaders } from "./ssr.js";
 import { randomBytes } from "node:crypto";
@@ -35,7 +35,7 @@ import {
   formDataToObject,
   createContractError,
   type RouteContract,
-} from "@frostjs/core";
+} from "@frost.js/core";
 
 export interface LoadedRoute<T = RouteModule | ApiRouteModule> {
   discovered: DiscoveredRoute;

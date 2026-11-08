@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { validateClientEnvAccess, validateModuleBoundary } from "../boundary.js";
-import { FrostError } from "@frostjs/core";
+import { FrostError } from "@frost.js/core";
 
 describe("Boundary enforcement in Vite plugin", () => {
   it("allows universal modules in client bundle", () => {

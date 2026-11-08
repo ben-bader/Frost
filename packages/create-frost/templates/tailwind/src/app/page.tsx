@@ -1,4 +1,4 @@
-import type { Route } from "@frostjs/core";
+import type { Route } from "@frost.js/core";
 
 export const metadata: Route.Metadata = {
   title: "My Frost App",

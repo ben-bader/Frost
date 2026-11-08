@@ -10,15 +10,15 @@ import {
   routeTypesDeclaration,
   type FrostConfig,
   type FrostErrorReport,
-} from "@frostjs/core";
-import { discoverRoutes, type DiscoveredRoute } from "@frostjs/router";
-import { createRequestHandler } from "@frostjs/server";
+} from "@frost.js/core";
+import { discoverRoutes, type DiscoveredRoute } from "@frost.js/router";
+import { createRequestHandler } from "@frost.js/server";
 import {
   isSafeRequestTarget,
   nodeReqToWebRequest,
   sendWebResponseToNode,
-} from "@frostjs/adapter-node";
-import { setBodyLimits } from "@frostjs/data";
+} from "@frost.js/adapter-node";
+import { setBodyLimits } from "@frost.js/data";
 import {
   VIRTUAL_ROUTES_ID,
   RESOLVED_VIRTUAL_ROUTES_ID,

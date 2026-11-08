@@ -1,5 +1,5 @@
 {
-  "name": "@frostjs/react",
+  "name": "@frost.js/react",
   "version": "0.1.0",
   "description": "React integration, SSR/hydration orchestration, and hooks for Frost",
   "type": "module",
@@ -16,8 +16,8 @@
     }
   },
   "dependencies": {
-    "@frostjs/core": "workspace:*",
-    "@frostjs/router": "workspace:*"
+    "@frost.js/core": "workspace:*",
+    "@frost.js/router": "workspace:*"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",

@@ -25,6 +25,6 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
-      - run: pnpm --filter @frostjs/starter build
+      - run: pnpm --filter @frost.js/starter build
       - name: Audit (non-blocking)
         run: pnpm audit || true

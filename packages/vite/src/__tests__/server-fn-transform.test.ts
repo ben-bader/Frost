@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { transformServerFnCalls } from "../server-fn-transform.js";
 
-const IMPORT = `import { createServerFn } from "@frostjs/data";\n`;
+const IMPORT = `import { createServerFn } from "@frost.js/data";\n`;
 
 describe("transformServerFnCalls", () => {
   it("replaces createServerFn config calls with fetch stubs", () => {
@@ -31,7 +31,7 @@ describe("transformServerFnCalls", () => {
     expect(out).not.toContain("a: [1");
   });
 
-  it("ignores files without the @frostjs/data import", () => {
+  it("ignores files without the @frost.js/data import", () => {
     const src = `const f = createServerFn({ name: "x", handler: async () => 1 });\n`;
     expect(transformServerFnCalls(src)).toBeNull();
   });

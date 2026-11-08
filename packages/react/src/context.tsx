@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode } from "react";
-import type { FrostAssets } from "@frostjs/core";
+import type { FrostAssets } from "@frost.js/core";
 
 export interface FrostClientState {
   pathname: string;

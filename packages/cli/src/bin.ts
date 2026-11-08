@@ -4,8 +4,8 @@ import { buildCommand } from "./commands/build.js";
 import { startCommand } from "./commands/start.js";
 import { routesCommand } from "./commands/routes.js";
 import { loadFrostConfig, mergeCliOverrides, findFrostConfigFile } from "./config.js";
-import { loadEnvFiles, missingEnvVars } from "@frostjs/core";
-import type { FrostConfig } from "@frostjs/core";
+import { loadEnvFiles, missingEnvVars } from "@frost.js/core";
+import type { FrostConfig } from "@frost.js/core";
 
 async function main() {
   const args = process.argv.slice(2);

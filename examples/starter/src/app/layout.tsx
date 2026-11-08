@@ -1,4 +1,4 @@
-import type { Route } from "@frostjs/core";
+import type { Route } from "@frost.js/core";
 import { Header } from "../components/Header.js";
 import { NAV_ITEMS, type NavItem } from "../config/nav.js";
 import "../styles/app.css";

@@ -1,4 +1,4 @@
-import type { FrostRequestContext } from "@frostjs/core";
+import type { FrostRequestContext } from "@frost.js/core";
 
 /**
  * Deduplicates an asynchronous operation within the scope of a single HTTP request.

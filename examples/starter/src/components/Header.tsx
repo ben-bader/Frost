@@ -1,4 +1,4 @@
-import { Link, usePathname } from "@frostjs/react";
+import { Link, usePathname } from "@frost.js/react";
 import { pillPrimary } from "./Button.js";
 import { SITE } from "../config/site.js";
 import { NAV_ITEMS, type NavItem } from "../config/nav.js";

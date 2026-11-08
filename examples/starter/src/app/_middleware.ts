@@ -1,4 +1,4 @@
-import type { FrostMiddleware } from "@frostjs/core";
+import type { FrostMiddleware } from "@frost.js/core";
 
 /**
  * App-root middleware — runs before routing for pages and APIs.

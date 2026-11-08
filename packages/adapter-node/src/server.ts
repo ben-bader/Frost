@@ -2,7 +2,7 @@ import * as http from "node:http";
 import { isSafeRequestTarget, nodeReqToWebRequest, sendWebResponseToNode } from "./bridge.js";
 import { tryServeStaticFile } from "./static.js";
 import { toCompressionOptions, type CompressionOptions } from "./compression.js";
-import type { CompressionConfig } from "@frostjs/core";
+import type { CompressionConfig } from "@frost.js/core";
 
 export interface NodeServerOptions {
   port?: number;

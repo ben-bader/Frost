@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { createRequestHandler } from "../handler.js";
 import { json } from "../response.js";
-import type { DiscoveredRoute } from "@frostjs/router";
-import type { RouteModule, ApiRouteModule } from "@frostjs/core";
+import type { DiscoveredRoute } from "@frost.js/router";
+import type { RouteModule, ApiRouteModule } from "@frost.js/core";
 
 describe("Server request handling and SSR", () => {
   const routes: DiscoveredRoute[] = [

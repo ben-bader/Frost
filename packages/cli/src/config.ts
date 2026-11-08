@@ -1,7 +1,7 @@
 import * as path from "node:path";
 import * as fs from "node:fs";
 import { loadConfigFromFile } from "vite";
-import type { FrostConfig } from "@frostjs/core";
+import type { FrostConfig } from "@frost.js/core";
 
 const CONFIG_CANDIDATES = ["frost.config.ts", "frost.config.js", "frost.config.mjs"];
 

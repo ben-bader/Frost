@@ -1,5 +1,5 @@
-import type { ApiRouteModule, FrostRequestContext, FrostErrorReport } from "@frostjs/core";
-import { createErrorReport, FROST_ERROR_CODES } from "@frostjs/core";
+import type { ApiRouteModule, FrostRequestContext, FrostErrorReport } from "@frost.js/core";
+import { createErrorReport, FROST_ERROR_CODES } from "@frost.js/core";
 import { json } from "./response.js";
 
 const API_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"];

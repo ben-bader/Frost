@@ -1,4 +1,4 @@
-import type { FrostRequestContext } from "@frostjs/core";
+import type { FrostRequestContext } from "@frost.js/core";
 import { validateCsrf } from "./csrf.js";
 
 export interface ServerFnContext extends FrostRequestContext {

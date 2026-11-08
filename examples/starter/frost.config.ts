@@ -1,4 +1,4 @@
-import { defineConfig } from "@frostjs/vite";
+import { defineConfig } from "@frost.js/vite";
 
 export default defineConfig({
   appDirectory: "src/app",

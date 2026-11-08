@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { createTestHandler, renderRoute, callLoader, callAction } from "../index.js";
-import type { RouteModule } from "@frostjs/core";
-import type { DiscoveredRoute } from "@frostjs/router";
+import type { RouteModule } from "@frost.js/core";
+import type { DiscoveredRoute } from "@frost.js/router";
 
 const pageRoute: DiscoveredRoute = {
   id: "page.tsx",
@@ -13,7 +13,7 @@ const pageRoute: DiscoveredRoute = {
   score: 100,
 };
 
-describe("@frostjs/test", () => {
+describe("@frost.js/test", () => {
   it("createTestHandler serves in-memory modules", async () => {
     const handler = createTestHandler({
       routes: [pageRoute],

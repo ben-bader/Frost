@@ -3,7 +3,7 @@ import { dedupe } from "../memo.js";
 import { parseJson } from "../form.js";
 import { validateCsrf } from "../csrf.js";
 import { createServerFn } from "../server-fn.js";
-import { createRequestContext, FrostError } from "@frostjs/core";
+import { createRequestContext, FrostError } from "@frost.js/core";
 
 describe("Data package", () => {
   it("deduplicates requests within the same context memo", async () => {

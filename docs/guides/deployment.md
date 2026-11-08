@@ -23,7 +23,7 @@ CMD ["pnpm", "--dir", "examples/starter", "start"]
 
 ## Edge / serverless (fetch adapter)
 
-`createFetchAdapter` from `@frostjs/server` wraps the same
+`createFetchAdapter` from `@frost.js/server` wraps the same
 `createRequestHandler` options in a Web `Request → Response` handler —
 drop it into a Cloudflare Worker / Vercel Edge / Deno / Bun `fetch`
 export. Static assets and `.frost` HTML are host concerns there; serve

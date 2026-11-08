@@ -1,4 +1,4 @@
-import { FrostError } from "@frostjs/core";
+import { FrostError } from "@frost.js/core";
 
 const NODE_BUILTINS = new Set([
   "node:fs",

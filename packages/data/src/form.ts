@@ -1,4 +1,4 @@
-import { FrostError } from "@frostjs/core";
+import { FrostError } from "@frost.js/core";
 
 export interface BodyParseOptions {
   maxSizeBytes?: number; // Defaults to 1MB (1024 * 1024)

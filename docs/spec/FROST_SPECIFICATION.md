@@ -101,7 +101,7 @@ These are proposed initial architectural decisions. They must be validated again
 | Testing | Vitest, React Testing Library and browser automation |
 | Documentation | Markdown with executable examples |
 | Deployment | Node.js server, static output and explicit platform adapters |
-| Public packages | Scoped packages under `@frostjs/*`, subject to npm availability |
+| Public packages | Scoped packages under `@frost.js/*`, subject to npm availability |
 
 Do not develop a custom JavaScript compiler, custom JSX language, custom React renderer or custom browser runtime.
 
@@ -200,20 +200,20 @@ Create packages only when their boundaries are justified. The initial implementa
 
 ### Package responsibilities
 
-**`@frostjs/core`**
+**`@frost.js/core`**
 - Framework configuration types.
 - Shared error types.
 - Request context contracts.
 - Framework lifecycle contracts.
 - Environment and runtime abstractions.
 
-**`@frostjs/react`**
+**`@frost.js/react`**
 - React integration.
 - SSR and hydration orchestration.
 - Error boundary integration.
 - React-specific runtime utilities.
 
-**`@frostjs/router`**
+**`@frost.js/router`**
 - Route discovery.
 - Route matching.
 - Layout hierarchy.
@@ -221,60 +221,60 @@ Create packages only when their boundaries are justified. The initial implementa
 - Navigation and redirects.
 - Route-level loading and error behavior.
 
-**`@frostjs/server`**
+**`@frost.js/server`**
 - Request lifecycle.
 - Middleware.
 - HTTP responses.
 - Request-scoped context.
 - Security headers and error handling.
 
-**`@frostjs/data`**
+**`@frost.js/data`**
 - Server-only data functions.
 - Request-scoped deduplication.
 - Data-loading contracts.
 - Mutation and invalidation integration.
 
-**`@frostjs/cache`**
+**`@frost.js/cache`**
 - Cache policy.
 - Cache keys and namespaces.
 - TTL and stale policy.
 - Tag-based invalidation.
 - Adapter interface and observability.
 
-**`@frostjs/build`**
+**`@frost.js/build`**
 - Build orchestration.
 - Server/client entry-point generation.
 - Manifest contracts.
 - Production artifact validation.
 
-**`@frostjs/vite`**
+**`@frost.js/vite`**
 - Vite plugin integration.
 - Route discovery integration.
 - Environment-specific module validation.
 - Development server integration.
 - Production build hooks.
 
-**`@frostjs/cli`**
+**`@frost.js/cli`**
 - Development commands.
 - Build and preview commands.
 - Diagnostics.
 - Type generation.
 - Project inspection.
 
-**`@frostjs/adapter-node`**
+**`@frost.js/adapter-node`**
 - Production Node.js HTTP server.
 - Static asset serving.
 - SSR request handling.
 - Graceful shutdown and runtime health.
 
-**`@frostjs/testing`**
+**`@frost.js/testing`**
 - Route tests.
 - Request simulation.
 - Server-function tests.
 - Cache tests.
 - Rendering and hydration helpers.
 
-**`@frostjs/devtools`**
+**`@frost.js/devtools`**
 - Route inspector.
 - Rendering-mode inspection.
 - Cache-decision inspection.
@@ -972,7 +972,7 @@ Frost configuration should be small, typed and validated.
 Illustrative example:
 
 ```ts
-import { defineConfig } from "@frostjs/core";
+import { defineConfig } from "@frost.js/core";
 
 export default defineConfig({
   appDirectory: "src/app",

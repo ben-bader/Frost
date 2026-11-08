@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { createRequestHandler } from "../handler.js";
-import { resolveConfig } from "@frostjs/core";
-import { createServerFn, getServerFn } from "@frostjs/data";
+import { resolveConfig } from "@frost.js/core";
+import { createServerFn, getServerFn } from "@frost.js/data";
 
 const security = resolveConfig().security;
 

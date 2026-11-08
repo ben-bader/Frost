@@ -2,14 +2,14 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as zlib from "node:zlib";
 import { build as viteBuild } from "vite";
-import { frost, generateClientEntryCode } from "@frostjs/vite";
+import { frost, generateClientEntryCode } from "@frost.js/vite";
 import {
   resolveConfig,
   routeTypesDeclaration,
   type FrostAssets,
   type FrostConfig,
-} from "@frostjs/core";
-import { discoverRoutes } from "@frostjs/router";
+} from "@frost.js/core";
+import { discoverRoutes } from "@frost.js/router";
 
 export interface BuildCommandOptions {
   rootDir?: string;
@@ -94,9 +94,9 @@ export async function buildCommand(options: BuildCommandOptions = {}): Promise<v
     const serverEntryPath = path.join(outDir, "server-entry.ts");
     const serverEntrySource = `
 import { readFileSync } from "node:fs";
-import { createRequestHandler } from "@frostjs/server";
-import { createLogger } from "@frostjs/core";
-import { setBodyLimits } from "@frostjs/data";
+import { createRequestHandler } from "@frost.js/server";
+import { createLogger } from "@frost.js/core";
+import { setBodyLimits } from "@frost.js/data";
 import { routes, routeImporters } from "virtual:frost/routes";
 
 setBodyLimits(${JSON.stringify(config.limits)});

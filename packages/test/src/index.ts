@@ -1,8 +1,8 @@
-import { createRequestHandler, type RequestHandlerOptions } from "@frostjs/server";
-import { renderRouteToHtml } from "@frostjs/server";
-import type { DiscoveredRoute } from "@frostjs/router";
-import type { FrostRequestContext, RouteModule, ApiRouteModule } from "@frostjs/core";
-import { createRequestContext } from "@frostjs/core";
+import { createRequestHandler, type RequestHandlerOptions } from "@frost.js/server";
+import { renderRouteToHtml } from "@frost.js/server";
+import type { DiscoveredRoute } from "@frost.js/router";
+import type { FrostRequestContext, RouteModule, ApiRouteModule } from "@frost.js/core";
+import { createRequestContext } from "@frost.js/core";
 
 export interface TestHandlerOptions extends Omit<RequestHandlerOptions, "routes" | "loadModule"> {
   routes?: DiscoveredRoute[];

@@ -1,4 +1,4 @@
-import { Link } from "@frostjs/react";
+import { Link } from "@frost.js/react";
 
 export default function NotFound(): React.JSX.Element {
   return (

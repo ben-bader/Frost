@@ -1,5 +1,5 @@
-import type { FrostRequestContext } from "@frostjs/core";
-import { createRequestContext } from "@frostjs/core";
+import type { FrostRequestContext } from "@frost.js/core";
+import { createRequestContext } from "@frost.js/core";
 import type { RequestHandlerOptions } from "./handler.js";
 import { createRequestHandler } from "./handler.js";
 

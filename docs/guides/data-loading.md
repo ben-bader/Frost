@@ -36,7 +36,7 @@ export const action = async ({ request, params, context }) => {
 
 ## Server functions (RPC)
 
-`createServerFn` in `@frostjs/server` exposes a typed function over
+`createServerFn` in `@frost.js/server` exposes a typed function over
 `POST /_frost/fn/<id>` with origin/CSRF checks. The Vite plugin rewrites
 client imports into fetch stubs; see the package source for the
 serialization contract.

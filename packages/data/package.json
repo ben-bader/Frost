@@ -1,5 +1,5 @@
 {
-  "name": "@frostjs/data",
+  "name": "@frost.js/data",
   "version": "0.1.0",
   "description": "Server-only data functions, request deduplication, form actions, and mutation contracts for Frost",
   "type": "module",
@@ -12,7 +12,7 @@
     }
   },
   "dependencies": {
-    "@frostjs/core": "workspace:*"
+    "@frost.js/core": "workspace:*"
   },
   "scripts": {
     "build": "tsc --build",

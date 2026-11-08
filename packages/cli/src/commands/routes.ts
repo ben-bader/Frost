@@ -1,6 +1,6 @@
 import * as fs from "node:fs";
-import { discoverRoutes } from "@frostjs/router";
-import { resolveConfig, type FrostConfig } from "@frostjs/core";
+import { discoverRoutes } from "@frost.js/router";
+import { resolveConfig, type FrostConfig } from "@frost.js/core";
 
 /** Static scan of a route module's exports (loader/action/contract/...). */
 function scanExports(filePath: string): Set<string> {

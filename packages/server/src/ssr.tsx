@@ -5,7 +5,7 @@ import {
   FrostProvider,
   FrostErrorBoundary,
   type FrostClientState,
-} from "@frostjs/react";
+} from "@frost.js/react";
 import {
   createErrorReport,
   createContractError,
@@ -17,7 +17,7 @@ import {
   type FrostRequestContext,
   type Route,
   type RouteModule,
-} from "@frostjs/core";
+} from "@frost.js/core";
 import { html, htmlStream } from "./response.js";
 
 export interface SsrRenderOptions {

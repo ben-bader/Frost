@@ -1,8 +1,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
-import { createNodeServer } from "@frostjs/adapter-node";
-import { resolveConfig, type FrostConfig } from "@frostjs/core";
+import { createNodeServer } from "@frost.js/adapter-node";
+import { resolveConfig, type FrostConfig } from "@frost.js/core";
 
 export interface StartCommandOptions {
   port?: number;

@@ -1,4 +1,4 @@
-import { defineConfig } from "@frostjs/core";
+import { defineConfig } from "@frost.js/core";
 
 export default defineConfig({
   appDirectory: "src/app",

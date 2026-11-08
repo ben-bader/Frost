@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { createRequestHandler } from "../handler.js";
-import { resolveConfig } from "@frostjs/core";
-import type { DiscoveredRoute } from "@frostjs/router";
-import type { RouteModule, ApiRouteModule } from "@frostjs/core";
+import { resolveConfig } from "@frost.js/core";
+import type { DiscoveredRoute } from "@frost.js/router";
+import type { RouteModule, ApiRouteModule } from "@frost.js/core";
 
 function page(id: string, pattern: string, filePath: string): DiscoveredRoute {
   return { id, pattern, filePath, kind: "page", isDynamic: false, isCatchAll: false, score: 100 };

@@ -13,4 +13,4 @@ export {
   type RouteModule,
   type ApiRouteModule,
   FrostError,
-} from "@frostjs/core";
+} from "@frost.js/core";

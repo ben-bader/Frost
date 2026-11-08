@@ -1,5 +1,5 @@
 {
-  "name": "@frostjs/vite",
+  "name": "@frost.js/vite",
   "version": "0.1.0",
   "description": "Vite plugin integration, virtual route modules, and dev SSR middleware for Frost",
   "type": "module",
@@ -12,12 +12,12 @@
     }
   },
   "dependencies": {
-    "@frostjs/core": "workspace:*",
-    "@frostjs/router": "workspace:*",
-    "@frostjs/server": "workspace:*",
-    "@frostjs/react": "workspace:*",
-    "@frostjs/adapter-node": "workspace:*",
-    "@frostjs/data": "workspace:*"
+    "@frost.js/core": "workspace:*",
+    "@frost.js/router": "workspace:*",
+    "@frost.js/server": "workspace:*",
+    "@frost.js/react": "workspace:*",
+    "@frost.js/adapter-node": "workspace:*",
+    "@frost.js/data": "workspace:*"
   },
   "peerDependencies": {
     "vite": "^5.0.0 || ^6.0.0"

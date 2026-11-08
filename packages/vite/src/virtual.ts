@@ -1,5 +1,5 @@
 import * as path from "node:path";
-import type { DiscoveredRoute } from "@frostjs/router";
+import type { DiscoveredRoute } from "@frost.js/router";
 
 export const VIRTUAL_ROUTES_ID = "virtual:frost/routes";
 export const RESOLVED_VIRTUAL_ROUTES_ID = "\0" + VIRTUAL_ROUTES_ID;
@@ -104,7 +104,7 @@ export function generateClientEntryCode(
   return `
 import PageModule from "${pageImportPath}";
 ${layoutImports.join("\n")}
-import { hydrateApp } from "@frostjs/react/client";
+import { hydrateApp } from "@frost.js/react/client";
 
 const PageComponent = PageModule.default || PageModule;
 const layoutComponents = [${layoutArray}];

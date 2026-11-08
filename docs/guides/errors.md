@@ -12,7 +12,7 @@
 
 ## Error codes
 
-Stable codes live in `@frostjs/core` (`FROST_ERROR_CODES`) and are
+Stable codes live in `@frost.js/core` (`FROST_ERROR_CODES`) and are
 attached to every `FrostErrorReport`:
 
 `FROST_E_LOADER`, `FROST_E_ACTION`, `FROST_E_RENDER`, `FROST_E_API`,
