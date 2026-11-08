@@ -19,6 +19,7 @@ import { dispatchApiRoute } from "./api.js";
 import { applySecurityHeaders } from "./security.js";
 import { json } from "./response.js";
 import { validateCsrf } from "@frostjs/data";
+import { dispatchServerFn } from "./server-fn.js";
 import { randomBytes } from "node:crypto";
 import {
   createErrorReport,
@@ -58,6 +59,8 @@ export interface RequestHandlerOptions {
   logRequests?: boolean;
   /** Validate route contracts (params/search/loader/action/headers). */
   validateContracts?: boolean;
+  /** URL prefix for createServerFn RPC (default "/_frost/fn"). */
+  serverFnPath?: string;
 }
 
 const PAGE_METHODS = ["GET", "HEAD"];
@@ -75,7 +78,7 @@ function methodNotAllowed(allow: string[]): Response {
 }
 
 export function createRequestHandler(options: RequestHandlerOptions) {
-  const { routes, loadModule, getAssetsForRoute, security, onError, checkDeterminism, lang, logger, logRequests, validateContracts } = options;
+  const { routes, loadModule, getAssetsForRoute, security, onError, checkDeterminism, lang, logger, logRequests, validateContracts, serverFnPath = "/_frost/fn" } = options;
 
   // The global not-found route (app/not-found.tsx or app/_404.tsx) is
   // discovered with kind "not-found" and never participates in matching.
@@ -192,6 +195,15 @@ export function createRequestHandler(options: RequestHandlerOptions) {
     // middleware's next() can delegate to it.
     const routeRequest = async (): Promise<Response> => {
     let response: Response;
+
+    // 0a. Server-function RPC endpoint: POST /<serverFnPath>/<id>.
+    const fnPrefix = `${serverFnPath}/`;
+    if (pathname.startsWith(fnPrefix)) {
+      const fnId = decodeURIComponent(pathname.slice(fnPrefix.length));
+      const fnResponse = await dispatchServerFn(request, fnId, context, { onError });
+      applySecurityHeaders(fnResponse.headers, secOptions);
+      return fnResponse;
+    }
 
     // 1. Try API routes first
     const apiMatch = matchRoutes(apiRoutes, pathname);

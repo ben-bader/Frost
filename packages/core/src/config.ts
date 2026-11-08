@@ -83,6 +83,11 @@ export interface SeoConfig {
   baseUrl?: string;
 }
 
+export interface ServerFnsConfig {
+  /** URL prefix for the server-function RPC endpoint. Default "/_frost/fn". */
+  path?: string;
+}
+
 export interface EnvConfig {
   /** Variable names that must be present at startup or the CLI fails fast. */
   required?: string[];
@@ -157,6 +162,7 @@ export interface FrostConfig {
   logging?: LoggingConfig;
   env?: EnvConfig;
   seo?: SeoConfig;
+  serverFns?: ServerFnsConfig;
   limits?: LimitsConfig;
 }
 
@@ -194,6 +200,7 @@ export interface ResolvedFrostConfig {
   logging: Required<LoggingConfig>;
   env: Required<EnvConfig>;
   seo: { sitemap: boolean; robots: boolean; baseUrl?: string };
+  serverFns: { path: string };
   limits: Required<LimitsConfig>;
 }
 
@@ -267,6 +274,9 @@ export const defaultFrostConfig: ResolvedFrostConfig = {
   seo: {
     sitemap: false,
     robots: false,
+  },
+  serverFns: {
+    path: "/_frost/fn",
   },
   limits: {
     formBytes: 1024 * 1024,
@@ -380,6 +390,9 @@ export function resolveConfig(config: FrostConfig = {}): ResolvedFrostConfig {
       sitemap: config.seo?.sitemap ?? false,
       robots: config.seo?.robots ?? false,
       baseUrl: config.seo?.baseUrl,
+    },
+    serverFns: {
+      path: config.serverFns?.path ?? "/_frost/fn",
     },
     limits: {
       formBytes: config.limits?.formBytes ?? defaultFrostConfig.limits.formBytes,

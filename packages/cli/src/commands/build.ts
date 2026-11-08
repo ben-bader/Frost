@@ -126,6 +126,7 @@ export const handler = createRequestHandler({
   logger: createLogger(${JSON.stringify(prodLogging)}),
   logRequests: ${config.logging.requestLogs},
   validateContracts: ${config.contracts.validateInProduction},
+  serverFnPath: ${JSON.stringify(config.serverFns.path)},
   loadModule: async (route) => {
     const importer = importerById.get(route.id);
     if (!importer) return null;

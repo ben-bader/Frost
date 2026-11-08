@@ -22,6 +22,8 @@ import {
   generateClientEntryCode,
 } from "./virtual.js";
 import { DEV_CLIENT_CODE, DEV_CLIENT_ID, RESOLVED_DEV_CLIENT_ID } from "./dev-client.js";
+import { SERVER_FN_CLIENT_ID, RESOLVED_SERVER_FN_CLIENT_ID, serverFnClientCode } from "./server-fn-client.js";
+import { transformServerFnCalls } from "./server-fn-transform.js";
 import { validateClientEnvAccess, validateModuleBoundary } from "./boundary.js";
 
 export interface FrostPluginOptions {
@@ -200,6 +202,9 @@ export function frost(userConfig: FrostConfig = {}, pluginOptions: FrostPluginOp
       if (id === DEV_CLIENT_ID || id === RESOLVED_DEV_CLIENT_ID) {
         return RESOLVED_DEV_CLIENT_ID;
       }
+      if (id === SERVER_FN_CLIENT_ID || id === RESOLVED_SERVER_FN_CLIENT_ID) {
+        return RESOLVED_SERVER_FN_CLIENT_ID;
+      }
       if (id.startsWith("/@frost/client") || id.startsWith("@frost/client")) {
         return id;
       }
@@ -231,6 +236,11 @@ export function frost(userConfig: FrostConfig = {}, pluginOptions: FrostPluginOp
         /\.[jt]sx?$/.test(id.split("?")[0] ?? id)
       ) {
         validateClientEnvAccess(code, id);
+
+        // Server functions: rewrite createServerFn({...}) calls to fetch
+        // stubs so handler code never ships to the browser.
+        const transformed = transformServerFnCalls(code);
+        if (transformed) return { code: transformed, map: null };
       }
       return null;
     },
@@ -238,6 +248,9 @@ export function frost(userConfig: FrostConfig = {}, pluginOptions: FrostPluginOp
     load(id) {
       if (id === RESOLVED_DEV_CLIENT_ID) {
         return DEV_CLIENT_CODE;
+      }
+      if (id === RESOLVED_SERVER_FN_CLIENT_ID) {
+        return serverFnClientCode(config.serverFns.path);
       }
       if (id === RESOLVED_VIRTUAL_ROUTES_ID) {
         cachedRoutes = discoverRoutes({
@@ -431,6 +444,7 @@ export function frost(userConfig: FrostConfig = {}, pluginOptions: FrostPluginOp
               },
               checkDeterminism: config.dev.checkDeterminism,
               validateContracts: true, // contracts always validate in dev
+              serverFnPath: config.serverFns.path,
               lang: config.app.lang,
               logger: createLogger(config.logging),
               logRequests: config.logging.requestLogs,

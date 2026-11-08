@@ -4,3 +4,4 @@ export * from "./api.js";
 export * from "./ssr.js";
 export * from "./handler.js";
 
+export * from "./server-fn.js";

@@ -16,6 +16,7 @@ export const FROST_ERROR_CODES = {
   BODY: "FROST_E_BODY",
   MIDDLEWARE: "FROST_E_MIDDLEWARE",
   ENV: "FROST_E_ENV",
+  SERVER_FN: "FROST_E_SERVERFN",
 } as const;
 
 export type FrostErrorCode = (typeof FROST_ERROR_CODES)[keyof typeof FROST_ERROR_CODES];
