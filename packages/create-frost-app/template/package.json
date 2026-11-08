@@ -1,0 +1,28 @@
+{
+  "name": "__APP_NAME__",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "frost dev",
+    "build": "frost build",
+    "start": "frost start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@frost.js/adapter-node": "^0.1.0",
+    "@frost.js/cli": "^0.1.0",
+    "@frost.js/core": "^0.1.0",
+    "@frost.js/data": "^0.1.0",
+    "@frost.js/react": "^0.1.0",
+    "@frost.js/router": "^0.1.0",
+    "@frost.js/server": "^0.1.0",
+    "@frost.js/vite": "^0.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "typescript": "^5.7.3"
+  }
+}

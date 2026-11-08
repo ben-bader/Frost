@@ -1,0 +1,5 @@
+# Shell scripts and bin entry points must keep LF line endings everywhere.
+*.sh        text eol=lf
+**/bin.js   text eol=lf
+# create-frost-app ships its templates verbatim in the npm tarball.
+packages/create-frost-app/** text eol=lf

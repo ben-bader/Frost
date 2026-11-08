@@ -1,0 +1,41 @@
+{
+  "name": "create-frost-app",
+  "version": "0.1.0",
+  "description": "Scaffold a new Frost application: npm create frost-app@latest my-app",
+  "type": "module",
+  "bin": {
+    "create-frost-app": "./bin.js"
+  },
+  "files": [
+    "bin.js",
+    "template",
+    "template-tailwind"
+  ],
+  "scripts": {
+    "test": "vitest run"
+  },
+  "license": "MIT",
+  "author": "Frost contributors",
+  "homepage": "https://frostjs.dev",
+  "bugs": {
+    "url": "https://github.com/ben-bader/Frost/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ben-bader/Frost.git",
+    "directory": "packages/create-frost-app"
+  },
+  "keywords": [
+    "frost",
+    "react",
+    "scaffold",
+    "create"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  }
+}

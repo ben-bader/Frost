@@ -23,7 +23,7 @@
     "vite": "^5.0.0 || ^6.0.0"
   },
   "scripts": {
-    "build": "tsc --build",
+    "build": "tsc --build && node ../../scripts/strip-dist-tests.mjs",
     "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\""
   },
   "publishConfig": {

@@ -311,7 +311,7 @@ importers:
 
   packages/core: {}
 
-  packages/create-frost: {}
+  packages/create-frost-app: {}
 
   packages/data:
     dependencies:
