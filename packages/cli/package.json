@@ -29,5 +29,25 @@
   },
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ben-bader/Frost.git",
+    "directory": "."
+  },
+  "keywords": [
+    "frost",
+    "react",
+    "ssr",
+    "framework",
+    "full-stack"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ]
 }
