@@ -73,6 +73,22 @@ describe("compressed responses", () => {
         if (url.pathname === "/small") {
           return new Response("hi", { headers: { "Content-Type": "text/html" } });
         }
+        if (url.pathname === "/stream") {
+          let tick = 0;
+          const stream = new ReadableStream<Uint8Array>({
+            async pull(controller) {
+              tick++;
+              if (tick === 1) {
+                controller.enqueue(new TextEncoder().encode("<html>part1-" + "x".repeat(200)));
+              } else if (tick === 2) {
+                await new Promise((r) => setTimeout(r, 60));
+                controller.enqueue(new TextEncoder().encode("part2" + "y".repeat(200) + "</html>"));
+                controller.close();
+              }
+            },
+          });
+          return new Response(stream, { headers: { "Content-Type": "text/html" } });
+        }
         return new Response("nf", { status: 404 });
       },
     });
@@ -103,6 +119,31 @@ describe("compressed responses", () => {
     const res = await fetch(`${base}/small`, { headers: { "Accept-Encoding": "gzip" } });
     expect(res.headers.get("content-encoding")).toBeNull();
     expect(await res.text()).toBe("hi");
+  });
+
+  it("streams compressed bodies incrementally (first chunk before completion)", async () => {
+    const res = await fetch(`${base}/stream`, {
+      headers: { "Accept-Encoding": "gzip" },
+    });
+    expect(res.headers.get("content-encoding")).toBe("gzip");
+    const reader = res.body!.getReader();
+    const t0 = performance.now();
+    const first = await reader.read();
+    const firstMs = performance.now() - t0;
+    expect(first.done).toBe(false);
+    // The 60ms-delayed second chunk must not have been required for
+    // the first bytes to arrive.
+    expect(firstMs).toBeLessThan(55);
+    const chunks: Uint8Array[] = [];
+    if (first.value) chunks.push(first.value);
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) chunks.push(value);
+    }
+    // undici transparently decompresses; assert the reassembled body.
+    const plain = Buffer.concat(chunks.map((c) => Buffer.from(c))).toString();
+    expect(plain).toBe("<html>part1-" + "x".repeat(200) + "part2" + "y".repeat(200) + "</html>");
   });
 
   it("serves pre-compressed static assets", async () => {

@@ -1,8 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { Readable } from "node:stream";
+import zlib from "node:zlib";
 import {
-  compressBuffer,
-  etagForEncoding,
   isCompressible,
   negotiateEncoding,
   type CompressionOptions,
@@ -126,68 +125,118 @@ export async function sendWebResponseToNode(
   nodeRes.statusMessage = webResponse.statusText;
 
   const headers = new Headers(webResponse.headers);
-
-  // Content negotiation for compressible dynamic responses.
-  let bodyBuffer: Buffer | null = null;
-  if (webResponse.body && compression?.enabled) {
-    const chunks: Buffer[] = [];
-    const reader = webResponse.body.getReader();
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        if (value) chunks.push(Buffer.from(value));
-      }
-    } finally {
-      reader.releaseLock();
-    }
-    bodyBuffer = Buffer.concat(chunks);
-
-    const contentType = headers.get("content-type");
-    const encoding = negotiateEncoding(
-      // nodeRes.req is available on ServerResponse in Node http
-      (nodeRes as any).req?.headers?.["accept-encoding"] as string | undefined,
-      compression,
-    );
-    if (
-      encoding &&
-      bodyBuffer.byteLength >= compression.threshold &&
-      isCompressible(contentType, "")
-    ) {
-      bodyBuffer = compressBuffer(bodyBuffer, encoding);
-      headers.set("Content-Encoding", encoding);
-      headers.set("Content-Length", String(bodyBuffer.byteLength));
-      const etag = headers.get("etag");
-      if (etag) headers.set("ETag", etagForEncoding(etag, encoding));
-    }
-    headers.set("Vary", mergeVary(headers.get("Vary"), "Accept-Encoding"));
-  }
-
-  headers.forEach((val, key) => {
-    nodeRes.setHeader(key, val);
-  });
-
-  if (bodyBuffer) {
-    nodeRes.end(bodyBuffer);
-    return;
-  }
+  const acceptEncoding = (nodeRes as any).req?.headers?.["accept-encoding"] as
+    | string
+    | undefined;
+  const contentType = headers.get("content-type");
+  const encoding =
+    webResponse.body && compression?.enabled
+      ? negotiateEncoding(acceptEncoding, compression)
+      : null;
+  const threshold = compression?.threshold ?? 1024;
+  const contentLength = Number(headers.get("content-length") ?? 0);
+  const maybeCompress =
+    !!webResponse.body &&
+    !!encoding &&
+    isCompressible(contentType, "") &&
+    (contentLength === 0 || contentLength >= threshold);
 
   if (!webResponse.body) {
+    headers.forEach((val, key) => nodeRes.setHeader(key, val));
     nodeRes.end();
     return;
   }
 
   const reader = webResponse.body.getReader();
+
+  if (!maybeCompress || !encoding) {
+    headers.set("Vary", mergeVary(headers.get("Vary"), "Accept-Encoding"));
+    headers.forEach((val, key) => nodeRes.setHeader(key, val));
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) nodeRes.write(Buffer.from(value));
+      }
+    } finally {
+      reader.releaseLock();
+      nodeRes.end();
+    }
+    return;
+  }
+
+  // Peek up to `threshold` bytes: bodies that end below it are sent
+  // raw (spec: skip small bodies); larger bodies stream through a zlib
+  // transform so TTFB is preserved — no full-buffer wait.
+  const prefix: Buffer[] = [];
+  let prefixBytes = 0;
+  let overflow = false;
+  while (prefixBytes <= threshold) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (!value) continue;
+    const buf = Buffer.from(value);
+    prefix.push(buf);
+    prefixBytes += buf.byteLength;
+    if (prefixBytes > threshold) {
+      overflow = true;
+      break;
+    }
+  }
+
+  if (!overflow) {
+    // Small body — send identity, no Content-Encoding.
+    headers.set("Vary", mergeVary(headers.get("Vary"), "Accept-Encoding"));
+    headers.forEach((val, key) => nodeRes.setHeader(key, val));
+    for (const buf of prefix) nodeRes.write(buf);
+    nodeRes.end();
+    return;
+  }
+
+  headers.set("Content-Encoding", encoding);
+  headers.delete("Content-Length");
+  // A strong ETag describes the identity body; drop it rather than
+  // serve a mismatched validator for the compressed variant.
+  headers.delete("etag");
+  headers.set("Vary", mergeVary(headers.get("Vary"), "Accept-Encoding"));
+  headers.forEach((val, key) => nodeRes.setHeader(key, val));
+
+  const compressor =
+    encoding === "br"
+      ? zlib.createBrotliCompress({
+          params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 5 },
+        })
+      : zlib.createGzip({ level: 6 });
+  compressor.on("error", () => nodeRes.destroy());
+  compressor.pipe(nodeRes);
+
+  // zlib buffers output internally. Flush once after the first chunk
+  // so headers + leading compressed bytes reach the client early
+  // (TTFB), then let zlib batch the rest — per-chunk sync flushes are
+  // too expensive for React's many small stream chunks.
+  let flushed = false;
+  const writeChunk = async (buf: Buffer) => {
+    await new Promise<void>((resolve, reject) =>
+      compressor.write(buf, (err) => (err ? reject(err) : resolve())),
+    );
+    if (!flushed) {
+      flushed = true;
+      await new Promise<void>((resolve) => compressor.flush(() => resolve()));
+    }
+  };
+
   try {
+    for (const buf of prefix) await writeChunk(buf);
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      if (value) {
-        nodeRes.write(Buffer.from(value));
-      }
+      if (value) await writeChunk(Buffer.from(value));
     }
+    compressor.end();
+  } catch {
+    nodeRes.destroy();
   } finally {
-    nodeRes.end();
+    reader.releaseLock();
   }
 }
 
