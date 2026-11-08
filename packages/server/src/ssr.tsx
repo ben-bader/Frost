@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { renderToString } from "react-dom/server";
+import { renderToString, renderToReadableStream } from "react-dom/server";
 import { FrostDocument, FrostProvider, FrostErrorBoundary, type FrostClientState } from "@frostjs/react";
 import {
   createErrorReport,
@@ -13,7 +13,7 @@ import {
   type Route,
   type RouteModule,
 } from "@frostjs/core";
-import { html } from "./response.js";
+import { html, htmlStream } from "./response.js";
 
 export interface SsrRenderOptions {
   routeModule: RouteModule;
@@ -41,6 +41,8 @@ export interface SsrRenderOptions {
   routeId?: string;
   /** Client-router manifest emitted as window.__FROST_ROUTES__. */
   routeManifest?: unknown;
+  /** Stream the document with Suspense support (config.ssr.streaming). */
+  streaming?: boolean;
 }
 
 type Settled<T> =
@@ -292,14 +294,40 @@ interface RenderTreeOptions {
   routeManifest?: unknown;
 }
 
-function renderTree(opts: RenderTreeOptions): string {
-  return renderToString(
+function documentElement(opts: RenderTreeOptions): ReactNode {
+  return (
     <FrostProvider value={opts.clientState}>
       <FrostDocument title={opts.title} head={opts.head} lang={opts.lang} routeManifest={opts.routeManifest}>
         <FrostErrorBoundary>{opts.content}</FrostErrorBoundary>
       </FrostDocument>
     </FrostProvider>
   );
+}
+
+function renderTree(opts: RenderTreeOptions): string {
+  return renderToString(documentElement(opts));
+}
+
+const DOCTYPE = new TextEncoder().encode("<!DOCTYPE html>\n");
+
+/** Prefixes a byte stream with the doctype declaration. */
+function prependDoctype(stream: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
+  return new ReadableStream<Uint8Array>({
+    async start(controller) {
+      controller.enqueue(DOCTYPE);
+      const reader = stream.getReader();
+      try {
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value) controller.enqueue(value);
+        }
+        controller.close();
+      } catch (err) {
+        controller.error(err);
+      }
+    },
+  });
 }
 
 /**
@@ -352,6 +380,7 @@ export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Resp
     validateContracts,
     routeId,
     routeManifest,
+    streaming,
   } = options;
 
   const url = new URL(request.url);
@@ -509,10 +538,41 @@ export async function renderRouteToHtml(options: SsrRenderOptions): Promise<Resp
   }
 
   const clientState = buildClientState(loaderData);
+  const treeOpts: RenderTreeOptions = {
+    content,
+    clientState,
+    title,
+    head,
+    lang,
+    routeManifest,
+  };
+
+  // Streaming SSR: flush the shell as soon as it is ready; Suspense
+  // boundaries inside the tree stream in later. Status/headers are set
+  // before the first byte because all loaders already resolved.
+  // Disabled while the dev determinism check needs string output.
+  if (streaming && !checkDeterminism) {
+    try {
+      const stream = await renderToReadableStream(documentElement(treeOpts), {
+        onError: (err) => {
+          onError?.(
+            createErrorReport(err, {
+              runtime: "server",
+              route: pathname,
+              code: FROST_ERROR_CODES.RENDER,
+            })
+          );
+        },
+      });
+      return htmlStream(prependDoctype(stream), { status });
+    } catch (err) {
+      return renderFailure(err, FROST_ERROR_CODES.RENDER);
+    }
+  }
 
   let appHtml: string;
   try {
-    appHtml = renderTree({ content, clientState, title, head, lang, routeManifest });
+    appHtml = renderTree(treeOpts);
   } catch (renderErr) {
     return renderFailure(renderErr, FROST_ERROR_CODES.RENDER);
   }

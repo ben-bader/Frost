@@ -34,3 +34,21 @@ browser tooling is used in this repo.
 - Hydration correctness (no React #418 warnings in console).
 - Client router navigation (scroll/focus restoration, popstate, prefetch).
 - Streaming SSR (shell arrives before deferred content).
+
+## Client router (config.router.enabled)
+1. Enable `router: { enabled: true }` in frost.config.ts, run `frost dev`.
+2. Load `/`, click a same-origin `<Link>`/`<a>` to another page.
+   Expected: URL updates via pushState, page swaps without reload,
+   scroll resets, focus moves to main.
+3. Click a link with Cmd/Ctrl/Shift or target=_blank.
+   Expected: normal browser navigation (no interception).
+4. Edit a loader and save; navigate to that route.
+   Expected: fresh loader data fetched; full reload only on failure.
+5. Disable JS network (offline) and click a link.
+   Expected: falls back to full document navigation.
+
+## Streaming SSR
+1. With `ssr.streaming` on (default), wrap a component in `<Suspense>`
+   with a slow async child.
+   Expected: shell HTML arrives before the suspended content; no
+   hydration mismatch; status/headers unchanged.

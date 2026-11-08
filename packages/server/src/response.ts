@@ -31,3 +31,15 @@ export function html(content: string, init?: ResponseInit): Response {
   });
 }
 
+/** HTML response with a streaming body (streaming SSR). */
+export function htmlStream(
+  stream: ReadableStream<Uint8Array>,
+  init?: ResponseInit
+): Response {
+  const headers = new Headers(init?.headers);
+  if (!headers.has("Content-Type")) {
+    headers.set("Content-Type", "text/html; charset=utf-8");
+  }
+  return new Response(stream, { ...init, headers });
+}
+

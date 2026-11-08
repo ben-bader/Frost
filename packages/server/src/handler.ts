@@ -66,6 +66,8 @@ export interface RequestHandlerOptions {
   routerEnabled?: boolean;
   /** Prefetch strategy embedded in the route manifest. */
   routerPrefetch?: "intent" | "viewport" | "none";
+  /** Stream SSR documents with Suspense support (config.ssr.streaming). */
+  ssrStreaming?: boolean;
 }
 
 const PAGE_METHODS = ["GET", "HEAD"];
@@ -83,7 +85,7 @@ function methodNotAllowed(allow: string[]): Response {
 }
 
 export function createRequestHandler(options: RequestHandlerOptions) {
-  const { routes, loadModule, getAssetsForRoute, security, onError, checkDeterminism, lang, logger, logRequests, validateContracts, serverFnPath = "/_frost/fn", routerEnabled, routerPrefetch = "intent" } = options;
+  const { routes, loadModule, getAssetsForRoute, security, onError, checkDeterminism, lang, logger, logRequests, validateContracts, serverFnPath = "/_frost/fn", routerEnabled, routerPrefetch = "intent", ssrStreaming } = options;
 
   // The global not-found route (app/not-found.tsx or app/_404.tsx) is
   // discovered with kind "not-found" and never participates in matching.
@@ -510,6 +512,7 @@ export function createRequestHandler(options: RequestHandlerOptions) {
                 validateContracts,
                 routeId: pageMatch.route.id,
                 routeManifest: routerEnabled ? await getRouteManifest() : undefined,
+                streaming: ssrStreaming,
               });
             } else {
               response = json(actionResult);
@@ -544,6 +547,7 @@ export function createRequestHandler(options: RequestHandlerOptions) {
             validateContracts,
             routeId: pageMatch.route.id,
             routeManifest: routerEnabled ? await getRouteManifest() : undefined,
+            streaming: ssrStreaming,
           });
 
           // Per-route headers export (static map or function).
@@ -613,6 +617,7 @@ export function createRequestHandler(options: RequestHandlerOptions) {
               validateContracts,
               routeId: "not-found",
               routeManifest: routerEnabled ? await getRouteManifest() : undefined,
+              streaming: ssrStreaming,
             });
           } catch (nfErr) {
             console.error(`[Frost] Error rendering not-found route:`, nfErr);

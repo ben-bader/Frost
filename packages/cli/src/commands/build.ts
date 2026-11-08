@@ -129,6 +129,7 @@ export const handler = createRequestHandler({
   serverFnPath: ${JSON.stringify(config.serverFns.path)},
   routerEnabled: ${config.router.enabled},
   routerPrefetch: ${JSON.stringify(config.router.prefetch)},
+  ssrStreaming: ${config.ssr.streaming},
   loadModule: async (route) => {
     const importer = importerById.get(route.id);
     if (!importer) return null;

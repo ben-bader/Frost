@@ -662,3 +662,31 @@ describe("Client router data endpoint", () => {
     expect(html).toContain('"prefetch":"intent"');
   });
 });
+
+describe("Streaming SSR", () => {
+  it("streams the document when ssrStreaming is enabled", async () => {
+    const handler = createRequestHandler({
+      routes: [page("page.tsx", "/", "/virtual/page.tsx")],
+      loadModule: async () => ({ default: () => <p>streamed</p> }) as RouteModule,
+      security,
+      lang: "en",
+      ssrStreaming: true,
+    });
+    const res = await handler(get("/"));
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toContain("text/html");
+    const text = await res.text();
+    expect(text).toContain("<!DOCTYPE html>");
+    expect(text).toContain("streamed");
+    expect(text).toContain("__FROST_DATA__");
+  });
+
+  it("still renders synchronously when streaming is off", async () => {
+    const handler = handlerFor(
+      [page("page.tsx", "/", "/virtual/page.tsx")],
+      { "/virtual/page.tsx": { default: () => <p>sync</p> } }
+    );
+    const res = await handler(get("/"));
+    expect(await res.text()).toContain("sync");
+  });
+});

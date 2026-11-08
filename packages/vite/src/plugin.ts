@@ -448,6 +448,7 @@ export function frost(userConfig: FrostConfig = {}, pluginOptions: FrostPluginOp
               serverFnPath: config.serverFns.path,
               routerEnabled: config.router.enabled,
               routerPrefetch: config.router.prefetch,
+              ssrStreaming: config.ssr.streaming,
               lang: config.app.lang,
               logger: createLogger(config.logging),
               logRequests: config.logging.requestLogs,
