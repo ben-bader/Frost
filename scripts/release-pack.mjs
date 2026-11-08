@@ -36,6 +36,11 @@ const run = (cmd, args, cwd) => {
 console.log("Building all packages...");
 run("pnpm", ["-r", "run", "build"], root);
 
+// Regenerate the starter template so tarballs always ship a fresh copy
+// (create-frost-app's prepack also does this; explicit here for clarity).
+console.log("Syncing create-frost-app template from examples/starter...");
+run("node", ["scripts/sync-template.mjs"], root);
+
 console.log("Packing into release-tarballs/ ...");
 for (const [name, dir] of PACKAGES) {
   const dest = path.join(outDir, dir);

@@ -9,10 +9,11 @@
   "files": [
     "bin.js",
     "template",
-    "template-tailwind"
+    "template-minimal"
   ],
   "scripts": {
-    "test": "vitest run"
+    "test": "node ../../scripts/sync-template.mjs && vitest run",
+    "prepack": "node ../../scripts/sync-template.mjs"
   },
   "license": "MIT",
   "author": "Frost contributors",
