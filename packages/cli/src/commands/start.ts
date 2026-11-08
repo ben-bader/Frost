@@ -52,6 +52,7 @@ export async function startCommand(options: StartCommandOptions = {}): Promise<v
     host,
     staticDirs,
     handleRequest: handler,
+    compression: config.compression,
   });
 
   // If the configured port is taken, fall back to the next free port with

@@ -2,9 +2,17 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { getMimeType } from "./mime.js";
+import {
+  compressBuffer,
+  etagForEncoding,
+  isCompressible,
+  negotiateEncoding,
+  type CompressionOptions,
+} from "./compression.js";
 
 export interface StaticServerOptions {
   staticDirs: string[];
+  compression?: CompressionOptions;
 }
 
 /** True when `child` is `parent` or inside it (path-segment aware). */
@@ -59,6 +67,45 @@ export function resolveStaticPath(dir: string, pathname: string): string | null 
   }
 }
 
+function sendFile(
+  req: IncomingMessage,
+  res: ServerResponse,
+  filePath: string,
+  opts: {
+    contentType: string;
+    etag: string;
+    cacheControl: string;
+    contentLength: number;
+    contentEncoding?: string;
+  }
+): void {
+  if (req.headers["if-none-match"] === opts.etag) {
+    res.statusCode = 304;
+    res.setHeader("ETag", opts.etag);
+    res.setHeader("Cache-Control", opts.cacheControl);
+    res.setHeader("Vary", "Accept-Encoding");
+    res.end();
+    return;
+  }
+
+  res.statusCode = 200;
+  res.setHeader("Content-Type", opts.contentType);
+  res.setHeader("Content-Length", opts.contentLength);
+  res.setHeader("ETag", opts.etag);
+  res.setHeader("Cache-Control", opts.cacheControl);
+  res.setHeader("Vary", "Accept-Encoding");
+  if (opts.contentEncoding) {
+    res.setHeader("Content-Encoding", opts.contentEncoding);
+  }
+
+  if (req.method === "HEAD") {
+    res.end();
+    return;
+  }
+
+  fs.createReadStream(filePath).pipe(res);
+}
+
 export function tryServeStaticFile(
   req: IncomingMessage,
   res: ServerResponse,
@@ -70,46 +117,84 @@ export function tryServeStaticFile(
 
   const rawUrl = req.url ?? "/";
   const pathname = rawUrl.split("?")[0]!;
+  const compression = options.compression;
+  const acceptEncoding = req.headers["accept-encoding"] as string | undefined;
+  const encoding = compression?.enabled
+    ? negotiateEncoding(acceptEncoding, compression)
+    : null;
 
   for (const dir of options.staticDirs) {
     const fullPath = resolveStaticPath(dir, pathname);
     if (!fullPath) continue;
 
-    if (fs.existsSync(fullPath)) {
-      const stat = fs.statSync(fullPath);
-      if (stat.isFile()) {
-        const mime = getMimeType(fullPath);
-        const etag = `W/"${stat.size}-${stat.mtimeMs.toString(16)}"`;
+    if (!fs.existsSync(fullPath)) continue;
+    const stat = fs.statSync(fullPath);
+    if (!stat.isFile()) continue;
 
-        // Check If-None-Match for 304 Not Modified
-        if (req.headers["if-none-match"] === etag) {
-          res.statusCode = 304;
-          res.end();
-          return true;
-        }
+    const mime = getMimeType(fullPath);
+    const cacheControl = pathname.includes("/assets/")
+      ? "public, max-age=31536000, immutable"
+      : "public, max-age=3600, must-revalidate";
+    const baseEtag = `W/"${stat.size}-${stat.mtimeMs.toString(16)}"`;
 
-        res.statusCode = 200;
-        res.setHeader("Content-Type", mime);
-        res.setHeader("Content-Length", stat.size);
-        res.setHeader("ETag", etag);
-
-        // Immutable caching for hashed assets in /assets/
-        if (pathname.includes("/assets/")) {
-          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-        } else {
-          res.setHeader("Cache-Control", "public, max-age=3600, must-revalidate");
-        }
-
-        if (req.method === "HEAD") {
-          res.end();
-          return true;
-        }
-
-        const stream = fs.createReadStream(fullPath);
-        stream.pipe(res);
+    // 1. Pre-compressed variant built at `frost build` time (.br/.gz
+    //    next to the original) — zero CPU cost per request.
+    if (encoding) {
+      const ext = encoding === "br" ? ".br" : ".gz";
+      const precompressed = fullPath + ext;
+      if (fs.existsSync(precompressed)) {
+        const pstat = fs.statSync(precompressed);
+        sendFile(req, res, precompressed, {
+          contentType: mime,
+          etag: etagForEncoding(baseEtag, encoding),
+          cacheControl,
+          contentLength: pstat.size,
+          contentEncoding: encoding,
+        });
         return true;
       }
     }
+
+    // 2. On-the-fly compression for compressible types above threshold.
+    if (
+      encoding &&
+      stat.size >= (compression?.threshold ?? 1024) &&
+      isCompressible(mime, pathname)
+    ) {
+      const data = fs.readFileSync(fullPath);
+      const compressed = compressBuffer(data, encoding);
+      // Send buffered compressed body directly.
+      const etag = etagForEncoding(baseEtag, encoding);
+      if (req.headers["if-none-match"] === etag) {
+        res.statusCode = 304;
+        res.setHeader("ETag", etag);
+        res.setHeader("Cache-Control", cacheControl);
+        res.setHeader("Vary", "Accept-Encoding");
+        res.end();
+        return true;
+      }
+      res.statusCode = 200;
+      res.setHeader("Content-Type", mime);
+      res.setHeader("Content-Length", compressed.byteLength);
+      res.setHeader("ETag", etag);
+      res.setHeader("Cache-Control", cacheControl);
+      res.setHeader("Vary", "Accept-Encoding");
+      res.setHeader("Content-Encoding", encoding);
+      if (req.method === "HEAD") {
+        res.end();
+        return true;
+      }
+      res.end(compressed);
+      return true;
+    }
+
+    sendFile(req, res, fullPath, {
+      contentType: mime,
+      etag: baseEtag,
+      cacheControl,
+      contentLength: stat.size,
+    });
+    return true;
   }
 
   return false;

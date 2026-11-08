@@ -1,5 +1,6 @@
 import type { Plugin, ViteDevServer } from "vite";
 import type { EnvironmentModuleNode } from "vite";
+import * as path from "node:path";
 import { resolveConfig, type FrostConfig } from "@frostjs/core";
 import { discoverRoutes, type DiscoveredRoute } from "@frostjs/router";
 import { createRequestHandler } from "@frostjs/server";
@@ -20,6 +21,47 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
   let isClientBuild = true;
   let cachedRoutes: DiscoveredRoute[] = [];
 
+  // Dev request caches: route discovery and the per-route CSS graph are
+  // expensive (recursive fs scan + module-graph walk), so they are
+  // computed once and invalidated by watcher events instead of per request.
+  let devRoutesCache: DiscoveredRoute[] | null = null;
+  const devCssCache = new Map<string, string[]>();
+  let routesInvalidationTimer: ReturnType<typeof setTimeout> | null = null;
+  let cssInvalidationTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const scheduleRouteInvalidation = () => {
+    if (routesInvalidationTimer) clearTimeout(routesInvalidationTimer);
+    // Debounce ~50ms to coalesce atomic-save bursts into one invalidation.
+    routesInvalidationTimer = setTimeout(() => {
+      routesInvalidationTimer = null;
+      devRoutesCache = null;
+    }, 50);
+  };
+
+  const scheduleCssInvalidation = () => {
+    if (cssInvalidationTimer) clearTimeout(cssInvalidationTimer);
+    cssInvalidationTimer = setTimeout(() => {
+      cssInvalidationTimer = null;
+      devCssCache.clear();
+    }, 50);
+  };
+
+  const isInsideDir = (dir: string, file: string): boolean => {
+    const rel = path.relative(dir, file);
+    return rel !== "" && !rel.startsWith("..") && !path.isAbsolute(rel);
+  };
+
+  const getDevRoutes = (): DiscoveredRoute[] => {
+    if (!devRoutesCache) {
+      devRoutesCache = discoverRoutes({
+        appDirectory: config.appDirectory,
+        apiDirectory: config.apiDirectory,
+        rootDir,
+      });
+    }
+    return devRoutesCache;
+  };
+
   return {
     name: "frost:vite-plugin",
     enforce: "pre",
@@ -27,6 +69,20 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
     config() {
       return {
         appType: "custom",
+        server: {
+          watch: {
+            // Reliable defaults on Windows; polling stays opt-in via
+            // dev.watch.usePolling for network drives / WSL edge cases.
+            usePolling: config.dev.watch.usePolling,
+            interval: config.dev.watch.interval,
+            ignored: [
+              "**/node_modules/**",
+              "**/.git/**",
+              "**/.frost/**",
+              "**/dist/**",
+            ],
+          },
+        },
       };
     },
 
@@ -104,6 +160,20 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
     },
 
     configureServer(server: ViteDevServer) {
+      // Watcher is the single source of change events. Route-table changes
+      // are scoped to the app/api directories; the CSS graph cache is
+      // cleared for any in-project change since imports can live anywhere.
+      const appDir = path.resolve(rootDir, config.appDirectory);
+      const apiDir = path.resolve(rootDir, config.apiDirectory);
+      server.watcher.on("all", (event, file) => {
+        if (event !== "change" && event !== "add" && event !== "unlink") return;
+        const abs = path.resolve(file);
+        if (isInsideDir(appDir, abs) || isInsideDir(apiDir, abs)) {
+          scheduleRouteInvalidation();
+        }
+        scheduleCssInvalidation();
+      });
+
       // Pre-middleware (runs before Vite's internal middlewares): serves
       // compiled route stylesheets as text/css so the SSR document can
       // reference them with a real render-blocking <link> instead of
@@ -143,17 +213,13 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
           }
 
           try {
-            // Routes are re-discovered per request in dev so file-based
-            // route changes are picked up without a server restart.
-            cachedRoutes = discoverRoutes({
-              appDirectory: config.appDirectory,
-              apiDirectory: config.apiDirectory,
-              rootDir,
-            });
+            // Cached route table — invalidated by watcher events in the
+            // app/api directories (see configureServer above).
+            const devRoutes = getDevRoutes();
 
             // Create request handler using Vite's ssrLoadModule
             const handler = createRequestHandler({
-              routes: cachedRoutes,
+              routes: devRoutes,
               security: config.security,
               loadModule: async (route) => {
                 return (await server.ssrLoadModule(route.filePath)) as any;
@@ -165,11 +231,18 @@ export function frost(userConfig: FrostConfig = {}): Plugin {
                       ? `&layouts=${encodeURIComponent(JSON.stringify(route.layouts))}`
                       : "";
                   const entryFiles = [route.filePath, ...(route.layouts ?? [])];
+                  // CSS graph is cached per route and cleared on any
+                  // in-project file change (module imports can move).
+                  let cssUrls = devCssCache.get(route.id);
+                  if (!cssUrls) {
+                    cssUrls = collectRouteCss(server, entryFiles);
+                    devCssCache.set(route.id, cssUrls);
+                  }
                   return {
                     scripts: [
                       `/@frost/client?file=${encodeURIComponent(route.filePath)}${layoutsQuery}`,
                     ],
-                    css: collectRouteCss(server, entryFiles).map(
+                    css: cssUrls.map(
                       (cssUrl) => `/@frost/css?url=${encodeURIComponent(cssUrl)}`
                     ),
                   };

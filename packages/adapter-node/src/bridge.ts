@@ -1,5 +1,12 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { Readable } from "node:stream";
+import {
+  compressBuffer,
+  etagForEncoding,
+  isCompressible,
+  negotiateEncoding,
+  type CompressionOptions,
+} from "./compression.js";
 
 const FALLBACK_HOST = "localhost:3000";
 const FALLBACK_ORIGIN = "http://frost.local";
@@ -109,14 +116,58 @@ export function nodeReqToWebRequest(req: IncomingMessage, defaultHost: string = 
 
 export async function sendWebResponseToNode(
   webResponse: Response,
-  nodeRes: ServerResponse
+  nodeRes: ServerResponse,
+  compression?: CompressionOptions
 ): Promise<void> {
   nodeRes.statusCode = webResponse.status;
   nodeRes.statusMessage = webResponse.statusText;
 
-  webResponse.headers.forEach((val, key) => {
+  const headers = new Headers(webResponse.headers);
+
+  // Content negotiation for compressible dynamic responses.
+  let bodyBuffer: Buffer | null = null;
+  if (webResponse.body && compression?.enabled) {
+    const chunks: Buffer[] = [];
+    const reader = webResponse.body.getReader();
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) chunks.push(Buffer.from(value));
+      }
+    } finally {
+      reader.releaseLock();
+    }
+    bodyBuffer = Buffer.concat(chunks);
+
+    const contentType = headers.get("content-type");
+    const encoding = negotiateEncoding(
+      // nodeRes.req is available on ServerResponse in Node http
+      (nodeRes as any).req?.headers?.["accept-encoding"] as string | undefined,
+      compression
+    );
+    if (
+      encoding &&
+      bodyBuffer.byteLength >= compression.threshold &&
+      isCompressible(contentType, "")
+    ) {
+      bodyBuffer = compressBuffer(bodyBuffer, encoding);
+      headers.set("Content-Encoding", encoding);
+      headers.set("Content-Length", String(bodyBuffer.byteLength));
+      const etag = headers.get("etag");
+      if (etag) headers.set("ETag", etagForEncoding(etag, encoding));
+    }
+    headers.set("Vary", mergeVary(headers.get("Vary"), "Accept-Encoding"));
+  }
+
+  headers.forEach((val, key) => {
     nodeRes.setHeader(key, val);
   });
+
+  if (bodyBuffer) {
+    nodeRes.end(bodyBuffer);
+    return;
+  }
 
   if (!webResponse.body) {
     nodeRes.end();
@@ -135,4 +186,11 @@ export async function sendWebResponseToNode(
   } finally {
     nodeRes.end();
   }
+}
+
+function mergeVary(existing: string | null, value: string): string {
+  if (!existing) return value;
+  const parts = existing.split(",").map((v) => v.trim().toLowerCase());
+  if (parts.includes(value.toLowerCase()) || parts.includes("*")) return existing;
+  return `${existing}, ${value}`;
 }

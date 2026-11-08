@@ -157,6 +157,43 @@ describe("Request hardening", () => {
     expect(res.headers.get("Content-Security-Policy-Report-Only")).toBeNull();
   });
 
+  it("applies a route headers export and no-cache on HTML", async () => {
+    const withHeaders: RouteModule = {
+      ...pageModule,
+      headers: { "X-Custom": "yes", "Cache-Control": "public, max-age=60" },
+    };
+    const modules = new Map([["/virtual/page.tsx", withHeaders]]);
+    const handler = createRequestHandler({
+      routes: [page("page.tsx", "/", "/virtual/page.tsx")],
+      loadModule: async (r) => modules.get(r.filePath)!,
+      security: resolveConfig().security,
+    });
+    const res = await handler(new Request("http://localhost/"));
+    expect(res.headers.get("X-Custom")).toBe("yes");
+    expect(res.headers.get("Cache-Control")).toBe("public, max-age=60");
+  });
+
+  it("defaults HTML responses to no-cache", async () => {
+    const handler = makeHandler();
+    const res = await handler(new Request("http://localhost/"));
+    expect(res.headers.get("Cache-Control")).toBe("no-cache");
+  });
+
+  it("supports a function headers export", async () => {
+    const withHeaders: RouteModule = {
+      ...pageModule,
+      headers: async ({ params }: any) => ({ "X-Params": JSON.stringify(params) }),
+    };
+    const modules = new Map([["/virtual/page.tsx", withHeaders]]);
+    const handler = createRequestHandler({
+      routes: [page("page.tsx", "/", "/virtual/page.tsx")],
+      loadModule: async (r) => modules.get(r.filePath)!,
+      security: resolveConfig().security,
+    });
+    const res = await handler(new Request("http://localhost/"));
+    expect(res.headers.get("X-Params")).toBe("{}");
+  });
+
   it("HSTS is opt-in", async () => {
     const security = resolveConfig({ security: { hsts: true } }).security;
     const handler = makeHandler({ security });

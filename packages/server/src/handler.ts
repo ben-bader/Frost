@@ -138,24 +138,29 @@ export function createRequestHandler(options: RequestHandlerOptions) {
 
           const layoutModules: RouteModule[] = [];
 
-          if (pageMatch.route.layouts) {
-            for (const layoutPath of pageMatch.route.layouts) {
-              try {
-                const layoutMod = (await loadModule({
-                  id: layoutPath,
-                  pattern: "",
-                  filePath: layoutPath,
-                  kind: "layout",
-                  isDynamic: false,
-                  isCatchAll: false,
-                  score: 0,
-                })) as RouteModule;
-                if (layoutMod) {
-                  layoutModules.push(layoutMod);
+          if (pageMatch.route.layouts && pageMatch.route.layouts.length > 0) {
+            // Load all layout modules in parallel; a failing layout is
+            // skipped with a warning (same semantics as before).
+            const layoutResults = await Promise.all(
+              pageMatch.route.layouts.map(async (layoutPath) => {
+                try {
+                  return (await loadModule({
+                    id: layoutPath,
+                    pattern: "",
+                    filePath: layoutPath,
+                    kind: "layout",
+                    isDynamic: false,
+                    isCatchAll: false,
+                    score: 0,
+                  })) as RouteModule;
+                } catch (layoutErr) {
+                  console.warn(`[Frost] Could not load layout at ${layoutPath}:`, layoutErr);
+                  return null;
                 }
-              } catch (layoutErr) {
-                console.warn(`[Frost] Could not load layout at ${layoutPath}:`, layoutErr);
-              }
+              })
+            );
+            for (const layoutMod of layoutResults) {
+              if (layoutMod) layoutModules.push(layoutMod);
             }
           }
 
@@ -169,6 +174,25 @@ export function createRequestHandler(options: RequestHandlerOptions) {
             context,
             assets,
           });
+
+          // Per-route headers export (static map or function).
+          if (mod.headers) {
+            const routeHeaders =
+              typeof mod.headers === "function"
+                ? await mod.headers({ request, params: pageMatch.params, url, context })
+                : mod.headers;
+            for (const [key, value] of Object.entries(routeHeaders)) {
+              response.headers.set(key, value);
+            }
+          }
+
+          // HTML must always revalidate — it embeds per-request state.
+          if (
+            response.headers.get("Content-Type")?.includes("text/html") &&
+            !response.headers.has("Cache-Control")
+          ) {
+            response.headers.set("Cache-Control", "no-cache");
+          }
         } catch (err) {
           console.error(`[Frost] Error rendering route ${pathname}:`, err);
           response = html(

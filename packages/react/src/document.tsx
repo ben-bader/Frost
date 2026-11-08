@@ -29,9 +29,9 @@ export function FrostDocument({ children, title, head }: FrostDocumentProps): Re
         {ctx.assets?.preloads?.map((preload) => (
           <link
             key={preload.href}
-            rel="preload"
+            rel={preload.rel ?? "preload"}
             href={preload.href}
-            as={preload.as}
+            as={preload.rel === "modulepreload" ? undefined : preload.as}
             type={preload.type}
             crossOrigin={preload.crossOrigin ? "anonymous" : undefined}
           />

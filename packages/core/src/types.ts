@@ -13,6 +13,8 @@ export interface FrostAssetPreload {
   as: string;
   type?: string;
   crossOrigin?: boolean;
+  /** Defaults to "preload"; "modulepreload" for JS module dependencies. */
+  rel?: "preload" | "modulepreload";
 }
 
 export interface FrostAssets {
@@ -91,12 +93,25 @@ export type RouteMetadata<TData = any, TParams = Record<string, string>> =
   | Route.Metadata
   | ((args: Route.MetadataArgs<TData, TParams>) => Promise<Route.Metadata> | Route.Metadata);
 
+export interface RouteHeadersArgs<TParams = Record<string, string>> {
+  request: Request;
+  params: TParams;
+  url: URL;
+  context: FrostRequestContext;
+}
+
+export type RouteHeaders<TParams = Record<string, string>> =
+  | Record<string, string>
+  | ((args: RouteHeadersArgs<TParams>) => Promise<Record<string, string>> | Record<string, string>);
+
 export interface RouteModule {
   default?: RouteComponent;
   loader?: RouteLoader;
   action?: RouteAction;
   metadata?: RouteMetadata;
   rendering?: RenderingConfig;
+  /** Static or per-request response headers applied to page responses. */
+  headers?: RouteHeaders;
 }
 
 export interface ApiRouteModule {

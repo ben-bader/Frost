@@ -1,5 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import * as zlib from "node:zlib";
 import { build as viteBuild } from "vite";
 import { frost, generateClientEntryCode } from "@frostjs/vite";
 import { resolveConfig, type FrostAssets, type FrostConfig } from "@frostjs/core";
@@ -9,6 +10,10 @@ export interface BuildCommandOptions {
   rootDir?: string;
   /** User config (typically loaded from frost.config.ts by the CLI entry). */
   config?: FrostConfig;
+  /** Print a per-route bundle size report. */
+  analyze?: boolean;
+  /** Fail the build when budgets.clientJsKb is exceeded. */
+  strict?: boolean;
 }
 
 interface ViteManifestEntry {
@@ -16,6 +21,8 @@ interface ViteManifestEntry {
   css?: string[];
   imports?: string[];
   assets?: string[];
+  isEntry?: boolean;
+  name?: string;
 }
 
 type ViteManifest = Record<string, ViteManifestEntry>;
@@ -35,39 +42,83 @@ export async function buildCommand(options: BuildCommandOptions = {}): Promise<v
 
   console.log("❄️  Building Frost application for production...");
 
-  // 1. Discover routes
-  const routes = discoverRoutes({
-    appDirectory: config.appDirectory,
-    apiDirectory: config.apiDirectory,
-    rootDir,
-  });
-  const pageRoutes = routes.filter((r) => r.kind === "page");
+  try {
+    // 1. Discover routes
+    const routes = discoverRoutes({
+      appDirectory: config.appDirectory,
+      apiDirectory: config.apiDirectory,
+      rootDir,
+    });
+    const pageRoutes = routes.filter((r) => r.kind === "page");
 
-  if (!fs.existsSync(outDir)) {
-    fs.mkdirSync(outDir, { recursive: true });
-  }
-
-  // 2. Generate one client entry per page route and build the browser bundle.
-  //    Vite's manifest maps each entry to its emitted JS/CSS assets so the
-  //    SSR document can reference real stylesheet links before hydration.
-  console.log("📦 Compiling client bundle...");
-  const clientInputs: Record<string, string> = {};
-  if (pageRoutes.length > 0) {
-    fs.mkdirSync(clientEntriesDir, { recursive: true });
-    for (const route of pageRoutes) {
-      const entryFile = path.join(
-        clientEntriesDir,
-        `${route.id.replace(/[\\/]/g, "_")}.ts`
-      );
-      fs.writeFileSync(
-        entryFile,
-        generateClientEntryCode(route.filePath, route.layouts ?? [], rootDir),
-        "utf-8"
-      );
-      clientInputs[route.id] = entryFile;
+    if (!fs.existsSync(outDir)) {
+      fs.mkdirSync(outDir, { recursive: true });
     }
 
-    try {
+    // 2. Write the per-route client entry shims and the server entry.
+    //    The server entry reads assets.json at runtime, so the client and
+    //    server bundles have no build-time dependency and build in parallel.
+    const clientInputs: Record<string, string> = {};
+    if (pageRoutes.length > 0) {
+      for (const route of pageRoutes) {
+        const entryFile = path.join(
+          clientEntriesDir,
+          `${route.id.replace(/[\\/]/g, "_")}.ts`
+        );
+        fs.writeFileSync(
+          entryFile,
+          generateClientEntryCode(route.filePath, route.layouts ?? [], rootDir),
+          "utf-8"
+        );
+        clientInputs[route.id] = entryFile;
+      }
+    }
+
+    const serverEntryPath = path.join(outDir, "server-entry.ts");
+    const serverEntrySource = `
+import { readFileSync } from "node:fs";
+import { createRequestHandler } from "@frostjs/server";
+import { setBodyLimits } from "@frostjs/data";
+import { routes, routeImporters } from "virtual:frost/routes";
+
+setBodyLimits(${JSON.stringify(config.limits)});
+
+const security = ${JSON.stringify(config.security)};
+
+// assets.json is written after the client build; read it lazily on first
+// request so server startup never depends on build ordering.
+let assetsCache: Record<string, { scripts: string[]; css: string[]; preloads?: { href: string; as: string; type?: string; crossOrigin?: boolean; rel?: string }[] }> | null = null;
+function loadAssets() {
+  if (!assetsCache) {
+    assetsCache = JSON.parse(
+      readFileSync(new URL("../assets.json", import.meta.url), "utf-8")
+    );
+  }
+  return assetsCache;
+}
+
+const importerById = new Map(Object.entries(routeImporters));
+
+export const handler = createRequestHandler({
+  routes,
+  security,
+  loadModule: async (route) => {
+    const importer = importerById.get(route.id);
+    if (!importer) return null;
+    return importer();
+  },
+  getAssetsForRoute: (route) => loadAssets()[route.id] ?? { scripts: [], css: [] }
+});
+
+export default handler;
+`;
+    fs.writeFileSync(serverEntryPath, serverEntrySource, "utf-8");
+
+    // 3. Build client and server bundles in parallel — they share no
+    //    build-time artifacts anymore.
+    const clientBuild = async () => {
+      if (pageRoutes.length === 0) return;
+      console.log("📦 Compiling client bundle...");
       await viteBuild({
         root: rootDir,
         plugins: [frost(config)],
@@ -81,73 +132,186 @@ export async function buildCommand(options: BuildCommandOptions = {}): Promise<v
           },
         },
       });
-    } finally {
-      fs.rmSync(clientEntriesDir, { recursive: true, force: true });
+    };
+
+    const serverBuild = async () => {
+      console.log("📦 Compiling server bundle...");
+      await viteBuild({
+        root: rootDir,
+        plugins: [frost(config)],
+        build: {
+          ssr: serverEntryPath,
+          outDir: serverOutDir,
+          emptyOutDir: true,
+          sourcemap: config.build.sourcemap,
+        },
+      });
+    };
+
+    await Promise.all([clientBuild(), serverBuild()]);
+
+    // 4. Resolve per-route browser assets from the Vite manifest.
+    const assetsByRoute = resolveRouteAssets(clientOutDir, pageRoutes.map((r) => r.id));
+    const assetsManifestPath = path.join(outDir, "assets.json");
+    fs.writeFileSync(assetsManifestPath, JSON.stringify(assetsByRoute, null, 2), "utf-8");
+
+    // 5. Pre-compress text assets (.br + .gz) for the production adapter.
+    const compressed = precompressDir(clientOutDir);
+    if (compressed > 0) {
+      console.log(`🗜️  Pre-compressed ${compressed} asset(s) (br + gzip)`);
+    }
+
+    // 6. Generate Production Manifest
+    const manifestPath = path.join(outDir, "manifest.json");
+    const manifest = {
+      version: "0.1.0",
+      buildId: `build_${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      routes: routes.map((r) => ({
+        id: r.id,
+        pattern: r.pattern,
+        kind: r.kind,
+        isDynamic: r.isDynamic,
+        isCatchAll: r.isCatchAll,
+      })),
+    };
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2), "utf-8");
+
+    // 7. Optional bundle report + size budgets
+    if (options.analyze || config.budgets.clientJsKb) {
+      printBundleReport(clientOutDir, pageRoutes.map((r) => r.id), {
+        analyze: options.analyze === true,
+        budgetKb: config.budgets.clientJsKb,
+        strict: options.strict === true || config.budgets.strict === true,
+      });
+    }
+
+    console.log(`\n✅ Production build complete! Output in ${config.build.outDir}\n`);
+  } finally {
+    fs.rmSync(clientEntriesDir, { recursive: true, force: true });
+  }
+}
+
+const COMPRESSIBLE_EXT = /\.(js|mjs|css|html|svg|json|txt|xml|webmanifest|map)$/i;
+const SKIP_COMPRESS_EXT = /\.(br|gz|zip|png|jpe?g|gif|webp|avif|ico|woff2?|ttf|otf|mp4|webm|wasm)$/i;
+
+/** Writes <file>.br and <file>.gz next to compressible assets. Returns count of source files processed. */
+function precompressDir(dir: string): number {
+  let count = 0;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      count += precompressDir(full);
+      continue;
+    }
+    if (!entry.isFile()) continue;
+    if (SKIP_COMPRESS_EXT.test(entry.name)) continue;
+    if (!COMPRESSIBLE_EXT.test(entry.name)) continue;
+    // Don't compress our own outputs or the manifest
+    if (entry.name.endsWith(".br") || entry.name.endsWith(".gz")) continue;
+
+    const data = fs.readFileSync(full);
+    if (data.byteLength < 256) continue;
+    try {
+      fs.writeFileSync(full + ".br", zlib.brotliCompressSync(data, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 11 } }));
+      fs.writeFileSync(full + ".gz", zlib.gzipSync(data, { level: 9 }));
+      count++;
+    } catch {
+      // best-effort per file
     }
   }
+  return count;
+}
 
-  // 3. Resolve per-route browser assets from the Vite manifest.
-  const assetsByRoute = resolveRouteAssets(clientOutDir, pageRoutes.map((r) => r.id));
-  const assetsManifestPath = path.join(outDir, "assets.json");
-  fs.writeFileSync(assetsManifestPath, JSON.stringify(assetsByRoute, null, 2), "utf-8");
+function gzipSize(file: string): number {
+  try {
+    return zlib.gzipSync(fs.readFileSync(file)).byteLength;
+  } catch {
+    return 0;
+  }
+}
 
-  // 4. Generate server entry script that imports virtual routes and creates handler
-  const serverEntryPath = path.join(outDir, "server-entry.ts");
-  const serverEntrySource = `
-import { createRequestHandler } from "@frostjs/server";
-import { setBodyLimits } from "@frostjs/data";
-import { routes } from "virtual:frost/routes";
-import assetsManifest from "./assets.json";
+function fmtKb(bytes: number): string {
+  return `${(bytes / 1024).toFixed(1)} KB`;
+}
 
-setBodyLimits(${JSON.stringify(config.limits)});
+function printBundleReport(
+  clientOutDir: string,
+  routeIds: string[],
+  opts: { analyze: boolean; budgetKb?: number; strict: boolean }
+): void {
+  const manifestPath = path.join(clientOutDir, ".vite", "manifest.json");
+  let manifest: ViteManifest = {};
+  try {
+    manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8")) as ViteManifest;
+  } catch {
+    console.log("⚠️  No client manifest found — skipping bundle report.");
+    return;
+  }
 
-const assetsByRoute = assetsManifest as Record<string, { scripts: string[]; css: string[]; preloads?: { href: string; as: string; type?: string; crossOrigin?: boolean }[] }>;
-const security = ${JSON.stringify(config.security)};
+  const entryKeyByRouteId = new Map<string, string>();
+  for (const [key, chunk] of Object.entries(manifest)) {
+    if (chunk.isEntry === false) continue;
+    const name = chunk.name ?? key;
+    if (!entryKeyByRouteId.has(name)) entryKeyByRouteId.set(name, key);
+    if (!entryKeyByRouteId.has(key)) entryKeyByRouteId.set(key, key);
+  }
 
-export const handler = createRequestHandler({
-  routes,
-  security,
-  loadModule: async (route) => {
-    const found = routes.find(r => r.id === route.id);
-    return found ? found.module : null;
-  },
-  getAssetsForRoute: (route) => assetsByRoute[route.id] ?? { scripts: [], css: [] }
-});
-
-export default handler;
-`;
-  fs.writeFileSync(serverEntryPath, serverEntrySource, "utf-8");
-
-  // 5. Build Server bundle
-  console.log("📦 Compiling server bundle...");
-  await viteBuild({
-    root: rootDir,
-    plugins: [frost(config)],
-    build: {
-      ssr: serverEntryPath,
-      outDir: serverOutDir,
-      emptyOutDir: true,
-      sourcemap: config.build.sourcemap,
-    },
-  });
-
-  // 6. Generate Production Manifest
-  const manifestPath = path.join(outDir, "manifest.json");
-  const manifest = {
-    version: "0.1.0",
-    buildId: `build_${Date.now()}`,
-    timestamp: new Date().toISOString(),
-    routes: routes.map((r) => ({
-      id: r.id,
-      pattern: r.pattern,
-      kind: r.kind,
-      isDynamic: r.isDynamic,
-      isCatchAll: r.isCatchAll,
-    })),
+  const collectJs = (entryKey: string): Set<string> => {
+    const files = new Set<string>();
+    const seen = new Set<string>();
+    const visit = (key: string) => {
+      if (seen.has(key)) return;
+      seen.add(key);
+      const chunk = manifest[key];
+      if (!chunk) return;
+      if (chunk.file) files.add(chunk.file);
+      for (const imp of chunk.imports ?? []) visit(imp);
+    };
+    visit(entryKey);
+    return files;
   };
-  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2), "utf-8");
 
-  console.log(`\n✅ Production build complete! Output in ${config.build.outDir}\n`);
+  let budgetExceeded = false;
+  const rows: string[] = [];
+  for (const routeId of routeIds) {
+    const entryKey = entryKeyByRouteId.get(routeId);
+    if (!entryKey) continue;
+    const files = collectJs(entryKey);
+    let raw = 0;
+    let gzip = 0;
+    for (const f of files) {
+      const full = path.join(clientOutDir, f);
+      if (!fs.existsSync(full)) continue;
+      raw += fs.statSync(full).size;
+      gzip += gzipSize(full);
+    }
+    const totalKb = raw / 1024;
+    const over = opts.budgetKb !== undefined && totalKb > opts.budgetKb;
+    if (over) budgetExceeded = true;
+    rows.push(
+      `${routeId.padEnd(30)} ${fmtKb(raw).padStart(10)} raw  ${fmtKb(gzip).padStart(10)} gzip  ${files.size} chunk(s)${over ? "  ⚠️ OVER BUDGET" : ""}`
+    );
+  }
+
+  if (opts.analyze || rows.length > 0) {
+    console.log("\n📊 Client bundle report");
+    console.log("-".repeat(80));
+    for (const row of rows) console.log(row);
+    console.log("-".repeat(80));
+  }
+
+  if (opts.budgetKb !== undefined) {
+    if (budgetExceeded) {
+      const msg = `Client JS budget of ${opts.budgetKb} KB exceeded for one or more routes.`;
+      if (opts.strict) {
+        throw new Error(`[frost] ${msg} Build failed (--strict).`);
+      }
+      console.warn(`⚠️  ${msg} (warning only — set budgets.strict or pass --strict to fail)`);
+    } else {
+      console.log(`✅ Client JS budget (${opts.budgetKb} KB) respected.`);
+    }
+  }
 }
 
 function resolveRouteAssets(clientOutDir: string, routeIds: string[]): Record<string, FrostAssets> {
@@ -165,8 +329,8 @@ function resolveRouteAssets(clientOutDir: string, routeIds: string[]): Record<st
   // matching the rollup input key (the Frost route id).
   const entryKeyByRouteId = new Map<string, string>();
   for (const [key, chunk] of Object.entries(manifest)) {
-    if ((chunk as { isEntry?: boolean }).isEntry === false) continue;
-    const name = (chunk as { name?: string }).name ?? key;
+    if (chunk.isEntry === false) continue;
+    const name = chunk.name ?? key;
     if (!entryKeyByRouteId.has(name)) entryKeyByRouteId.set(name, key);
     if (!entryKeyByRouteId.has(key)) entryKeyByRouteId.set(key, key);
   }
@@ -181,6 +345,7 @@ function resolveRouteAssets(clientOutDir: string, routeIds: string[]): Record<st
 
     const css = new Set<string>();
     const assets = new Set<string>();
+    const modulePreloads = new Set<string>();
     const collectChunkAssets = (key: string, seen: Set<string>) => {
       if (seen.has(key)) return;
       seen.add(key);
@@ -188,14 +353,28 @@ function resolveRouteAssets(clientOutDir: string, routeIds: string[]): Record<st
       if (!chunk) return;
       for (const file of chunk.css ?? []) css.add(`/${file}`);
       for (const file of chunk.assets ?? []) assets.add(file);
-      for (const imp of chunk.imports ?? []) collectChunkAssets(imp, seen);
+      for (const imp of chunk.imports ?? []) {
+        const imported = manifest[imp];
+        if (imported?.file) modulePreloads.add(`/${imported.file}`);
+        collectChunkAssets(imp, seen);
+      }
     };
     collectChunkAssets(entryKey, new Set());
+    // The entry chunk itself is loaded via <script type="module">; its
+    // static imports become modulepreload hints.
+    modulePreloads.delete(`/${entry.file}`);
 
     result[routeId] = {
       scripts: [`/${entry.file}`],
       css: [...css],
-      preloads: selectFontPreloads([...assets]),
+      preloads: [
+        ...[...modulePreloads].map((href) => ({
+          href,
+          as: "script",
+          rel: "modulepreload" as const,
+        })),
+        ...(selectFontPreloads([...assets]) ?? []),
+      ],
     };
   }
 

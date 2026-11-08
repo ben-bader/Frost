@@ -8,13 +8,16 @@ export const VIRTUAL_CLIENT_ENTRY_ID = "virtual:frost/client-entry";
 export const RESOLVED_VIRTUAL_CLIENT_ENTRY_ID = "\0" + VIRTUAL_CLIENT_ENTRY_ID;
 
 export function generateRoutesModuleCode(routes: DiscoveredRoute[]): string {
-  const imports: string[] = [];
+  const importers: string[] = [];
   const routeEntries: string[] = [];
 
-  routes.forEach((route, index) => {
-    const varName = `route_${index}`;
+  // Route modules are loaded lazily: each entry gets a dynamic import()
+  // so the production server only pays for the routes a request needs.
+  routes.forEach((route) => {
     const normalizedFilePath = route.filePath.replace(/\\/g, "/");
-    imports.push(`import * as ${varName} from "${normalizedFilePath}";`);
+    importers.push(
+      `  ${JSON.stringify(route.id)}: () => import(${JSON.stringify(normalizedFilePath)})`
+    );
     routeEntries.push(`  {
     id: ${JSON.stringify(route.id)},
     pattern: ${JSON.stringify(route.pattern)},
@@ -23,8 +26,7 @@ export function generateRoutesModuleCode(routes: DiscoveredRoute[]): string {
     isDynamic: ${route.isDynamic},
     isCatchAll: ${route.isCatchAll},
     score: ${route.score},
-    layouts: ${JSON.stringify(route.layouts || [])},
-    module: ${varName}
+    layouts: ${JSON.stringify(route.layouts || [])}
   }`);
   });
 
@@ -34,10 +36,11 @@ export function generateRoutesModuleCode(routes: DiscoveredRoute[]): string {
   const layoutPaths = [
     ...new Set(routes.flatMap((r) => r.layouts ?? [])),
   ];
-  layoutPaths.forEach((layoutPath, index) => {
-    const varName = `layout_${index}`;
+  layoutPaths.forEach((layoutPath) => {
     const normalizedLayoutPath = layoutPath.replace(/\\/g, "/");
-    imports.push(`import * as ${varName} from "${normalizedLayoutPath}";`);
+    importers.push(
+      `  ${JSON.stringify(layoutPath)}: () => import(${JSON.stringify(normalizedLayoutPath)})`
+    );
     routeEntries.push(`  {
     id: ${JSON.stringify(layoutPath)},
     pattern: "",
@@ -46,13 +49,14 @@ export function generateRoutesModuleCode(routes: DiscoveredRoute[]): string {
     isDynamic: false,
     isCatchAll: false,
     score: 0,
-    layouts: [],
-    module: ${varName}
+    layouts: []
   }`);
   });
 
   return `
-${imports.join("\n")}
+export const routeImporters = {
+${importers.join(",\n")}
+};
 
 export const routes = [
 ${routeEntries.join(",\n")}

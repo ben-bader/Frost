@@ -1,16 +1,25 @@
 import * as http from "node:http";
 import { isSafeRequestTarget, nodeReqToWebRequest, sendWebResponseToNode } from "./bridge.js";
 import { tryServeStaticFile } from "./static.js";
+import { toCompressionOptions, type CompressionOptions } from "./compression.js";
+import type { CompressionConfig } from "@frostjs/core";
 
 export interface NodeServerOptions {
   port?: number;
   host?: string;
   staticDirs?: string[];
   handleRequest: (request: Request) => Promise<Response>;
+  /** Response compression settings (from frost.config compression.*). */
+  compression?: CompressionConfig | CompressionOptions;
 }
 
 export function createNodeServer(options: NodeServerOptions): http.Server {
   const { port = 3000, host = "localhost", staticDirs = [], handleRequest } = options;
+  const compression = options.compression
+    ? "enabled" in options.compression && "threshold" in options.compression
+      ? (options.compression as CompressionOptions)
+      : toCompressionOptions(options.compression as CompressionConfig)
+    : undefined;
 
   const server = http.createServer(async (req, res) => {
     try {
@@ -31,7 +40,7 @@ export function createNodeServer(options: NodeServerOptions): http.Server {
       }
 
       // 3. Try static asset serving
-      if (tryServeStaticFile(req, res, { staticDirs })) {
+      if (tryServeStaticFile(req, res, { staticDirs, compression })) {
         return;
       }
 
@@ -39,8 +48,8 @@ export function createNodeServer(options: NodeServerOptions): http.Server {
       const webRequest = nodeReqToWebRequest(req, `${host}:${port}`);
       const webResponse = await handleRequest(webRequest);
 
-      // 4. Send back Web response
-      await sendWebResponseToNode(webResponse, res);
+      // 5. Send back Web response (with content negotiation)
+      await sendWebResponseToNode(webResponse, res, compression);
     } catch (err) {
       console.error("[Frost Adapter Node] Uncaught request error:", err);
       if (!res.headersSent) {

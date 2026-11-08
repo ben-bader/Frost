@@ -38,7 +38,11 @@ async function main() {
       break;
 
     case "build":
-      await buildCommand({ config: userConfig });
+      await buildCommand({
+        config: userConfig,
+        analyze: args.includes("--analyze"),
+        strict: args.includes("--strict"),
+      });
       break;
 
     case "start":
@@ -63,6 +67,8 @@ Options:
   --port, -p    Port number
   --host, -h    Host address
   --config      Path to frost.config.{ts,js,mjs} (searched in project root by default)
+  --analyze     (build) print per-route client bundle sizes
+  --strict      (build) fail when budgets.clientJsKb is exceeded
 `);
       break;
   }
