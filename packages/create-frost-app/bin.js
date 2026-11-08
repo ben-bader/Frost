@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // create-frost-app — scaffold a new Frost application.
-// Usage: npm create frost-app@latest [name] [--template minimal|tailwind]
+// Usage: npm create frost-app@latest [name] [--template starter|minimal]
 //        [--install] [--no-git] [--pm pnpm|npm|yarn|bun]
 import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
@@ -9,8 +9,10 @@ import * as readline from "node:readline";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const VERSION = "0.1.0";
-const TEMPLATES = ["minimal", "tailwind"];
+const TEMPLATES = ["starter", "minimal"];
+const VERSION = JSON.parse(
+  fs.readFileSync(path.join(__dirname, "package.json"), "utf8"),
+).version;
 
 function fail(message) {
   console.error(`\n  Error: ${message}\n`);
@@ -26,7 +28,7 @@ Arguments:
   name                  Project directory/name (default: my-frost-app)
 
 Options:
-  --template <name>     Template: ${TEMPLATES.join(" | ")} (default: minimal)
+  --template <name>     Template: ${TEMPLATES.join(" | ")} (default: starter)
   --pm <pm>             Package manager: pnpm | npm | yarn | bun
                         (default: detected from npm_config_user_agent)
   --install             Run the package manager install (default: yes)
@@ -125,7 +127,7 @@ function replacePlaceholder(dir, appName) {
 async function main() {
   const args = process.argv.slice(2);
   let name = "";
-  let template = "minimal";
+  let template = "starter";
   let pm = "";
   let install = true;
   let git = true;
@@ -189,7 +191,7 @@ async function main() {
     }
   }
 
-  const templateDir = template === "tailwind" ? "template-tailwind" : "template";
+  const templateDir = template === "minimal" ? "template-minimal" : "template";
   const src = path.join(__dirname, templateDir);
   if (!fs.existsSync(src)) {
     fail(`Template "${template}" not found in this installation.`);
