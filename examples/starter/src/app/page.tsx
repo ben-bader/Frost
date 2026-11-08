@@ -1,6 +1,8 @@
-﻿import type { Route } from "@frostjs/core";
+﻿import { useState } from "react";
+import type { Route } from "@frostjs/core";
 import { Link } from "@frostjs/react";
 import { pillGhost, pillPrimary } from "../components/Button.js";
+import { RunLocallyDialog } from "../components/RunLocallyDialog.js";
 
 export const metadata: Route.Metadata = {
   title: "Frost — React rendering, web-native runtime",
@@ -9,6 +11,8 @@ export const metadata: Route.Metadata = {
 };
 
 export default function DemoPage(): React.JSX.Element {
+  const [dialogOpen, setDialogOpen] = useState(false);
+
   return (
     <section className="flex min-h-0 flex-1 items-center justify-center px-[clamp(20px,5vw,48px)] py-8" aria-labelledby="hero-title">
       <div className="flex max-w-[760px] flex-col items-center text-center">
@@ -29,11 +33,16 @@ export default function DemoPage(): React.JSX.Element {
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3 motion-safe:animate-hero-rise [animation-delay:320ms]">
           <Link className={pillPrimary} to="/playground">Open playground</Link>
-          <Link className={pillGhost} to="/playground">Run it locally</Link>
+          <button
+            type="button"
+            className={pillGhost}
+            onClick={() => setDialogOpen(true)}
+          >
+            Run it locally
+          </button>
         </div>
-       
-     
       </div>
+      <RunLocallyDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
     </section>
   );
 }

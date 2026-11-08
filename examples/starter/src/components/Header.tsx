@@ -1,5 +1,6 @@
 import { Link, usePathname } from "@frostjs/react";
 import { pillPrimary } from "./Button.js";
+import { SITE } from "../config/site.js";
 
 const navItems = [
   { label: "Demo", href: "/" },
@@ -41,7 +42,15 @@ export function Header(): React.JSX.Element {
         </nav>
 
         <div className="flex items-center justify-self-end">
-          <Link className={pillPrimary} to="/playground">Get started</Link>
+          <a
+            className={pillPrimary}
+            href={SITE.repoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Get started on GitHub (opens in a new tab)"
+          >
+            Get started
+          </a>
         </div>
       </div>
     </header>
