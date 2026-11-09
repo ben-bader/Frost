@@ -109,11 +109,26 @@ function copyDir(src, dest) {
   }
 }
 
+function quoteArg(arg) {
+  const s = String(arg);
+  return /[\s"]/.test(s) ? `"${s.replace(/"/g, '\\"')}"` : s;
+}
+
+/**
+ * Spawn cmd with its args. On Windows, .cmd shims cannot be spawned
+ * directly (EINVAL on modern Node), so go through cmd.exe /c — the same
+ * approach scripts/lib/run.mjs uses for the repo's own tooling.
+ */
+function spawnCmd(cmd, args, opts) {
+  if (process.platform !== "win32") return spawnSync(cmd, args, opts);
+  const line = [cmd, ...args].map(quoteArg).join(" ");
+  return spawnSync("cmd.exe", ["/d", "/s", "/c", line], { ...opts, shell: false });
+}
+
 function runCaptured(cmd, args, cwd, logFile) {
-  const isWin = process.platform === "win32";
   const out = fs.openSync(logFile, "w");
   try {
-    const res = spawnSync(isWin ? `${cmd}.cmd` : cmd, args, {
+    const res = spawnCmd(cmd, args, {
       cwd,
       stdio: ["ignore", out, out],
       windowsHide: true,
@@ -125,8 +140,7 @@ function runCaptured(cmd, args, cwd, logFile) {
 }
 
 function run(cmd, args, cwd) {
-  const isWin = process.platform === "win32";
-  const res = spawnSync(isWin ? `${cmd}.cmd` : cmd, args, {
+  const res = spawnCmd(cmd, args, {
     cwd,
     stdio: "inherit",
     windowsHide: true,
