@@ -1,5 +1,0 @@
-2026/11/08-12:31:00.139 1fa8 Creating DB D:\Projects\frameworks\Frost\scratch\edge-profile-dlg\Default\EdgeCoupons/coupons_data.db since it was missing.
-2026/11/08-12:31:00.270 1fa8 Reusing MANIFEST D:\Projects\frameworks\Frost\scratch\edge-profile-dlg\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
-2026/11/08-12:31:01.364 eb0 Level-0 table #5: started
-2026/11/08-12:31:01.369 eb0 Level-0 table #5: 683273 bytes OK
-2026/11/08-12:31:01.373 eb0 Delete type=0 #3

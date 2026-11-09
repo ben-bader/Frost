@@ -1,5 +1,0 @@
-2026/11/08-12:12:35.291 65c0 Creating DB D:\Projects\frameworks\Frost\scratch\edge-profile-bento\Default\EdgeCoupons/coupons_data.db since it was missing.
-2026/11/08-12:12:35.389 65c0 Reusing MANIFEST D:\Projects\frameworks\Frost\scratch\edge-profile-bento\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
-2026/11/08-12:12:37.267 6f0c Level-0 table #5: started
-2026/11/08-12:12:37.274 6f0c Level-0 table #5: 683273 bytes OK
-2026/11/08-12:12:37.279 6f0c Delete type=0 #3

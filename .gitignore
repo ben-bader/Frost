@@ -40,3 +40,6 @@ Thumbs.db
 .e2e-tmp/
 release-tarballs/
 packages/create-frost-app/template/
+
+# Browser profiles used by manual dev-server checks
+scratch/edge-profile-*/
