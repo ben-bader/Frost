@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 430" width="680" height="430" role="img" aria-label="Frost dev error overlay">
+<title>Frost dev error overlay</title>
+
+
+<rect width="680" height="430" fill="rgba(4,12,13,0.72)"/>
+<rect x="60" y="40" width="560" height="350" rx="16" fill="#1a0f12" stroke="#ff4d5e" stroke-width="1.5"/>
+<rect x="60" y="40" width="560" height="44" rx="16" fill="rgba(255,77,94,0.08)"/>
+<rect x="60" y="70" width="560" height="14" fill="rgba(255,77,94,0.08)"/>
+<path d="M84 56l10-18h20l10 18z" fill="none" stroke="#ff4d5e" stroke-width="2" stroke-linejoin="round"/>
+<line x1="94" y1="46" x2="94" y2="52" stroke="#ff4d5e" stroke-width="2"/>
+<circle cx="94" cy="57" r="1.6" fill="#ff4d5e"/>
+<text x="116" y="68" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="14" font-weight="600" fill="#e8f4f1">Loader failed</text>
+<rect x="556" y="54" width="52" height="20" rx="10" fill="#ff4d5e"/>
+<text x="582" y="68" text-anchor="middle" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="11" font-weight="700" fill="#1a0f12">ERR</text>
+<text x="84" y="112" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="14" font-weight="700" fill="#ff4d5e">TypeError: Cannot read properties of undefined</text>
+<text x="84" y="134" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="12.5" fill="#b9c9c6">res.json() returned undefined for /api/nav on the server.</text>
+<text x="84" y="156" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="11.5" fill="#6f9390">src/app/playground/page.tsx:42:11</text>
+<rect x="84" y="172" width="512" height="86" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)"/>
+<text x="96" y="194" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="11.5" fill="#6f9390">40 | export const loader = async () =&gt; {</text>
+<text x="96" y="212" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="11.5" fill="#6f9390">41 |   const res = await fetch(apiUrl);</text>
+<rect x="88" y="216" width="504" height="18" fill="rgba(255,77,94,0.18)"/>
+<text x="96" y="230" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="11.5" fill="#e8f4f1">42 |   return res.json().nav;</text>
+<text x="96" y="248" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="11.5" fill="#6f9390">43 | };</text>
+<g font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="10.5">
+<rect x="84" y="272" width="248" height="34" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)"/>
+<text x="94" y="286" fill="#6f9390">CODE</text><text x="94" y="300" fill="#e8f4f1">FROST_E_LOADER</text>
+<rect x="348" y="272" width="248" height="34" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)"/>
+<text x="358" y="286" fill="#6f9390">ROUTE</text><text x="358" y="300" fill="#e8f4f1">/playground</text>
+<rect x="84" y="314" width="248" height="34" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)"/>
+<text x="94" y="328" fill="#6f9390">RUNTIME</text><text x="94" y="342" fill="#e8f4f1">server</text>
+<rect x="348" y="314" width="248" height="34" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)"/>
+<text x="358" y="328" fill="#6f9390">LOCATION</text><text x="358" y="342" fill="#e8f4f1">page.tsx:42:11</text>
+</g>
+<text x="84" y="366" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="11.5" fill="#ffb86b">hint  check the loader's fetch target and response shape</text>
+<rect x="84" y="382" width="86" height="26" rx="8" fill="#10e8c8"/>
+<text x="127" y="399" text-anchor="middle" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="11.5" font-weight="700" fill="#062b27">Dismiss</text>
+<rect x="178" y="382" width="110" height="26" rx="8" fill="none" stroke="rgba(255,255,255,0.15)"/>
+<text x="233" y="399" text-anchor="middle" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="11.5" fill="#e8f4f1">Copy details</text>
+
+</svg>

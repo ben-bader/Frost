@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 340" width="980" height="340" role="img" aria-label="Frost request lifecycle">
+<title>Frost request lifecycle</title>
+<style>
+.dot{animation:dotmove 9s linear infinite}
+.dot.d2{animation-delay:-3s}.dot.d3{animation-delay:-6s}
+@keyframes dotmove{from{transform:translateX(0);opacity:0}8%{opacity:1}92%{opacity:1}to{transform:translateX(916px);opacity:0}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important}}</style>
+
+<defs><marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0L8 4L0 8z" fill="#6f9390"/></marker></defs>
+<text x="490" y="52" text-anchor="middle" font-family="'Space Grotesk','Segoe UI',system-ui,-apple-system,sans-serif" font-size="20" font-weight="600" fill="#f2f7f5">One request, explicit phases</text>
+<text x="490" y="76" text-anchor="middle" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="12" fill="#6f9390">server runtime ——— client runtime</text>
+<line x1="700" y1="96" x2="700" y2="230" stroke="#10e8c8" stroke-width="1.4" stroke-dasharray="5 5" opacity="0.7"/>
+<text x="700" y="248" text-anchor="middle" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="10" fill="#10e8c8">server / client boundary</text>
+<g>
+<rect x="12" y="120" width="116" height="64" rx="10" fill="#10282a" stroke="#2c4d4b" stroke-width="1"/>
+<text x="70" y="148" text-anchor="middle" font-family="'Space Grotesk','Segoe UI',system-ui,-apple-system,sans-serif" font-size="14" font-weight="600" fill="#f2f7f5">Request</text>
+<text x="70" y="166" text-anchor="middle" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="9.5" fill="#6f9390">GET /playground</text>
+<path d="M132 152 h16" stroke="#6f9390" stroke-width="1.4" marker-end="url(#arr)"/>
+</g>
+<g>
+<rect x="152" y="120" width="116" height="64" rx="10" fill="#10282a" stroke="#2c4d4b" stroke-width="1"/>
+<text x="210" y="148" text-anchor="middle" font-family="'Space Grotesk','Segoe UI',system-ui,-apple-system,sans-serif" font-size="14" font-weight="600" fill="#f2f7f5">Middleware</text>
+<text x="210" y="166" text-anchor="middle" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="9.5" fill="#6f9390">app/_middleware.ts</text>
+<path d="M272 152 h16" stroke="#6f9390" stroke-width="1.4" marker-end="url(#arr)"/>
+</g>
+<g>
+<rect x="292" y="120" width="116" height="64" rx="10" fill="#10282a" stroke="#2c4d4b" stroke-width="1"/>
+<text x="350" y="148" text-anchor="middle" font-family="'Space Grotesk','Segoe UI',system-ui,-apple-system,sans-serif" font-size="14" font-weight="600" fill="#f2f7f5">Route match</text>
+<text x="350" y="166" text-anchor="middle" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="9.5" fill="#6f9390">router.discover + match</text>
+<path d="M412 152 h16" stroke="#6f9390" stroke-width="1.4" marker-end="url(#arr)"/>
+</g>
+<g>
+<rect x="432" y="120" width="116" height="64" rx="10" fill="#10282a" stroke="#2c4d4b" stroke-width="1"/>
+<text x="490" y="148" text-anchor="middle" font-family="'Space Grotesk','Segoe UI',system-ui,-apple-system,sans-serif" font-size="14" font-weight="600" fill="#f2f7f5">Loaders</text>
+<text x="490" y="166" text-anchor="middle" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="9.5" fill="#6f9390">page + layouts, parallel</text>
+<path d="M552 152 h16" stroke="#6f9390" stroke-width="1.4" marker-end="url(#arr)"/>
+</g>
+<g>
+<rect x="572" y="120" width="116" height="64" rx="10" fill="#10282a" stroke="#2c4d4b" stroke-width="1"/>
+<text x="630" y="148" text-anchor="middle" font-family="'Space Grotesk','Segoe UI',system-ui,-apple-system,sans-serif" font-size="14" font-weight="600" fill="#f2f7f5">Render</text>
+<text x="630" y="166" text-anchor="middle" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="9.5" fill="#6f9390">streaming SSR</text>
+<path d="M692 152 h16" stroke="#6f9390" stroke-width="1.4" marker-end="url(#arr)"/>
+</g>
+<g>
+<rect x="712" y="120" width="116" height="64" rx="10" fill="#10282a" stroke="#10e8c8" stroke-width="1.6"/>
+<text x="770" y="148" text-anchor="middle" font-family="'Space Grotesk','Segoe UI',system-ui,-apple-system,sans-serif" font-size="14" font-weight="600" fill="#f2f7f5">HTML</text>
+<text x="770" y="166" text-anchor="middle" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="9.5" fill="#6f9390">.frost response</text>
+<path d="M832 152 h16" stroke="#6f9390" stroke-width="1.4" marker-end="url(#arr)"/>
+</g>
+<g>
+<rect x="852" y="120" width="116" height="64" rx="10" fill="#10282a" stroke="#2c4d4b" stroke-width="1"/>
+<text x="910" y="148" text-anchor="middle" font-family="'Space Grotesk','Segoe UI',system-ui,-apple-system,sans-serif" font-size="14" font-weight="600" fill="#f2f7f5">Hydrate</text>
+<text x="910" y="166" text-anchor="middle" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="9.5" fill="#6f9390">client reconnects</text>
+
+</g>
+<circle class="dot d1" cx="22" cy="210" r="3.4" fill="#10e8c8"/>
+<circle class="dot d2" cx="22" cy="210" r="3.4" fill="#10e8c8"/>
+<circle class="dot d3" cx="22" cy="210" r="3.4" fill="#10e8c8"/>
+<text x="490" y="306" text-anchor="middle" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="11" fill="#6f9390">middleware → match → loaders (parallel) → stream → HTML → hydrate</text>
+
+</svg>

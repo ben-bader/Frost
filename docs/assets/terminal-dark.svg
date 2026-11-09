@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 700" width="860" height="700" role="img" aria-label="Frost dev server — terminal session">
+<title>Frost dev server — terminal session</title>
+<style>
+.win{fill:#10282a;stroke:#2c4d4b}
+.titlebar{fill:#0a1c1e}
+.prompt{fill:#10e8c8}
+.cmd{fill:#f2f7f5;font-weight:600}
+.dim{fill:#6f9390}
+.mint{fill:#10e8c8}
+.errname{fill:#ff4d5e;font-weight:700}
+.warnname{fill:#ffb86b;font-weight:700}
+.gutter{fill:#6f9390}
+.marktext{fill:#f2f7f5}
+.caret{fill:#ff4d5e}
+@media (prefers-reduced-motion: reduce){*{animation:none !important}}@keyframes tl0{0%,0.0%{opacity:0} 2.0%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl1{0%,2.1%{opacity:0} 4.1%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl2{0%,4.1%{opacity:0} 6.1%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl3{0%,6.2%{opacity:0} 8.2%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl4{0%,8.3%{opacity:0} 10.3%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl5{0%,10.4%{opacity:0} 12.4%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl6{0%,12.4%{opacity:0} 14.4%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl7{0%,14.5%{opacity:0} 16.5%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl8{0%,16.6%{opacity:0} 18.6%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl9{0%,18.6%{opacity:0} 20.6%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl10{0%,20.7%{opacity:0} 22.7%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl11{0%,22.8%{opacity:0} 24.8%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl12{0%,24.9%{opacity:0} 26.9%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl13{0%,26.9%{opacity:0} 28.9%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl14{0%,29.0%{opacity:0} 31.0%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl15{0%,31.1%{opacity:0} 33.1%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl16{0%,33.1%{opacity:0} 35.1%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl17{0%,35.2%{opacity:0} 37.2%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl18{0%,37.3%{opacity:0} 39.3%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl19{0%,39.4%{opacity:0} 41.4%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl20{0%,41.4%{opacity:0} 43.4%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl21{0%,43.5%{opacity:0} 45.5%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl22{0%,45.6%{opacity:0} 47.6%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl23{0%,47.6%{opacity:0} 49.6%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl24{0%,49.7%{opacity:0} 51.7%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl25{0%,51.8%{opacity:0} 53.8%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl26{0%,53.9%{opacity:0} 55.9%,82.0%{opacity:1} 100%{opacity:0}}
+@keyframes tl27{0%,55.9%{opacity:0} 57.9%,82.0%{opacity:1} 100%{opacity:0}}
+.tl0{animation:tl0 20s linear infinite}
+.tl1{animation:tl1 20s linear infinite}
+.tl2{animation:tl2 20s linear infinite}
+.tl3{animation:tl3 20s linear infinite}
+.tl4{animation:tl4 20s linear infinite}
+.tl5{animation:tl5 20s linear infinite}
+.tl6{animation:tl6 20s linear infinite}
+.tl7{animation:tl7 20s linear infinite}
+.tl8{animation:tl8 20s linear infinite}
+.tl9{animation:tl9 20s linear infinite}
+.tl10{animation:tl10 20s linear infinite}
+.tl11{animation:tl11 20s linear infinite}
+.tl12{animation:tl12 20s linear infinite}
+.tl13{animation:tl13 20s linear infinite}
+.tl14{animation:tl14 20s linear infinite}
+.tl15{animation:tl15 20s linear infinite}
+.tl16{animation:tl16 20s linear infinite}
+.tl17{animation:tl17 20s linear infinite}
+.tl18{animation:tl18 20s linear infinite}
+.tl19{animation:tl19 20s linear infinite}
+.tl20{animation:tl20 20s linear infinite}
+.tl21{animation:tl21 20s linear infinite}
+.tl22{animation:tl22 20s linear infinite}
+.tl23{animation:tl23 20s linear infinite}
+.tl24{animation:tl24 20s linear infinite}
+.tl25{animation:tl25 20s linear infinite}
+.tl26{animation:tl26 20s linear infinite}
+.tl27{animation:tl27 20s linear infinite}
+</style>
+
+<rect class="win" x="1" y="1" width="858" height="698" rx="12"/>
+<rect class="titlebar" x="1" y="1" width="858" height="38" rx="12"/>
+<rect x="1" y="30" width="858" height="10" fill="#0a1c1e"/>
+<circle cx="22" cy="20" r="5" fill="#ff4d5e"/>
+<circle cx="40" cy="20" r="5" fill="#ffb86b"/>
+<circle cx="58" cy="20" r="5" fill="#10e8c8"/>
+<text x="430" y="24" text-anchor="middle" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="12" fill="#6f9390">my-app — zsh</text>
+<rect class="tl tl21" x="20" y="522" width="620" height="24" fill="#3d1518" opacity="0.55"/>
+<text x="28" y="56" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="15" class="tl tl0"><tspan class="prompt" x="28">$ </tspan><tspan class="cmd" x="46">npm create frost-app@latest my-app</tspan></text>
+<text x="28" y="79" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="15" class="tl tl1"><tspan class="dim" x="28">  Created a Frost starter app in ./my-app</tspan></text>
+<text x="28" y="102" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="15" class="tl tl2"><tspan class="dim" x="28">  Initialized git repository</tspan></text>
+<text x="28" y="125" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="15" class="tl tl3"><tspan class="dim" x="28">  Done! Next steps:</tspan></text>
+<text x="28" y="148" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="15" class="tl tl4"><tspan class="dim" x="28">    cd my-app</tspan></text>
+<text x="28" y="171" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="15" class="tl tl5"><tspan class="prompt" x="28">$ </tspan><tspan class="cmd" x="46">cd my-app &amp;&amp; npm install</tspan></text>
+<text x="28" y="194" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="15" class="tl tl6"><tspan class="dim" x="28">added 87 packages in 4s</tspan></text>
+<text x="28" y="217" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="15" class="tl tl7"><tspan class="prompt" x="28">$ </tspan><tspan class="cmd" x="46">npm run dev</tspan></text>
+<text class="tl tl8" x="28" y="240"> </text>
+<text x="28" y="263" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="15" class="tl tl9"><tspan class="mint" x="28">  Frost development server running at http://localhost:3000/</tspan></text>
+<text x="28" y="286" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="15" class="tl tl10"><tspan class="dim" x="28">  GET /playground  loader threw — see below</tspan></text>
+<text class="tl tl11" x="28" y="309"> </text>
+<g class="tl tl12"><rect x="28" y="318" width="85.2" height="20" rx="4" fill="#ff4d5e"/><text x="37" y="333" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="12" font-weight="700" fill="#fff"> ERROR </text></g>
+<text x="28" y="355" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="15" class="tl tl13"><tspan class="errname" x="28"> Error: Cannot read properties of undefined (reading 'nav')</tspan></text>
+<text x="28" y="378" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="15" class="tl tl14"><tspan class="dim" x="28">  code  FROST_E_LOADER</tspan></text>
+<text x="28" y="401" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="15" class="tl tl15"><tspan class="dim" x="28">  at    src/app/playground/page.tsx:42:11</tspan></text>
+<text x="28" y="424" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="15" class="tl tl16"><tspan class="dim" x="28">  route /playground</tspan></text>
+<text x="28" y="447" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="15" class="tl tl17"><tspan class="dim" x="28">  runtime server</tspan></text>
+<text class="tl tl18" x="28" y="470"> </text>
+<text x="28" y="493" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="15" class="tl tl19"><tspan class="gutter" x="28">  40 | export const loader = async () =&gt; {</tspan></text>
+<text x="28" y="516" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="15" class="tl tl20"><tspan class="gutter" x="28">  41 |   const res = await fetch(apiUrl);</tspan></text>
+<text x="28" y="539" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="15" class="tl tl21"><tspan class="marktext" x="28">  42 |   return res.json().nav;</tspan><tspan class="caret" x="307">        ^</tspan></text>
+<text x="28" y="562" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="15" class="tl tl22"><tspan class="gutter" x="28">  43 | };</tspan></text>
+<text class="tl tl23" x="28" y="585"> </text>
+<g class="tl tl24"><rect x="28" y="594" width="75.6" height="20" rx="4" fill="#ffb86b"/><text x="37" y="609" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="12" font-weight="700" fill="#1a1206"> WARN </text></g>
+<text x="28" y="631" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="15" class="tl tl25"><tspan class="warnname" x="28"> Warning: Nondeterministic render output on /playground</tspan></text>
+<text x="28" y="654" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="15" class="tl tl26"><tspan class="dim" x="28">  code  FROST_E_HYDRATION</tspan></text>
+<text x="28" y="677" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="15" class="tl tl27"><tspan class="dim" x="28">  route /playground</tspan></text>
+
+</svg>

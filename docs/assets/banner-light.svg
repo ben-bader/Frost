@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 400" width="1280" height="400" role="img" aria-label="Frost — React rendering. Web-native runtime.">
+<title>Frost — React rendering. Web-native runtime.</title>
+<style>
+.bg-grad{fill:url(#bg)}
+.glow{animation:drift 18s ease-in-out infinite alternate}
+@keyframes drift{from{transform:translate(0,0)}to{transform:translate(60px,-30px)}}
+.tick{animation:tickfade 1.2s ease-out .3s both}
+@keyframes tickfade{from{opacity:0}to{opacity:1}}
+.dot{animation:dotseq 12s ease-in-out infinite}
+@keyframes dotseq{0%,100%{opacity:.15}12%{opacity:.9}24%{opacity:.15}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important}}</style>
+
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0" stop-color="#f7fcfa"/><stop offset="1" stop-color="#e9f4f0"/>
+</linearGradient>
+<radialGradient id="glow"><stop offset="0" stop-color="rgba(11,143,126,0.14)"/><stop offset="1" stop-color="rgba(11,143,126,0)"/></radialGradient>
+</defs>
+<rect class="bg-grad" width="1280" height="400"/>
+<ellipse class="glow" cx="1050" cy="80" rx="340" ry="200" fill="url(#glow)"/>
+<ellipse class="glow" style="animation-delay:-9s" cx="180" cy="340" rx="300" ry="180" fill="url(#glow)"/>
+<g transform="translate(96 128) scale(2.6)">
+<path d="M12 0h38l-6 9H17z" fill="#0b8f7e"/>
+<path d="M9 14h28l-5 8H5z" fill="#0e8a76"/>
+<path d="M0 44L12 24h6L4 44z" fill="#0a1c1e"/>
+</g>
+<rect class="tick" x="72" y="50" width="2" height="20" fill="#0b8f7e"/>
+<text x="86" y="70" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="15" letter-spacing="3" fill="#55716c">NPM CREATE FROST-APP@LATEST MY-APP</text>
+<text x="292" y="238" font-family="'Space Grotesk','Segoe UI',system-ui,-apple-system,sans-serif" font-weight="600" font-size="92" letter-spacing="4" fill="#143638">FROST</text>
+<text x="296" y="286" font-family="'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace" font-size="21" fill="#0b8f7e">React rendering. Web-native runtime.</text>
+<text x="296" y="322" font-family="'Space Grotesk','Segoe UI',system-ui,-apple-system,sans-serif" font-size="16" fill="#6f9390">Explicit execution, visible boundaries, predictable hydration.</text>
+<circle class="dot" style="animation-delay:0s" cx="1130" cy="300" r="2.4" fill="#0b8f7e"/>
+<circle class="dot" style="animation-delay:0.9s" cx="1154" cy="300" r="2.4" fill="#0b8f7e"/>
+<circle class="dot" style="animation-delay:1.8s" cx="1178" cy="300" r="2.4" fill="#0b8f7e"/>
+<circle class="dot" style="animation-delay:2.7s" cx="1130" cy="326" r="2.4" fill="#0b8f7e"/>
+<circle class="dot" style="animation-delay:3.6s" cx="1154" cy="326" r="2.4" fill="#0b8f7e"/>
+<circle class="dot" style="animation-delay:4.5s" cx="1178" cy="326" r="2.4" fill="#0b8f7e"/>
+<circle class="dot" style="animation-delay:5.4s" cx="1130" cy="352" r="2.4" fill="#0b8f7e"/>
+<circle class="dot" style="animation-delay:6.3s" cx="1154" cy="352" r="2.4" fill="#0b8f7e"/>
+<circle class="dot" style="animation-delay:7.2s" cx="1178" cy="352" r="2.4" fill="#0b8f7e"/>
+<line x1="96" y1="356" x2="1184" y2="356" stroke="#d3e6e1" stroke-width="1"/>
+
+</svg>
