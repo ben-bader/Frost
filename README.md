@@ -14,7 +14,7 @@ Frost is a React full-stack framework built around explicit execution: server lo
   <a href="https://www.npmjs.com/package/@frost.js/core"><img alt="@frost.js/core npm" src="https://img.shields.io/npm/v/@frost.js/core?label=%40frost.js%2Fcore&color=0a1c1e&labelColor=0a1c1e"></a>
   <a href="https://github.com/ben-bader/Frost/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/ben-bader/Frost/ci.yml?label=CI&color=0a1c1e&labelColor=0a1c1e"></a>
   <img alt="MIT license" src="https://img.shields.io/badge/license-MIT-10e8c8?labelColor=0a1c1e">
-  <img alt="Node >= 20" src="https://img.shields.io/badge/node-%3E%3D20-10e8c8?labelColor=0a1c1e">
+  <img alt="Node 20+" src="https://img.shields.io/badge/node-%3E%3D20-10e8c8?labelColor=0a1c1e">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-native-10e8c8?labelColor=0a1c1e">
 </p>
 
