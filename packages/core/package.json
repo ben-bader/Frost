@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./cli-ui": {
+      "types": "./dist/cli-ui.d.ts",
+      "import": "./dist/cli-ui.js"
     }
   },
   "scripts": {

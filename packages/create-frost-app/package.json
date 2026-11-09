@@ -8,12 +8,13 @@
   },
   "files": [
     "bin.js",
+    "ui.mjs",
     "template",
     "template-minimal"
   ],
   "scripts": {
-    "test": "node ../../scripts/sync-template.mjs && vitest run",
-    "prepack": "node ../../scripts/sync-template.mjs"
+    "test": "node ../../scripts/sync-template.mjs && node ../../scripts/sync-cli-ui.mjs && vitest run",
+    "prepack": "node ../../scripts/sync-template.mjs && node ../../scripts/sync-cli-ui.mjs"
   },
   "license": "MIT",
   "author": "Frost contributors",

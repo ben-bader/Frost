@@ -58,6 +58,8 @@ export interface RequestHandlerOptions {
   logger?: FrostLogger;
   /** Log one line per request (method, path, status, ms). */
   logRequests?: boolean;
+  /** Dev hook: receives one entry per completed request (method, path, status, ms). */
+  onRequest?: (entry: { method: string; path: string; status: number; ms: number }) => void;
   /** Validate route contracts (params/search/loader/action/headers). */
   validateContracts?: boolean;
   /** URL prefix for createServerFn RPC (default "/_frost/fn"). */
@@ -100,6 +102,7 @@ export function createRequestHandler(options: RequestHandlerOptions) {
     routerEnabled,
     routerPrefetch = "intent",
     ssrStreaming,
+    onRequest,
   } = options;
 
   // The global not-found route (app/not-found.tsx or app/_404.tsx) is
@@ -686,7 +689,8 @@ export function createRequestHandler(options: RequestHandlerOptions) {
     return routeRequest();
   };
 
-  if (!logRequests || !logger) return handleRequest;
+  const shouldLogRequests = Boolean(logRequests && logger);
+  if (!shouldLogRequests && !onRequest) return handleRequest;
   return async (request: Request, contextOverrides?: Partial<FrostRequestContext>) => {
     const start = performance.now();
     const response = await handleRequest(request, contextOverrides);
@@ -696,12 +700,14 @@ export function createRequestHandler(options: RequestHandlerOptions) {
     } catch {
       // keep raw url
     }
-    logRequest(logger, {
+    const entry = {
       method: request.method,
       path,
       status: response.status,
       ms: Math.round(performance.now() - start),
-    });
+    };
+    if (onRequest) onRequest(entry);
+    if (shouldLogRequests && logger) logRequest(logger, entry);
     return response;
   };
 }

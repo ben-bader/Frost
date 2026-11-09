@@ -21,6 +21,17 @@ if (res.status !== 0) {
   failures.push(`sync-template --check failed:\n${(res.stderr || res.stdout || "").trim()}`);
 }
 
+// 3. packages/create-frost-app/ui.mjs must match the transpiled
+//    packages/core/src/cli-ui.ts canonical source.
+const uiRes = spawnSync(process.execPath, [path.join(root, "scripts", "sync-cli-ui.mjs"), "--check"], {
+  cwd: root,
+  encoding: "utf8",
+  windowsHide: true,
+});
+if (uiRes.status !== 0) {
+  failures.push(`sync-cli-ui --check failed:\n${(uiRes.stderr || uiRes.stdout || "").trim()}`);
+}
+
 // workspace versions
 const workspaceVersions = {};
 for (const dir of fs.readdirSync(path.join(root, "packages"))) {
