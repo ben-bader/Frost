@@ -1,0 +1,15 @@
+
+┃  ERROR  TypeError
+┃  Cannot read properties of undefined (reading 'toUpperCase')
+┃
+┃  code     FROST_E_LOADER
+┃  at       proj/src/app/hello/[name]/page.tsx:25:24
+┃  route    /hello/world
+┃  runtime  server
+┃
+┃    23 │  export async function loader({ params }) {
+┃    24 │    const name = params.name;
+┃  ❯ 25 │    return { title: name.toUpperCase() };
+┃       │                         ^
+┃    26 │  }
+

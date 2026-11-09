@@ -140,16 +140,16 @@ export function cliHeader(opts: {
   const arrow = mint(sym("arrow"));
   const label = (t: string) => dim(t.padEnd(9));
   if (lines.length) lines.push("");
-  if (r.local) lines.push(`${arrow}  ${label("Local")}  ${url(r.local)}`);
-  if (r.network) lines.push(`${arrow}  ${label("Network")}  ${url(r.network)}`);
+  if (r.local) lines.push(`${arrow}  ${label("Local")}${url(r.local)}`);
+  if (r.network) lines.push(`${arrow}  ${label("Network")}${url(r.network)}`);
   if (r.pages !== undefined || r.api !== undefined) {
     const parts: string[] = [];
     if (r.pages !== undefined) parts.push(`${r.pages} page${r.pages === 1 ? "" : "s"}`);
     if (r.api !== undefined) parts.push(`${r.api} api`);
-    lines.push(`${arrow}  ${label("Routes")}  ${white(parts.join(" · "))}`);
+    lines.push(`${arrow}  ${label("Routes")}${white(parts.join(" · "))}`);
   }
   if (r.envFiles && r.envFiles.length > 0) {
-    lines.push(`${arrow}  ${label("Env")}  ${dim(r.envFiles.join(", "))}`);
+    lines.push(`${arrow}  ${label("Env")}${dim(r.envFiles.join(", "))}`);
   }
   if (r.watching) {
     lines.push(`${arrow}  ${dim("Watching for changes")}`);

@@ -1,0 +1,24 @@
+  ▰▰▰▰▰
+ ▰▰▰▰       Frost
+▰▰          create-frost-app 0.1.1
+
+┌  Create a new Frost app
+│
+◇  Project name     my-app
+◇  Template         starter
+◇  Package manager  npm (detected)
+│
+◇  📁  Created starter in ./my-app
+◇  🌱  Initialized git repository
+◇  📦  Installed dependencies with npm  8.4s
+│
+└  🚀  Your app is ready
+
+╭─ Next steps ──────────────────────────────────╮
+│                                               │
+│  cd my-app                                    │
+│  npm run dev      start the dev server        │
+│  npm run build    production build            │
+│  npm start        serve the production build  │
+│                                               │
+╰───────────────────────────────────────────────╯
