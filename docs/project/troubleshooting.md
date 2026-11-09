@@ -49,6 +49,19 @@ npm staged publishing can leave a `0.0.0-stage` placeholder. Check `npm stage li
 **`npm whoami` → E401 mid-release**
 Token expired or 2FA-restricted. Run `npm login` again.
 
+## Terminal output
+
+**Colors/Unicode look wrong in your terminal**
+The CLI auto-detects color depth and Unicode support. Force behavior with
+`--no-color` / `NO_COLOR` (no ANSI), `FORCE_COLOR=1|2|3` (16/256/truecolor),
+`--no-emoji` / `FROST_NO_EMOJI=1`, or `--ascii` / `FROST_ASCII=1` (ASCII
+symbols — also auto-enabled on legacy Windows consoles, `TERM=dumb`, and
+non-UTF-8 locales). Piped/CI output never animates: each step prints once
+as a finished line. Preview all variants with `pnpm cli:preview`.
+
+**Error block shows no stack trace**
+Stacks are hidden by default. Re-run with `--verbose` or `FROST_DEBUG=1`.
+
 ## Framework
 
 **Overlay stuck after fixing the error**

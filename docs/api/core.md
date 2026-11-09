@@ -35,6 +35,20 @@ npm install @frost.js/core
 | `parseJson`, `parseFormData`, `formDataToObject`, `searchParamsToObject` | fns | Body parsing helpers |
 | `StandardSchemaV1`, `isStandardSchema` | types/fn | Standard Schema interop |
 
+### Terminal UI (`@frost.js/core/cli-ui` subpath)
+
+Shared CLI presentation — also transpiled into `create-frost-app`'s
+dependency-free `ui.mjs`. See [CLI reference → Terminal output](../reference/cli.md#terminal-output).
+
+| Group | Exports |
+|---|---|
+| Config | `detectUiConfig`, `configureUi`, `getUi` |
+| Palette | `mint`, `teal`, `url`, `white`, `bold`, `dim`, `amber`, `red`, `errorBadge`, `warnBadge` |
+| Symbols/width | `sym`, `emoji`, `stripAnsi`, `displayWidth`, `padEnd`, `padStart`, `ellipsize` |
+| Layout | `brandHeader`, `railTitle`, `railBlank`, `railRow`, `railSeparator`, `railDone`, `railField`, `roundedBox` |
+| Spinner/requests | `startSpinner`, `isAssetPath`, `formatRequestLine`, `requestLineJson`, `printRequestLine` |
+| Errors/header | `cliHeader`, `printCliHeader`, `formatErrorBlock`, `printErrorBlock`, `warnLine` |
+
 ## Related
 
 - [Configuration](../reference/configuration.md) · [Error codes](../reference/error-codes.md) · [API routes](../guides/api-routes.md)
