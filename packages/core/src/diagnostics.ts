@@ -1,3 +1,5 @@
+import { formatErrorBlock } from "./cli-ui.js";
+
 /**
  * Shared runtime error report — the single object that feeds both the
  * terminal diagnostic block and the browser error overlay in dev.
@@ -103,43 +105,20 @@ export function createErrorReport(
   };
 }
 
-/** Terminal rendering: solid badges, aligned fields, optional code frame. */
-export function formatErrorReportTerminal(report: FrostErrorReport): string {
-  const badge =
-    report.severity === "warning"
-      ? "\x1b[43m\x1b[30m WARN \x1b[0m"
-      : "\x1b[41m\x1b[37m ERROR \x1b[0m";
-
-  const out: string[] = [];
-  out.push(badge);
-  out.push(` ${report.name}: ${report.message}`);
-  if (report.code) out.push(`  code  ${report.code}`);
-  if (report.location) out.push(`  at    ${report.location}`);
-  if (report.route) out.push(`  route ${report.route}`);
-  if (report.runtime) out.push(`  runtime ${report.runtime}`);
-
-  if (report.frame && report.frame.length > 0) {
-    out.push("");
-    const width = Math.max(...report.frame.map((l) => String(l.line).length));
-    for (const l of report.frame) {
-      const isMarked = l.markerColumn !== undefined;
-      const num = String(l.line).padStart(width);
-      const gutter = isMarked ? "\x1b[41m\x1b[37m" : "\x1b[90m";
-      const text = isMarked ? "\x1b[41m\x1b[37m" : "";
-      out.push(`  ${gutter}${num} |\x1b[0m ${text}${l.text}\x1b[0m`);
-      if (isMarked) {
-        const caret =
-          " ".repeat(width + 4) + " ".repeat(Math.max(0, (l.markerColumn ?? 1) - 1)) + "^";
-        out.push(`  \x1b[41m\x1b[37m${caret}\x1b[0m`);
-      }
-    }
-  }
-
-  if (report.hint) {
-    out.push("");
-    out.push(`  hint  ${report.hint}`);
-  }
-  return out.join("\n");
+/**
+ * Terminal rendering: delegated to the shared cli-ui error block
+ * (rail + badges + optional code frame). `rootDir` relativizes `at`
+ * paths to `<project-folder>/src/...`; stacks print only with
+ * --verbose or FROST_DEBUG.
+ */
+export function formatErrorReportTerminal(
+  report: FrostErrorReport,
+  opts: { rootDir?: string; verbose?: boolean } = {},
+): string {
+  // cli-ui's block ends with a blank line; callers print via console.error
+  // which appends its own newline — drop one trailing newline so exactly
+  // one blank line follows the block.
+  return formatErrorBlock(report, opts).replace(/\n$/, "");
 }
 
 /**

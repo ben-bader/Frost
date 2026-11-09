@@ -53,7 +53,7 @@ describe("createErrorReport", () => {
 });
 
 describe("formatErrorReportTerminal", () => {
-  it("renders an ERROR badge, fields, and hint", () => {
+  it("renders an ERROR badge and fields", () => {
     const report = createErrorReport(new Error("nope"), {
       runtime: "server",
       code: FROST_ERROR_CODES.API,
@@ -61,9 +61,12 @@ describe("formatErrorReportTerminal", () => {
     });
     const out = formatErrorReportTerminal(report);
     expect(out).toContain("ERROR");
-    expect(out).toContain("Error: nope");
+    expect(out).toContain("Error");
+    expect(out).toContain("nope");
     expect(out).toContain("FROST_E_API");
-    expect(out).toContain("check the handler");
+    // The cli-ui block intentionally omits the hint row (spec: only
+    // code/at/route/runtime rows are printed).
+    expect(out).not.toContain("check the handler");
   });
 
   it("renders a WARN badge for warnings", () => {

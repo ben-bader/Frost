@@ -148,7 +148,7 @@ export function frost(
         route: "/",
         code: "FROST_E_CONFIG",
       });
-      console.error(formatErrorReportTerminal(report));
+      console.error(formatErrorReportTerminal(report, { rootDir }));
       server.ws.send({ type: "custom", event: "frost:error", data: report });
     }
   };
@@ -443,7 +443,7 @@ export function frost(
               // (formatted block) and the browser overlay over the same
               // frost:* ws protocol.
               onError: (report: FrostErrorReport) => {
-                console.error(formatErrorReportTerminal(report));
+                console.error(formatErrorReportTerminal(report, { rootDir }));
                 sendFrostEvent("frost:error", report);
               },
               checkDeterminism: config.dev.checkDeterminism,
