@@ -98,9 +98,21 @@ export function detectUiConfig(overrides = {}) {
     const stream = process.stdout;
     const interactive = Boolean(stream.isTTY);
     const depth = typeof stream.getColorDepth === "function" ? stream.getColorDepth() : 1;
+    // FORCE_COLOR levels follow Node's convention: 1 = 16 colors,
+    // 2 = 256 colors, 3 = truecolor; bare "true"/"always" => 256.
+    let forcedDepth = 0;
+    if (forceColor) {
+        const raw = process.env.FORCE_COLOR ?? "";
+        const n = Number.parseInt(raw, 10);
+        forcedDepth = Number.isFinite(n) && n > 0 ? n : 2;
+    }
     let color = "none";
-    if (forceColor)
-        color = depth >= 24 ? "true" : "256";
+    if (forcedDepth >= 3)
+        color = "true";
+    else if (forcedDepth === 2)
+        color = "256";
+    else if (forcedDepth === 1)
+        color = "16";
     else if (!noColor && interactive) {
         if (depth >= 24)
             color = "true";
@@ -222,7 +234,9 @@ export function sym(name) {
     return cfg.unicode ? SYM[name] : SYM_ASCII[name];
 }
 export function emoji(text) {
-    return getUi().emoji ? text : "";
+    const cfg = getUi();
+    // ASCII fallback drops emoji too (legacy consoles can't render them).
+    return cfg.emoji && cfg.unicode ? text : "";
 }
 // ---------- width / truncation ----------
 const ANSI_RE = /\x1b\[[0-9;]*m/g;
@@ -299,7 +313,7 @@ export function brandHeader(row2, row3) {
     const r1 = "  " + mint(block.repeat(5));
     const r2pre = " " + mint(block.repeat(4));
     const r2text = row2.map(tone).join("");
-    const r3pre = mint(block.repeat(2));
+    const r3pre = teal(block.repeat(2));
     const r3text = row3.map(tone).join("");
     return [r1, padEnd(r2pre, 12) + r2text, padEnd(r3pre, 12) + r3text];
 }
@@ -319,13 +333,13 @@ export function railSeparator() {
 export function railDone(text) {
     return mint(sym("railEnd")) + "  " + mint(text);
 }
-/** Config row inside the card: dim label padded to 15 + value segments. */
+/** Config row inside the card: ◇ marker + dim label padded to 15 + value. */
 export function railField(label, value) {
     const labelText = padEnd(dim(label), 15) + "  ";
     const val = value
         .map((v) => (v.tone === "dim" ? dim(v.text) : v.tone === "bold" ? white(v.text) : v.text))
         .join("");
-    return labelText + val;
+    return mint(sym("diamond")) + "  " + labelText + val;
 }
 function segWidth(segs) {
     return segs.reduce((n, s) => n + displayWidth(s.text), 0);

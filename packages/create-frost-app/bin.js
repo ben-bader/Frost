@@ -2,17 +2,46 @@
 // create-frost-app — scaffold a new Frost application.
 // Usage: npm create frost-app@latest [name] [--template starter|minimal]
 //        [--install] [--no-git] [--pm pnpm|npm|yarn|bun]
+//        [--no-color] [--no-emoji] [--ascii]
 import { spawnSync } from "node:child_process";
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import * as readline from "node:readline";
 import { fileURLToPath } from "node:url";
+import {
+  brandHeader,
+  configureUi,
+  detectUiConfig,
+  dim,
+  emoji,
+  mint,
+  padEnd,
+  railBlank,
+  railDone,
+  railField,
+  railTitle,
+  red,
+  roundedBox,
+  startSpinner,
+  sym,
+  white,
+} from "./ui.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TEMPLATES = ["starter", "minimal"];
 const VERSION = JSON.parse(
   fs.readFileSync(path.join(__dirname, "package.json"), "utf8"),
 ).version;
+
+configureUi(detectUiConfig());
+
+const PM_RUN = {
+  npm: { dev: "npm run dev", build: "npm run build", start: "npm start", install: "npm install" },
+  pnpm: { dev: "pnpm dev", build: "pnpm build", start: "pnpm start", install: "pnpm install" },
+  yarn: { dev: "yarn dev", build: "yarn build", start: "yarn start", install: "yarn install" },
+  bun: { dev: "bun run dev", build: "bun run build", start: "bun run start", install: "bun install" },
+};
 
 function fail(message) {
   console.error(`\n  Error: ${message}\n`);
@@ -34,6 +63,9 @@ Options:
   --install             Run the package manager install (default: yes)
   --no-install          Skip dependency installation
   --no-git              Skip git init
+  --no-color            Disable ANSI colors
+  --no-emoji            Disable emoji
+  --ascii               Use ASCII symbols instead of Unicode
   --help                Show this help
   --version             Show version`);
 }
@@ -55,15 +87,16 @@ function detectPackageManager() {
   return "npm";
 }
 
-function prompt(question, fallback) {
-  return new Promise((resolve) => {
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    rl.question(`${question} (${fallback}): `, (answer) => {
-      rl.close();
-      const value = answer.trim();
-      resolve(value || fallback);
-    });
+/** Rail-styled prompt: "◆  Project name" with dim default. */
+async function promptField(label, fallback) {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const promptText =
+    mint(sym("prompt")) + "  " + dim(label) + "  " + dim(`(${fallback})`) + " ";
+  const answer = await new Promise((resolve) => {
+    rl.question(promptText, resolve);
   });
+  rl.close();
+  return answer.trim() || fallback;
 }
 
 function copyDir(src, dest) {
@@ -73,6 +106,21 @@ function copyDir(src, dest) {
     const d = path.join(dest, entry.name);
     if (entry.isDirectory()) copyDir(s, d);
     else fs.copyFileSync(s, d);
+  }
+}
+
+function runCaptured(cmd, args, cwd, logFile) {
+  const isWin = process.platform === "win32";
+  const out = fs.openSync(logFile, "w");
+  try {
+    const res = spawnSync(isWin ? `${cmd}.cmd` : cmd, args, {
+      cwd,
+      stdio: ["ignore", out, out],
+      windowsHide: true,
+    });
+    return res.status === 0;
+  } finally {
+    fs.closeSync(out);
   }
 }
 
@@ -124,11 +172,30 @@ function replacePlaceholder(dir, appName) {
   walk(dir);
 }
 
+/** Step marker + optional emoji prefix shared by spinner and final lines. */
+function stepPrefix(e) {
+  return mint(sym("diamond")) + "  " + (e && emoji(e) ? e + "  " : "");
+}
+
+/**
+ * Run fn() under a spinner; the finished line replaces it in place.
+ * workingText is shown while running; doneText(result) renders the result.
+ */
+function runStep(e, workingText, doneText, fn) {
+  const spinner = startSpinner(
+    (frame) => frame + "  " + (e && emoji(e) ? e + "  " : "") + workingText,
+  );
+  const result = fn();
+  spinner.stop(stepPrefix(e) + doneText(result));
+  return result;
+}
+
 async function main() {
   const args = process.argv.slice(2);
   let name = "";
   let template = "starter";
   let pm = "";
+  let pmFromFlag = false;
   let install = true;
   let git = true;
 
@@ -149,12 +216,15 @@ async function main() {
       template = next();
     } else if (a === "--pm") {
       pm = next();
+      pmFromFlag = true;
     } else if (a === "--install") {
       install = true;
     } else if (a === "--no-install") {
       install = false;
     } else if (a === "--no-git") {
       git = false;
+    } else if (["--no-color", "--no-emoji", "--ascii"].includes(a)) {
+      // handled by detectUiConfig via process.argv
     } else if (a.startsWith("-")) {
       fail(`Unknown option: ${a} (try --help)`);
     } else if (!name) {
@@ -168,8 +238,14 @@ async function main() {
     fail(`Unknown template "${template}". Available: ${TEMPLATES.join(", ")}`);
   }
 
+  // Ctrl+C during scaffolding: dim cancelled line, exit 130.
+  process.on("SIGINT", () => {
+    process.stdout.write(`\n${dim(sym("railEnd"))}  ${dim("Cancelled")}\n`);
+    process.exit(130);
+  });
+
   if (!name) {
-    name = await prompt("Project name", "my-frost-app");
+    name = await promptField("Project name", "my-frost-app");
   }
   if (!isValidName(name)) {
     fail(
@@ -197,51 +273,132 @@ async function main() {
     fail(`Template "${template}" not found in this installation.`);
   }
 
-  copyDir(src, targetDir);
+  // ---- header ----
+  console.log(brandHeader([{ text: "Frost", tone: "bold" }], [
+    { text: `create-frost-app ${VERSION}`, tone: "dim" },
+  ]).join("\n"));
+  console.log();
 
-  // npm strips dotfiles from tarballs — templates ship them underscored.
-  for (const [from, to] of [
-    ["_gitignore", ".gitignore"],
-    ["_npmrc", ".npmrc"],
-  ]) {
-    const f = path.join(targetDir, from);
-    if (fs.existsSync(f)) fs.renameSync(f, path.join(targetDir, to));
-  }
+  // ---- summary card (config rows) ----
+  console.log(railTitle("Create a new Frost app"));
+  console.log(railBlank());
+  console.log(
+    railField("Project name", [{ text: name, tone: "bold" }]),
+  );
+  console.log(railField("Template", [{ text: template, tone: "bold" }]));
+  const pmValue = [{ text: pm, tone: "bold" }];
+  if (!pmFromFlag) pmValue.push({ text: " (detected)", tone: "dim" });
+  console.log(railField("Package manager", pmValue));
+  console.log(railBlank());
 
-  // Set the package name and replace placeholders everywhere.
-  const pkgPath = path.join(targetDir, "package.json");
-  const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
-  pkg.name = name;
-  fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
-  replacePlaceholder(targetDir, name);
-
-  console.log(`\n  Created a Frost ${template} app in ./${name}`);
+  // ---- steps ----
+  runStep(
+    "📁",
+    dim("Copying template..."),
+    () =>
+      `Created ${white(template)} ${dim("in")} ${white("./" + name)}`,
+    () => {
+      copyDir(src, targetDir);
+      // npm strips dotfiles from tarballs — templates ship them underscored.
+      for (const [from, to] of [
+        ["_gitignore", ".gitignore"],
+        ["_npmrc", ".npmrc"],
+      ]) {
+        const f = path.join(targetDir, from);
+        if (fs.existsSync(f)) fs.renameSync(f, path.join(targetDir, to));
+      }
+      const pkgPath = path.join(targetDir, "package.json");
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
+      pkg.name = name;
+      fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
+      replacePlaceholder(targetDir, name);
+      return true;
+    },
+  );
 
   const parent = path.dirname(targetDir);
   if (git && commandExists("git") && !insideGitRepo(parent)) {
-    if (run("git", ["init"], targetDir)) {
-      console.log("  Initialized git repository");
-    } else {
-      console.log("  (git init skipped — continuing anyway)");
-    }
+    runStep(
+      "🌱",
+      dim("Initializing git repository..."),
+      (ok) =>
+        ok
+          ? "Initialized git repository"
+          : dim("(git init skipped — continuing anyway)"),
+      () => run("git", ["init"], targetDir),
+    );
   }
 
+  let installOk = true;
   if (install) {
-    console.log(`\n  Installing dependencies with ${pm}...`);
-    if (!run(pm, ["install"], targetDir)) {
-      console.log(`  ${pm} install failed — run it manually in ./${name}`);
+    const logFile = path.join(os.tmpdir(), `frost-install-${process.pid}.log`);
+    const t0 = Date.now();
+    const spinner = startSpinner((frame, elapsed) =>
+      frame +
+      "  " +
+      (emoji("📦") ? "📦  " : "") +
+      `Installing dependencies with ${pm}  ` +
+      dim(`${Math.floor(elapsed)}s`),
+    );
+    const ok = runCaptured(pm, ["install"], targetDir, logFile);
+    const secs = ((Date.now() - t0) / 1000).toFixed(1).replace(/\.0$/, "");
+    if (ok) {
+      spinner.stop(
+        stepPrefix("📦") +
+          `Installed dependencies with ${pm}  ${dim(`${secs}s`)}`,
+      );
+    } else {
+      spinner.stop(
+        stepPrefix("📦") + red(`Failed to install dependencies with ${pm}`),
+      );
+      try {
+        const tail = fs
+          .readFileSync(logFile, "utf8")
+          .split(/\r?\n/)
+          .filter((l) => l.length > 0)
+          .slice(-20);
+        for (const l of tail) console.log(dim(l));
+      } catch {
+        // log unreadable — skip tail
+      }
+      console.log(dim(`Retry manually: cd ./${name} && ${PM_RUN[pm].install}`));
+      installOk = false;
     }
+    try {
+      fs.unlinkSync(logFile);
+    } catch {
+      // best effort
+    }
+  } else {
+    console.log(stepPrefix("📦") + dim("Skipped install"));
   }
 
-  console.log(`
-  Done! Next steps:
+  console.log(railBlank());
+  console.log(railDone((emoji("🚀") ? "🚀  " : "") + "Your app is ready"));
+  console.log();
 
-    cd ${name}
-    ${pm} install${install ? "   # already done" : ""}
-    ${pm} run dev      # start the dev server (http://localhost:3000)
-    ${pm} run build    # production build
-    ${pm} start        # serve the production build
-`);
+  // ---- next steps ----
+  const cmds = PM_RUN[pm];
+  const cmdRow = (cmd, desc) => ({
+    segs: [
+      { text: padEnd(cmd, 17), tone: "bold" },
+      { text: desc, tone: "dim" },
+    ],
+  });
+  const rows = [];
+  if (name !== ".") rows.push({ segs: [{ text: `cd ${name}`, tone: "bold" }] });
+  if (!install || !installOk) {
+    rows.push(cmdRow(cmds.install, "install dependencies"));
+  }
+  rows.push(
+    cmdRow(cmds.dev, "start the dev server"),
+    cmdRow(cmds.build, "production build"),
+    cmdRow(cmds.start, "serve the production build"),
+  );
+  for (const line of roundedBox("Next steps", rows)) console.log(line);
+  console.log();
+
+  if (!installOk) process.exitCode = 1;
 }
 
 main().catch((err) => {
