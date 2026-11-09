@@ -2,22 +2,41 @@
 // Generates every docs/assets SVG deterministically from source.
 // Run: pnpm docs:assets   (node scripts/build-readme-assets.mjs)
 //
-// Rules enforced by scripts/check-assets.mjs:
-//  - no script/foreignObject/external refs/raster images
-//  - animation via CSS @keyframes only, transform+opacity only,
-//    8-20s loops, wrapped in prefers-reduced-motion
-//  - <150KB per file, text uses system stacks (SVG-as-img can't load
-//    webfonts reliably — Space Grotesk/Space Mono are listed first so
-//    installs that have them get the brand face)
+// PROVENANCE RULE: nothing visual or textual is invented.
+//  - Logo: the real brand PNGs from examples/starter/public are embedded
+//    byte-for-byte as base64 <image> elements (the project ships no SVG logo).
+//  - All visible strings come from real repo files or the captured dev-server
+//    run recorded in audit-output/overlay-capture.json + OVERLAY_SPEC.md.
+//  - Feature icons are the real lucide-react icon data used by the starter.
+//  - Machine-specific values (paths, timings) are anonymized to stable
+//    placeholders; format is identical to real output.
+// scripts/check-assets.mjs enforces the GitHub-rendering rules and that every
+// embedded raster hash-matches a file in examples/starter/public.
 import fs from "node:fs";
 import path from "node:path";
+import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = path.join(root, "docs", "assets");
+const PUBLIC_DIR = path.join(root, "examples", "starter", "public"); // provenance source for logos
 fs.mkdirSync(OUT, { recursive: true });
 
-// ---------- palette ----------
+// ---------- real brand rasters ----------
+// The project ships only PNG logos (examples/starter/public). They are
+// embedded as <image> data URIs. Display size is small (<= ~190px tall),
+// so scripts/logo-src/ holds Lanczos-downscaled derivatives (2x display
+// size) whose provenance is recorded in scripts/logo-src/manifest.json —
+// check-assets.mjs verifies every embedded raster hash against it.
+const LOGO_SRC = path.join(root, "scripts", "logo-src");
+function pngDataUri(name) {
+  const buf = fs.readFileSync(path.join(LOGO_SRC, name));
+  return `data:image/png;base64,${buf.toString("base64")}`;
+}
+const LOGO_MARK = pngDataUri("frost-mark.png"); // 256x205 derivative of 334x267 source
+const LOGO_WORDMARK = pngDataUri("frost-wordmark.png"); // 640x118 derivative of 755x139 source
+
+// ---------- palette (brand colors from the task + starter tokens) ----------
 const DARK = {
   bgTop: "#0a1c1e",
   bgBottom: "#143638",
@@ -25,7 +44,6 @@ const DARK = {
   line: "#2c4d4b",
   mint: "#10e8c8",
   mintSoft: "#35f2d6",
-  mintDeep: "#0fbfa5",
   tealDeep: "#0b8f7e",
   inkHi: "#f2f7f5",
   inkBody: "#b9c9c6",
@@ -41,9 +59,8 @@ const LIGHT = {
   bgBottom: "#e9f4f0",
   panel: "#ffffff",
   line: "#d3e6e1",
-  mint: "#0b8f7e", // darker mint for contrast on light bg
+  mint: "#0b8f7e",
   mintSoft: "#0e8a76",
-  mintDeep: "#0a6f61",
   tealDeep: "#0a1c1e",
   inkHi: "#143638",
   inkBody: "#3c5854",
@@ -56,7 +73,7 @@ const LIGHT = {
 };
 
 const SANS = "'Space Grotesk','Segoe UI',system-ui,-apple-system,sans-serif";
-const MONO = "'Space Mono',ui-monospace,'Cascadia Mono',Consolas,monospace";
+const MONO = "ui-monospace,SFMono-Regular,Menlo,Consolas,monospace"; // real overlay font stack
 
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -69,67 +86,104 @@ ${body}
 `;
 }
 
-// ---------- shared bits ----------
-function logoMark(x, y, s, c1, c2, c3) {
-  return `<g transform="translate(${x} ${y}) scale(${s})">
-<path d="M12 0h38l-6 9H17z" fill="${c1}"/>
-<path d="M9 14h28l-5 8H5z" fill="${c2}"/>
-<path d="M0 44L12 24h6L4 44z" fill="${c3}"/>
-</g>`;
-}
-
 const REDUCED = `@media (prefers-reduced-motion: reduce){*{animation:none !important}}`;
 
-// ---------- 1. banner ----------
+// ---------- real strings (each traces to a repo file or capture) ----------
+// page.tsx hero / metadata
+const TAGLINE = "React rendering. Web-native runtime."; // src/app/page.tsx h1 + metadata.title
+const HERO_SUB =
+  "Frost keeps execution explicit: server loaders, client hydration, route contracts, and runtime boundaries stay visible, testable, and predictable."; // src/app/page.tsx paragraph + metadata.description
+const KICKER_CMD = "npm create frost-app@latest my-app"; // README quick start / create-frost-app usage
+// create-frost-app bin.js real output
+const SCAFFOLD_LINES = [
+  "  Created a Frost starter app in ./my-app",
+  "  Initialized git repository",
+  "",
+  "  Installing dependencies with npm...",
+  "",
+  "  Done! Next steps:",
+  "",
+  "    cd my-app",
+  "    npm install   # already done",
+  "    npm run dev      # start the dev server (http://localhost:3000)",
+  "    npm run build    # production build",
+  "    npm start        # serve the production build",
+];
+// dev server ready line (real, incl. snowflake)
+const READY_LINE = "❄️  Frost development server running at http://localhost:3000/";
+// npm install summary — format real, count/time anonymized
+const NPM_ADDED = "added 95 packages in 8s";
+// captured loader error (audit-output/overlay-capture.json), paths anonymized
+const ERR_NAME = "TypeError";
+const ERR_MSG = "Cannot read properties of undefined (reading 'toUpperCase')";
+const ERR_CODE = "FROST_E_LOADER";
+const ERR_FILE_ANON = "my-app/src/app/hello/[name]/page.tsx";
+const ERR_LINE = 25;
+const ERR_COL = 24;
+const ERR_ROUTE = "/hello/world";
+const ERR_RUNTIME = "server";
+const ERR_TIME = "9:17:23 PM"; // toLocaleTimeString of captured timestamp
+
+// ---------- shared logo lockup (real PNGs, Header proportions) ----------
+// Header: mark h-8 w-[37px], wordmark h-[22px] w-[118px], gap-3 (12px)
+function logoLockup(cx, y, scale = 1, darkPanel = false) {
+  // mark 334x267 shown at 37x32 -> use ratio w/h = 37/32; wordmark 755x139 at 118x22
+  const mh = 32 * scale, mw = mh * (37 / 32);
+  const wh = 22 * scale, ww = wh * (118 / 22);
+  const gap = 12 * scale;
+  const total = mw + gap + ww;
+  const x0 = cx - total / 2;
+  const panelPad = 14 * scale;
+  const panel = darkPanel
+    ? `<rect x="${x0 - panelPad}" y="${y - panelPad}" width="${total + panelPad * 2}" height="${Math.max(mh, wh) + panelPad * 2}" rx="10" fill="#0a1c1e"/>`
+    : "";
+  return `${panel}<image href="${LOGO_MARK}" x="${x0}" y="${y}" width="${mw}" height="${mh}" preserveAspectRatio="xMidYMid meet"/>
+<image href="${LOGO_WORDMARK}" x="${x0 + mw + gap}" y="${y + (mh - wh) / 2}" width="${ww}" height="${wh}" preserveAspectRatio="xMidYMid meet"/>`;
+}
+
+// ---------- 1. banner (1280x400) ----------
 function banner(t) {
   const w = 1280, h = 400;
-  const mintGlow = t === "dark" ? "rgba(16,232,200,0.16)" : "rgba(11,143,126,0.14)";
+  const light = t === LIGHT;
   const style = `
 .bg-grad{fill:url(#bg)}
 .glow{animation:drift 18s ease-in-out infinite alternate}
 @keyframes drift{from{transform:translate(0,0)}to{transform:translate(60px,-30px)}}
 .tick{animation:tickfade 1.2s ease-out .3s both}
 @keyframes tickfade{from{opacity:0}to{opacity:1}}
-.dot{animation:dotseq 12s ease-in-out infinite}
-@keyframes dotseq{0%,100%{opacity:.15}12%{opacity:.9}24%{opacity:.15}}
 ${REDUCED}`;
-  const dots = [0, 1, 2].map((r) =>
-    [0, 1, 2].map((c) =>
-      `<circle class="dot" style="animation-delay:${(r * 3 + c) * 0.9}s" cx="${1130 + c * 24}" cy="${300 + r * 26}" r="2.4" fill="${t.mint}"/>`,
-    ).join("\n"),
-  ).join("\n");
+  const atmo = light
+    ? `<ellipse cx="240" cy="60" rx="420" ry="240" fill="url(#glow)"/>`
+    : `<ellipse cx="240" cy="60" rx="420" ry="240" fill="url(#glow)"/>
+<ellipse cx="1120" cy="360" rx="380" ry="220" fill="url(#glow2)"/>`;
   const body = `
 <defs>
 <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
 <stop offset="0" stop-color="${t.bgTop}"/><stop offset="1" stop-color="${t.bgBottom}"/>
 </linearGradient>
-<radialGradient id="glow"><stop offset="0" stop-color="${mintGlow}"/><stop offset="1" stop-color="${mintGlow.replace(/[\d.]+\)$/, "0)")}"/></radialGradient>
+<radialGradient id="glow"><stop offset="0" stop-color="${light ? "rgba(54,114,114,0.30)" : "rgba(54,114,114,0.45)"}"/><stop offset="1" stop-color="${light ? "rgba(54,114,114,0)" : "rgba(54,114,114,0)"}"/></radialGradient>
+<radialGradient id="glow2"><stop offset="0" stop-color="rgba(42,90,90,0.35)"/><stop offset="1" stop-color="rgba(42,90,90,0)"/></radialGradient>
 </defs>
 <rect class="bg-grad" width="${w}" height="${h}"/>
-<ellipse class="glow" cx="1050" cy="80" rx="340" ry="200" fill="url(#glow)"/>
-<ellipse class="glow" style="animation-delay:-9s" cx="180" cy="340" rx="300" ry="180" fill="url(#glow)"/>
-${logoMark(96, 128, 2.6, t.mint, t.mintSoft, t.tealDeep)}
-<rect class="tick" x="72" y="50" width="2" height="20" fill="${t.mint}"/>
-<text x="86" y="70" font-family="${MONO}" font-size="15" letter-spacing="3" fill="${t.inkLo}">NPM CREATE FROST-APP@LATEST MY-APP</text>
-<text x="292" y="238" font-family="${SANS}" font-weight="600" font-size="92" letter-spacing="4" fill="${t.inkHi}">FROST</text>
-<text x="296" y="286" font-family="${MONO}" font-size="21" fill="${t.mint}">React rendering. Web-native runtime.</text>
-<text x="296" y="322" font-family="${SANS}" font-size="16" fill="${t.inkDim}">Explicit execution, visible boundaries, predictable hydration.</text>
-${dots}
-<line x1="96" y1="356" x2="1184" y2="356" stroke="${t.line}" stroke-width="1"/>
+${atmo}
+${logoLockup(w / 2, 44, 1.5, light)}
+<rect class="tick" x="${w / 2 - 1}" y="104" width="2" height="20" fill="${t.mint}"/>
+<text x="${w / 2}" y="146" text-anchor="middle" font-family="${MONO}" font-size="15" letter-spacing="3" fill="${t.inkLo}">${esc(KICKER_CMD.toUpperCase())}</text>
+<text x="${w / 2}" y="238" text-anchor="middle" font-family="${SANS}" font-weight="500" font-size="76" letter-spacing="-1" fill="${t.inkHi}">${esc(TAGLINE)}</text>
+<text x="${w / 2}" y="282" text-anchor="middle" font-family="${SANS}" font-size="17" fill="${t.inkBody}">${esc(HERO_SUB)}</text>
+<line x1="240" y1="330" x2="1040" y2="330" stroke="${t.line}" stroke-width="1"/>
 `;
-  return svgWrap({ w, h, title: "Frost — React rendering. Web-native runtime.", body, style });
+  return svgWrap({ w, h, title: `${TAGLINE} — ${KICKER_CMD}`, body, style });
 }
 
-// ---------- 2. terminal demo ----------
-// Line model: [text runs]. Colors: cmd (inkHi bold), dim, mint, red badge, orange.
+// ---------- 2. terminal demo (real captured output) ----------
 function termLine(x, y, runs, cls = "") {
-  // runs: [[text, className]]
   let cx = x;
   const tspans = runs
     .map(([txt, c]) => {
-      const w = txt.length * 9.0; // advance for 15px mono (~0.6em)
+      const wch = txt.length * 9.0;
       const out = `<tspan class="${c}" x="${cx}">${esc(txt)}</tspan>`;
-      cx += w;
+      cx += wch;
       return out;
     })
     .join("");
@@ -143,47 +197,32 @@ function badge(x, y, label, bg, fg) {
 }
 
 function terminal(t) {
-  const w = 860, h = 700, lh = 23, x0 = 28, y0 = 56;
-  // Build the script of lines (each = array of runs or special)
+  const w = 860, lh = 23, x0 = 28, y0 = 56;
   const L = [];
   const cmd = (s) => L.push([["$ ", "prompt"], [s, "cmd"]]);
   const out = (s, c = "dim") => L.push([[s, c]]);
   const blank = () => L.push(null);
 
-  cmd("npm create frost-app@latest my-app");
-  out("  Created a Frost starter app in ./my-app", "dim");
-  out("  Initialized git repository", "dim");
-  out("  Done! Next steps:", "dim");
-  out("    cd my-app", "dim");
-  cmd("cd my-app && npm install");
-  out("added 87 packages in 4s", "dim");
-  cmd("npm run dev");
+  cmd(KICKER_CMD);
+  for (const l of SCAFFOLD_LINES) (l ? out(l) : blank());
+  cmd("cd my-app && npm run dev");
   blank();
-  out("  Frost development server running at http://localhost:3000/", "mint");
-  out("  GET /playground  loader threw — see below", "dim");
+  out(READY_LINE, "mint");
   blank();
-  // ERROR block (real formatErrorReportTerminal shape)
-  L.push({ badge: [" ERROR ", DARK.danger, "#fff"] });
-  L.push([[" Error: Cannot read properties of undefined (reading 'nav')", "errname"]]);
-  L.push([["  code  FROST_E_LOADER", "dim"]]);
-  L.push([["  at    src/app/playground/page.tsx:42:11", "dim"]]);
-  L.push([["  route /playground", "dim"]]);
-  L.push([["  runtime server", "dim"]]);
-  blank();
-  L.push([["  40 | export const loader = async () => {", "gutter"]]);
-  L.push([["  41 |   const res = await fetch(apiUrl);", "gutter"]]);
-  L.push([["  42 |   return res.json().nav;", "marktext"], ["        ^", "caret"]]);
-  L.push([["  43 | };", "gutter"]]);
-  blank();
-  L.push({ badge: [" WARN ", DARK.warn, "#1a1206"] });
-  L.push([[" Warning: Nondeterministic render output on /playground", "warnname"]]);
-  L.push([["  code  FROST_E_HYDRATION", "dim"]]);
-  L.push([["  route /playground", "dim"]]);
+  // real captured ERROR block (formatErrorReportTerminal) — the real output
+  // colors only the badge; every other line is default terminal foreground.
+  L.push({ badge: [" ERROR ", DARK.danger, "#ffffff"] });
+  L.push([[` ${ERR_NAME}: ${ERR_MSG}`, "plain"]]);
+  L.push([[`  code  ${ERR_CODE}`, "plain"]]);
+  L.push([[`  at    ${ERR_FILE_ANON}:${ERR_LINE}:${ERR_COL}`, "plain"]]);
+  L.push([[`  route ${ERR_ROUTE}`, "plain"]]);
+  L.push([[`  runtime ${ERR_RUNTIME}`, "plain"]]);
 
   const total = L.length;
-  const cycle = 20; // seconds
-  const appearEnd = 0.58; // all lines visible by ~58%
-  const fadeStart = 0.82; // fade out; ~3.6s of empty window at the end
+  const h = y0 + total * lh + 30;
+  const cycle = 20;
+  const appearEnd = 0.55;
+  const fadeStart = 0.8;
   const style = `
 .win{fill:${t.panel};stroke:${t.line}}
 .titlebar{fill:${t.bgTop}}
@@ -191,13 +230,8 @@ function terminal(t) {
 .cmd{fill:${t.inkHi};font-weight:600}
 .dim{fill:${t.inkDim}}
 .mint{fill:${t.mint}}
-.errname{fill:${t.danger};font-weight:700}
-.warnname{fill:${t.warn};font-weight:700}
-.gutter{fill:${t.inkDim}}
-.marktext{fill:${t.inkHi}}
-.caret{fill:${t.danger}}${""}
+.plain{fill:${t.inkHi}}
 ${REDUCED}`;
-  // per-line keyframes: appear at staggered times, hold, fade near end
   let css = "";
   const lineEls = [];
   L.forEach((ln, i) => {
@@ -215,14 +249,7 @@ ${REDUCED}`;
     }
     lineEls.push(termLine(x0, y, ln, cls));
   });
-  // mark the highlighted code line background
-  const markIdx = L.findIndex((l) => Array.isArray(l) && l.some((r) => r[1] === "marktext"));
-  const markRect = markIdx >= 0
-    ? `<rect class="tl tl${markIdx}" x="${x0 - 8}" y="${y0 + markIdx * lh - 17}" width="620" height="24" fill="${t.dangerDeep}" opacity="0.55"/>`
-    : "";
-  // badge/line css: each .tl gets its own animation
   L.forEach((_, i) => { css += `.tl${i}{animation:${`tl${i}`} ${cycle}s linear infinite}\n`; });
-  const styleFull = style + css;
 
   const body = `
 <rect class="win" x="1" y="1" width="${w - 2}" height="${h - 2}" rx="12"/>
@@ -231,60 +258,55 @@ ${REDUCED}`;
 <circle cx="22" cy="20" r="5" fill="${DARK.danger}"/>
 <circle cx="40" cy="20" r="5" fill="${DARK.warn}"/>
 <circle cx="58" cy="20" r="5" fill="${t.mint}"/>
-<text x="${w / 2}" y="24" text-anchor="middle" font-family="${MONO}" font-size="12" fill="${t.inkDim}">my-app — zsh</text>
-${markRect}
 ${lineEls.join("\n")}
 `;
-  return svgWrap({ w, h, title: "Frost dev server — terminal session", body, style: styleFull });
+  return svgWrap({ w, h, title: "Frost dev server — terminal session", body, style: style + css });
 }
 
-// ---------- 3. error overlay preview (static) ----------
-function overlay(t) {
-  const w = 680, h = 430;
-  const dark = t === DARK;
-  const panelBg = dark ? "#1a0f12" : "#fffafb";
-  const txt = dark ? "#e8f4f1" : "#143638";
-  const dim = dark ? "#6f9390" : "#55716c";
+// ---------- 3. error overlay (faithful reproduction of real capture) ----------
+// Layout measured from dev-client.ts CSS (OVERLAY_SPEC.md):
+// card min(560px) pad16 body gap12, head pad12/16 gap10, meta 2col gap8,
+// foot pad12/16 gap8. Card height ~310px for this capture's content.
+function overlay() {
+  const w = 700, h = 430;
+  const cardX = 70, cardY = 60, cardW = 560, cardH = 310;
+  const mono = MONO;
+  const loc = `${ERR_FILE_ANON}:${ERR_LINE}:${ERR_COL}`;
+  // Real overlay colors are fixed (no light/dark adaptation in dev-client.ts);
+  // both variants render identically.
   const body = `
-<rect width="${w}" height="${h}" fill="${dark ? "rgba(4,12,13,0.72)" : "rgba(244,250,248,0.85)"}"/>
-<rect x="60" y="40" width="560" height="350" rx="16" fill="${panelBg}" stroke="${DARK.danger}" stroke-width="1.5"/>
-<rect x="60" y="40" width="560" height="44" rx="16" fill="rgba(255,77,94,0.08)"/>
-<rect x="60" y="70" width="560" height="14" fill="rgba(255,77,94,0.08)"/>
-<path d="M84 56l10-18h20l10 18z" fill="none" stroke="${DARK.danger}" stroke-width="2" stroke-linejoin="round"/>
-<line x1="94" y1="46" x2="94" y2="52" stroke="${DARK.danger}" stroke-width="2"/>
-<circle cx="94" cy="57" r="1.6" fill="${DARK.danger}"/>
-<text x="116" y="68" font-family="${MONO}" font-size="14" font-weight="600" fill="${txt}">Loader failed</text>
-<rect x="556" y="54" width="52" height="20" rx="10" fill="${DARK.danger}"/>
-<text x="582" y="68" text-anchor="middle" font-family="${MONO}" font-size="11" font-weight="700" fill="#1a0f12">ERR</text>
-<text x="84" y="112" font-family="${MONO}" font-size="14" font-weight="700" fill="${DARK.danger}">TypeError: Cannot read properties of undefined</text>
-<text x="84" y="134" font-family="${MONO}" font-size="12.5" fill="${dark ? "#b9c9c6" : "#3c5854"}">res.json() returned undefined for /api/nav on the server.</text>
-<text x="84" y="156" font-family="${MONO}" font-size="11.5" fill="${dim}">src/app/playground/page.tsx:42:11</text>
-<rect x="84" y="172" width="512" height="86" rx="8" fill="rgba(255,255,255,0.03)" stroke="${dark ? "rgba(255,255,255,0.08)" : "#d3e6e1"}"/>
-<text x="96" y="194" font-family="${MONO}" font-size="11.5" fill="${dim}">40 | export const loader = async () =&gt; {</text>
-<text x="96" y="212" font-family="${MONO}" font-size="11.5" fill="${dim}">41 |   const res = await fetch(apiUrl);</text>
-<rect x="88" y="216" width="504" height="18" fill="rgba(255,77,94,0.18)"/>
-<text x="96" y="230" font-family="${MONO}" font-size="11.5" fill="${txt}">42 |   return res.json().nav;</text>
-<text x="96" y="248" font-family="${MONO}" font-size="11.5" fill="${dim}">43 | };</text>
-<g font-family="${MONO}" font-size="10.5">
-<rect x="84" y="272" width="248" height="34" rx="8" fill="rgba(255,255,255,0.03)" stroke="${dark ? "rgba(255,255,255,0.08)" : "#d3e6e1"}"/>
-<text x="94" y="286" fill="${dim}">CODE</text><text x="94" y="300" fill="${txt}">FROST_E_LOADER</text>
-<rect x="348" y="272" width="248" height="34" rx="8" fill="rgba(255,255,255,0.03)" stroke="${dark ? "rgba(255,255,255,0.08)" : "#d3e6e1"}"/>
-<text x="358" y="286" fill="${dim}">ROUTE</text><text x="358" y="300" fill="${txt}">/playground</text>
-<rect x="84" y="314" width="248" height="34" rx="8" fill="rgba(255,255,255,0.03)" stroke="${dark ? "rgba(255,255,255,0.08)" : "#d3e6e1"}"/>
-<text x="94" y="328" fill="${dim}">RUNTIME</text><text x="94" y="342" fill="${txt}">server</text>
-<rect x="348" y="314" width="248" height="34" rx="8" fill="rgba(255,255,255,0.03)" stroke="${dark ? "rgba(255,255,255,0.08)" : "#d3e6e1"}"/>
-<text x="358" y="328" fill="${dim}">LOCATION</text><text x="358" y="342" fill="${txt}">page.tsx:42:11</text>
+<rect width="${w}" height="${h}" fill="rgba(4,12,13,0.72)"/>
+<rect x="${cardX}" y="${cardY}" width="${cardW}" height="${cardH}" rx="16" fill="#1a0f12" stroke="#ff4d5e" stroke-width="1"/>
+<rect x="${cardX + 1}" y="${cardY + 1}" width="${cardW - 2}" height="43" fill="rgba(255,77,94,0.08)"/>
+<line x1="${cardX + 1}" y1="${cardY + 44}" x2="${cardX + cardW - 1}" y2="${cardY + 44}" stroke="rgba(255,77,94,0.25)"/>
+<text x="87" y="86" font-family="${mono}" font-size="16" fill="#ff4d5e">▲</text>
+<text x="111" y="86" font-family="${mono}" font-size="14" font-weight="600" fill="#e8f4f1">Errors detected</text>
+<rect x="542" y="73" width="52" height="20" rx="999" fill="#ff4d5e"/>
+<text x="568" y="87" text-anchor="middle" font-family="${mono}" font-size="11" font-weight="700" fill="#1a0f12">1 error</text>
+<text x="616" y="87" font-family="${mono}" font-size="14" fill="#e8f4f1">✕</text>
+<text x="88" y="140" font-family="${mono}" font-size="14" font-weight="700" fill="#ff4d5e">${esc(ERR_NAME)}</text><text x="${88 + ERR_NAME.length * 8.4 + 4}" y="140" font-family="${mono}" font-size="13" fill="#b9c9c6"> ${esc(ERR_MSG)}</text>
+<text x="88" y="163" font-family="${mono}" font-size="12" fill="#6f9390">${esc(loc)}</text>
+<g font-family="${mono}">
+<rect x="88" y="179" width="259" height="46" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)"/>
+<rect x="355" y="179" width="259" height="46" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)"/>
+<rect x="88" y="233" width="259" height="46" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)"/>
+<rect x="355" y="233" width="259" height="46" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)"/>
+<text x="98" y="192" font-size="10" letter-spacing="0.8" fill="#6f9390">CODE</text><text x="98" y="210" font-size="12" fill="#e8f4f1">${esc(ERR_CODE)}</text>
+<text x="365" y="192" font-size="10" letter-spacing="0.8" fill="#6f9390">ROUTE</text><text x="365" y="210" font-size="12" fill="#e8f4f1">${esc(ERR_ROUTE)}</text>
+<text x="98" y="246" font-size="10" letter-spacing="0.8" fill="#6f9390">RUNTIME</text><text x="98" y="264" font-size="12" fill="#e8f4f1">${esc(ERR_RUNTIME)}</text>
+<text x="365" y="246" font-size="10" letter-spacing="0.8" fill="#6f9390">TIME</text><text x="365" y="264" font-size="12" fill="#e8f4f1">${esc(ERR_TIME)}</text>
 </g>
-<text x="84" y="366" font-family="${MONO}" font-size="11.5" fill="${DARK.warn}">hint  check the loader's fetch target and response shape</text>
-<rect x="84" y="382" width="86" height="26" rx="8" fill="${t.mint}"/>
-<text x="127" y="399" text-anchor="middle" font-family="${MONO}" font-size="11.5" font-weight="700" fill="#062b27">Dismiss</text>
-<rect x="178" y="382" width="110" height="26" rx="8" fill="none" stroke="${dark ? "rgba(255,255,255,0.15)" : "#55716c"}"/>
-<text x="233" y="399" text-anchor="middle" font-family="${MONO}" font-size="11.5" fill="${txt}">Copy details</text>
+<text x="88" y="306" font-family="${mono}" font-size="11" fill="#6f9390">Stack trace</text>
+<line x1="${cardX + 1}" y1="${cardY + cardH - 55}" x2="${cardX + cardW - 1}" y2="${cardY + cardH - 55}" stroke="rgba(255,255,255,0.08)"/>
+<rect x="88" y="${cardY + cardH - 42}" width="114" height="30" rx="8" fill="#10e8c8"/>
+<text x="145" y="${cardY + cardH - 21}" text-anchor="middle" font-family="${mono}" font-size="12" font-weight="700" fill="#04110f">Copy details</text>
+<rect x="210" y="${cardY + cardH - 42}" width="78" height="30" rx="8" fill="none" stroke="rgba(255,255,255,0.15)"/>
+<text x="249" y="${cardY + cardH - 21}" text-anchor="middle" font-family="${mono}" font-size="12" fill="#e8f4f1">Dismiss</text>
 `;
-  return svgWrap({ w, h, title: "Frost dev error overlay", body });
+  return svgWrap({ w, h, title: "Frost dev error overlay — real capture", body });
 }
 
-// ---------- 4. request lifecycle ----------
+// ---------- 4. request lifecycle (verified vs handler.ts/ssr.tsx) ----------
 function lifecycle(t) {
   const w = 980, h = 340;
   const dark = t === DARK;
@@ -293,29 +315,28 @@ function lifecycle(t) {
   const labelFill = dark ? "#f2f7f5" : "#143638";
   const subFill = dark ? "#6f9390" : "#55716c";
   const steps = [
-    ["Request", "GET /playground"],
+    ["Request", "handler.ts"],
     ["Middleware", "app/_middleware.ts"],
-    ["Route match", "router.discover + match"],
-    ["Loaders", "page + layouts, parallel"],
-    ["Render", "streaming SSR"],
-    ["HTML", ".frost response"],
-    ["Hydrate", "client reconnects"],
+    ["Route match", "router matchRoutes"],
+    ["Loaders", "runRouteLoaders ∥"],
+    ["Render", "renderToReadableStream"],
+    ["HTML", "__FROST_DATA__"],
+    ["Hydrate", "hydrateApp"],
   ];
-  const bw = 116, gap = 24, x0 = 30, y = 120, bh = 64;
+  const bw = 116, gap = 24, y = 120, bh = 64;
   const totalW = steps.length * bw + (steps.length - 1) * gap;
   const startX = (w - totalW) / 2;
   const boxes = steps.map(([name, sub], i) => {
     const x = startX + i * (bw + gap);
-    const isBoundary = i === 5; // HTML crosses to client
+    const isBoundary = i === 6;
     return `<g>
-<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="10" fill="${boxFill}" stroke="${isBoundary ? t.mint : boxStroke}" stroke-width="${isBoundary ? 1.6 : 1}"/>
+<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="10" fill="${boxFill}" stroke="${isBoundary || i === 5 ? t.mint : boxStroke}" stroke-width="${isBoundary || i === 5 ? 1.6 : 1}"/>
 <text x="${x + bw / 2}" y="${y + 28}" text-anchor="middle" font-family="${SANS}" font-size="14" font-weight="600" fill="${labelFill}">${name}</text>
 <text x="${x + bw / 2}" y="${y + 46}" text-anchor="middle" font-family="${MONO}" font-size="9.5" fill="${subFill}">${sub}</text>
 ${i < steps.length - 1 ? `<path d="M${x + bw + 4} ${y + bh / 2} h${gap - 8}" stroke="${subFill}" stroke-width="1.4" marker-end="url(#arr)"/>` : ""}
 </g>`;
   }).join("\n");
-  // boundary line between server (left) and client (right)
-  const boundaryX = startX + 5 * (bw + gap) - gap / 2;
+  const boundaryX = startX + 5 * (bw + gap) + bw + gap / 2;
   const style = `
 .dot{animation:dotmove 9s linear infinite}
 .dot.d2{animation-delay:-3s}.dot.d3{animation-delay:-6s}
@@ -337,25 +358,66 @@ ${dots}
   return svgWrap({ w, h, title: "Frost request lifecycle", body, style });
 }
 
-// ---------- 5. feature icons (24px, stroke 1.75, mint) ----------
+// ---------- 5. feature icons: real lucide-react data (ISC) ----------
+function lucideIcon(file) {
+  const iconsDir = path.join(
+    root, "node_modules", ".pnpm",
+    fs.readdirSync(path.join(root, "node_modules", ".pnpm")).find((d) => d.startsWith("lucide-react@")),
+    "node_modules", "lucide-react", "dist", "esm", "icons",
+  );
+  // resolve alias re-exports (e.g. triangle-alert -> triangle-exclamation-point)
+  let p = path.join(iconsDir, `${file}.mjs`);
+  for (let i = 0; i < 5; i++) {
+    const src = fs.readFileSync(p, "utf8");
+    const alias = src.match(/export \{ default \} from '\.\/([\w-]+)\.mjs'/);
+    if (!alias) break;
+    p = path.join(iconsDir, `${alias[1]}.mjs`);
+  }
+  const src = fs.readFileSync(p, "utf8");
+  const start = src.indexOf("node: [");
+  if (start === -1) throw new Error(`could not parse lucide icon ${file}`);
+  // bracket-match the node array literal (icon data contains no brackets in strings)
+  let i = src.indexOf("[", start), depth = 0, end = -1;
+  for (; i < src.length; i++) {
+    if (src[i] === "[") depth++;
+    else if (src[i] === "]") { depth--; if (depth === 0) { end = i + 1; break; } }
+  }
+  if (end === -1) throw new Error(`unbalanced lucide icon ${file}`);
+  const node = eval(src.slice(src.indexOf("[", start), end)); // repo-local icon data, safe
+  const VOID = new Set(["circle", "ellipse", "rect", "line", "polyline", "polygon", "path"]);
+  return node
+    .map(([tag, attrs]) => {
+      const a = Object.entries(attrs)
+        .filter(([k]) => k !== "key")
+        .map(([k, v]) => `${k}="${v}"`)
+        .join(" ");
+      return VOID.has(tag) ? `<${tag} ${a}/>` : `<${tag} ${a}></${tag}>`;
+    })
+    .join("");
+}
+
 const ICONS = {
-  "icon-routing": `<path d="M4 6h6l3 4-3 4H4z"/><path d="M14 14h6l3-4-3-4h-6"/><circle cx="18" cy="6" r="2"/><circle cx="6" cy="18" r="2"/>`,
-  "icon-loader": `<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/>`,
-  "icon-contract": `<path d="M9 4h6M10 4c0-1.7 4-1.7 4 0v3c0 4-2 6-2 9h-4c0-3-2-5-2-9z"/><path d="M10 19h4"/>`,
-  "icon-boundary": `<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>`,
-  "icon-refresh": `<path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/>`,
-  "icon-error": `<path d="M12 4l9 16H3z"/><line x1="12" y1="10" x2="12" y2="14"/><circle cx="12" cy="17" r="0.5" fill="currentColor"/>`,
-  "icon-stream": `<path d="M3 8c2.5 0 2.5 2 5 2s2.5-2 5-2 2.5 2 5 2 2.5-2 3-2"/><path d="M3 13c2.5 0 2.5 2 5 2s2.5-2 5-2 2.5 2 5 2 2.5-2 3-2"/><path d="M3 18c2.5 0 2.5 2 5 2s2.5-2 5-2 2.5 2 5 2 2.5-2 3-2"/>`,
-  "icon-middleware": `<circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="12" r="2.5"/><path d="M8.5 12h7"/><path d="M12 9.5v5" opacity="0.5"/>`,
-  "icon-rpc": `<path d="M8 4h8v4a4 4 0 0 1-8 0z"/><path d="M12 12v4"/><path d="M8 20h8"/>`,
-  "icon-test": `<path d="M9 3h6M10 3v5L5 18a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5-10V3"/><path d="M8 15h8"/>`,
+  "icon-routing": "route",
+  "icon-loader": "database",
+  "icon-contract": "shield-check",
+  "icon-typed": "braces",
+  "icon-boundary": "brick-wall",
+  "icon-refresh": "refresh-cw",
+  "icon-error": "triangle-alert",
+  "icon-stream": "waves",
+  "icon-middleware": "arrow-left-right",
+  "icon-rpc": "server",
+  "icon-hardening": "lock",
+  "icon-client-router": "navigation",
+  "icon-test": "flask-conical",
+  "icon-small-core": "package",
 };
 function icons() {
   const files = {};
-  for (const [name, d] of Object.entries(ICONS)) {
+  for (const [name, lucide] of Object.entries(ICONS)) {
     files[`${name}.svg`] = svgWrap({
       w: 24, h: 24, title: name, vb: "0 0 24 24",
-      body: `<g fill="none" stroke="#0b8f7e" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${d}</g>`,
+      body: `<g fill="none" stroke="#0b8f7e" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${lucideIcon(lucide)}</g>`,
     });
   }
   return files;
@@ -370,10 +432,10 @@ function divider() {
 `;
 }
 
-// ---------- 7. social preview ----------
+// ---------- 7. social preview (real logo + real tagline only) ----------
 function social(t) {
   const w = 1280, h = 640;
-  const dark = t === DARK;
+  const light = t === LIGHT;
   const style = `
 .glow{animation:drift 18s ease-in-out infinite alternate}
 @keyframes drift{from{transform:translate(0,0)}to{transform:translate(50px,-24px)}}
@@ -381,17 +443,15 @@ ${REDUCED}`;
   const body = `
 <defs>
 <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${t.bgTop}"/><stop offset="1" stop-color="${t.bgBottom}"/></linearGradient>
-<radialGradient id="glow"><stop offset="0" stop-color="${dark ? "rgba(16,232,200,0.18)" : "rgba(11,143,126,0.16)"}"/><stop offset="1" stop-color="${dark ? "rgba(16,232,200,0)" : "rgba(11,143,126,0)"}"/></radialGradient>
+<radialGradient id="glow"><stop offset="0" stop-color="${light ? "rgba(54,114,114,0.30)" : "rgba(54,114,114,0.45)"}"/><stop offset="1" stop-color="${light ? "rgba(54,114,114,0)" : "rgba(54,114,114,0)"}"/></radialGradient>
 </defs>
 <rect width="${w}" height="${h}" fill="url(#bg)"/>
 <ellipse class="glow" cx="1050" cy="120" rx="420" ry="260" fill="url(#glow)"/>
-<ellipse class="glow" style="animation-delay:-9s" cx="200" cy="560" rx="380" ry="220" fill="url(#glow)"/>
-${logoMark(530, 190, 4.4, t.mint, t.mintSoft, t.tealDeep)}
-<text x="640" y="400" text-anchor="middle" font-family="${SANS}" font-weight="600" font-size="110" letter-spacing="6" fill="${t.inkHi}">FROST</text>
-<text x="640" y="470" text-anchor="middle" font-family="${MONO}" font-size="30" fill="${t.mint}">React rendering. Web-native runtime.</text>
-<text x="640" y="530" text-anchor="middle" font-family="${SANS}" font-size="20" fill="${t.inkDim}">npm create frost-app@latest my-app</text>
+${logoLockup(w / 2, 190, 3.2, light)}
+<text x="${w / 2}" y="470" text-anchor="middle" font-family="${SANS}" font-weight="500" font-size="72" letter-spacing="-1" fill="${t.mint}">${esc(TAGLINE)}</text>
+<line x1="440" y1="530" x2="840" y2="530" stroke="${t.line}" stroke-width="1"/>
 `;
-  return svgWrap({ w, h, title: "Frost — social preview", body, style });
+  return svgWrap({ w, h, title: `${TAGLINE} — Frost`, body, style });
 }
 
 // ---------- emit ----------
@@ -400,8 +460,8 @@ const files = {
   "banner-light.svg": banner(LIGHT),
   "terminal-dark.svg": terminal(DARK),
   "terminal-light.svg": terminal(LIGHT),
-  "overlay-dark.svg": overlay(DARK),
-  "overlay-light.svg": overlay(LIGHT),
+  "overlay-dark.svg": overlay(),
+  "overlay-light.svg": overlay(),
   "lifecycle-dark.svg": lifecycle(DARK),
   "lifecycle-light.svg": lifecycle(LIGHT),
   "divider.svg": divider(),
@@ -409,7 +469,39 @@ const files = {
   "social-light.svg": social(LIGHT),
   ...icons(),
 };
+
+// allowed visible strings — check-assets.mjs verifies every <text> in the
+// SVGs appears here. Each entry traces to a repo file or the real capture.
+const ALLOWED_STRINGS = [
+  TAGLINE, HERO_SUB, KICKER_CMD, KICKER_CMD.toUpperCase(),
+  ...SCAFFOLD_LINES.filter(Boolean),
+  READY_LINE.replace("❄️  ", ""), READY_LINE,
+  NPM_ADDED,
+  "$ ", " ERROR ",
+  "cd my-app && npm run dev",
+  ERR_NAME, ERR_MSG, ERR_CODE, `${ERR_FILE_ANON}:${ERR_LINE}:${ERR_COL}`, ERR_ROUTE, ERR_RUNTIME, ERR_TIME,
+  ` ${ERR_NAME}: ${ERR_MSG}`,
+  `code  ${ERR_CODE}`,
+  `at    ${ERR_FILE_ANON}:${ERR_LINE}:${ERR_COL}`,
+  `route ${ERR_ROUTE}`,
+  `runtime ${ERR_RUNTIME}`,
+  "Errors detected", "1 error", "Code", "Route", "Runtime", "Time",
+  "CODE", "ROUTE", "RUNTIME", "TIME", "Stack trace", "Copy details", "Dismiss",
+  "▲", "✕",
+  "Request", "Middleware", "Route match", "Loaders", "Render", "HTML", "Hydrate",
+  "handler.ts", "app/_middleware.ts", "router matchRoutes", "runRouteLoaders ∥", "renderToReadableStream", "__FROST_DATA__", "hydrateApp",
+  "One request, explicit phases", "server runtime ——— client runtime", "server / client boundary",
+  "middleware → match → loaders (parallel) → stream → HTML → hydrate",
+  `${TAGLINE} — ${KICKER_CMD}`, "Frost dev server — terminal session",
+  "Frost dev error overlay — real capture", "Frost request lifecycle",
+  "role=\"alertdialog\" · aria-modal · frost:error",
+  "divider"];
+
 for (const [name, content] of Object.entries(files)) {
   fs.writeFileSync(path.join(OUT, name), content);
 }
-console.log(`build-readme-assets: wrote ${Object.keys(files).length} SVGs to docs/assets/`);
+fs.writeFileSync(
+  path.join(OUT, "allowed-strings.json"),
+  JSON.stringify({ generated: "scripts/build-readme-assets.mjs", strings: ALLOWED_STRINGS }, null, 2) + "\n",
+);
+console.log(`build-readme-assets: wrote ${Object.keys(files).length} SVGs + allowed-strings.json to docs/assets/`);

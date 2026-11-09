@@ -1,0 +1,22 @@
+[
+  {
+    "file": "frost-mark.png",
+    "source": "examples/starter/public/frost-mark.png",
+    "embedded": "scripts/logo-src/frost-mark.png",
+    "width": 256,
+    "height": 205,
+    "sourceSha256": "bfe5583ad422d9f111457711dd6a7caf60d75185376058ab73d536d5a0c87c22",
+    "embeddedSha256": "fb1b344e51e3a86411e213e302a58e010b6251e164d95c1292ef085ac5ddc4cb",
+    "transform": "RGBA downscale to 256x205 (display max ~128px, 2x)"
+  },
+  {
+    "file": "frost-wordmark.png",
+    "source": "examples/starter/public/frost-wordmark.png",
+    "embedded": "scripts/logo-src/frost-wordmark.png",
+    "width": 640,
+    "height": 118,
+    "sourceSha256": "c9bf354558d58afaa95e1f8cd929bfa142266260928c0be817e53fdb1b8f56e9",
+    "embeddedSha256": "0bc2a240187e4f39d933a70518d07d7ee9d671b9ecaabcd5c779908d2f1350e3",
+    "transform": "RGBA downscale to 640x118 (display max ~320px, 2x)"
+  }
+]

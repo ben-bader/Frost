@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" role="img" aria-label="icon-routing">
 <title>icon-routing</title>
 
-<g fill="none" stroke="#0b8f7e" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h6l3 4-3 4H4z"/><path d="M14 14h6l3-4-3-4h-6"/><circle cx="18" cy="6" r="2"/><circle cx="6" cy="18" r="2"/></g>
+<g fill="none" stroke="#0b8f7e" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></g>
 </svg>

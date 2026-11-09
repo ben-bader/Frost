@@ -53,7 +53,7 @@ Then open `http://localhost:3000`. You get the full starter: a landing page, a `
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/terminal-dark.svg">
-  <img alt="Terminal session: npm create frost-app, npm install, npm run dev, then a styled Frost error with code FROST_E_LOADER and a WARN block" src="docs/assets/terminal-light.svg" width="100%">
+  <img alt="Terminal session: npm create frost-app scaffolds the app, npm run dev starts the server, then a loader TypeError is printed with code FROST_E_LOADER" src="docs/assets/terminal-light.svg" width="100%">
 </picture>
 
 <details>
@@ -78,11 +78,15 @@ pnpm install && pnpm dev       # yarn/bun equivalents
 <tr>
 <td width="50%" valign="top">
 
+<img src="docs/assets/icon-routing.svg" width="20" alt="">
+
 **File-based routing**
 `page.tsx` and `layout.tsx` files map to URLs, with `[param]` and `[...catchAll]` segments.
 
 </td>
 <td width="50%" valign="top">
+
+<img src="docs/assets/icon-loader.svg" width="20" alt="">
 
 **Loaders & actions**
 Server data loading with parallel layout/page loaders, POST actions, and progressive-enhancement forms.
@@ -92,11 +96,15 @@ Server data loading with parallel layout/page loaders, POST actions, and progres
 <tr>
 <td valign="top">
 
+<img src="docs/assets/icon-contract.svg" width="20" alt="">
+
 **Route contracts**
 Validate params, search, loader returns, and action input with any Standard Schema validator.
 
 </td>
 <td valign="top">
+
+<img src="docs/assets/icon-typed.svg" width="20" alt="">
 
 **Typed end to end**
 `defineRoute()` infers loader/params types; generated types give typed `Link` hrefs.
@@ -106,11 +114,15 @@ Validate params, search, loader returns, and action input with any Standard Sche
 <tr>
 <td valign="top">
 
+<img src="docs/assets/icon-boundary.svg" width="20" alt="">
+
 **Visible boundaries**
 Client code reading non-public `process.env` fails the build; server-only imports are enforced transitively.
 
 </td>
 <td valign="top">
+
+<img src="docs/assets/icon-stream.svg" width="20" alt="">
 
 **Streaming SSR**
 `renderToReadableStream` flushes the shell early; Suspense boundaries stream in.
@@ -120,11 +132,15 @@ Client code reading non-public `process.env` fails the build; server-only import
 <tr>
 <td valign="top">
 
+<img src="docs/assets/icon-error.svg" width="20" alt="">
+
 **Honest dev errors**
 Browser overlay plus a terminal `ERROR`/`WARN` block with code, file:line:column, and a code frame.
 
 </td>
 <td valign="top">
+
+<img src="docs/assets/icon-refresh.svg" width="20" alt="">
 
 **Fast Refresh dev**
 CSS hot-updates without reload, component state survives edits, loaders trigger reload, config restarts the server.
@@ -134,11 +150,15 @@ CSS hot-updates without reload, component state survives edits, loaders trigger 
 <tr>
 <td valign="top">
 
+<img src="docs/assets/icon-rpc.svg" width="20" alt="">
+
 **Server functions**
 `createServerFn` exposes typed RPC over `POST /_frost/fn` with CSRF and origin checks.
 
 </td>
 <td valign="top">
+
+<img src="docs/assets/icon-middleware.svg" width="20" alt="">
 
 **Middleware**
 `app/_middleware.ts` runs before routing for pages and API routes, with a memoized `next()`.
@@ -148,11 +168,15 @@ CSS hot-updates without reload, component state survives edits, loaders trigger 
 <tr>
 <td valign="top">
 
+<img src="docs/assets/icon-hardening.svg" width="20" alt="">
+
 **Built-in hardening**
 CSP nonces, Permissions-Policy, br/gzip compression, body limits, static-file containment.
 
 </td>
 <td valign="top">
+
+<img src="docs/assets/icon-client-router.svg" width="20" alt="">
 
 **Client router** *(experimental)*
 Opt-in fetch navigation with prefetch, scroll restoration, and full-reload fallback.
@@ -162,11 +186,15 @@ Opt-in fetch navigation with prefetch, scroll restoration, and full-reload fallb
 <tr>
 <td valign="top">
 
+<img src="docs/assets/icon-test.svg" width="20" alt="">
+
 **Test utilities**
 `@frost.js/test` builds request handlers from in-memory route modules — no browser needed.
 
 </td>
 <td valign="top">
+
+<img src="docs/assets/icon-small-core.svg" width="20" alt="">
 
 **Small core**
 Nine focused packages; import only what you need. Node adapter plus a fetch adapter for edge runtimes.
@@ -286,8 +314,10 @@ The runtime boundary is a build-time guarantee: modules that touch server-only A
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/overlay-dark.svg">
-  <img alt="Frost dev error overlay: red alertdialog with error name, message, code FROST_E_LOADER, source location, code frame, meta grid, and suggested fix" src="docs/assets/overlay-light.svg" width="100%">
+  <img alt="Frost dev error overlay for a loader TypeError: error name and message, source location, Code/Route/Runtime/Time grid, stack trace summary, Copy details and Dismiss buttons" src="docs/assets/overlay-light.svg" width="100%">
 </picture>
+
+<sub>Vector reproduction of the dev error overlay captured from a real run with Frost 0.1.1.</sub>
 
 On file save, the dev server classifies the change and does the minimum necessary work:
 
@@ -353,6 +383,7 @@ See [docs/project/roadmap.md](docs/project/roadmap.md) for detail and status.
 Issues and PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Security reports: [SECURITY.md](SECURITY.md). Licensed [MIT](LICENSE).
 
 <p align="center">
-  <img src="docs/assets/icon-routing.svg" width="20" alt="">
+  <img src="examples/starter/public/frost-mark.png" width="24" alt="Frost">
+  <br>
   <sub>MIT · <a href="docs/README.md">Documentation</a></sub>
 </p>
