@@ -4,8 +4,11 @@ import { buildCommand } from "./commands/build.js";
 import { startCommand } from "./commands/start.js";
 import { routesCommand } from "./commands/routes.js";
 import { loadFrostConfig, mergeCliOverrides, findFrostConfigFile } from "./config.js";
+import { configureUi, detectUiConfig, printErrorBlock } from "@frost.js/core/cli-ui";
 import { loadEnvFiles, missingEnvVars } from "@frost.js/core";
 import type { FrostConfig } from "@frost.js/core";
+
+configureUi(detectUiConfig());
 
 async function main() {
   const args = process.argv.slice(2);
@@ -36,9 +39,11 @@ async function main() {
   const userConfig = mergeCliOverrides(fileConfig, { port, host });
 
   // Load .env files and fail fast on missing required variables.
+  let envFiles: string[] = [];
   if (command && command !== "--help" && command !== "-h") {
     const mode = command === "dev" ? "development" : "production";
-    await loadEnvFiles(rootDir, mode);
+    const envResult = await loadEnvFiles(rootDir, mode);
+    envFiles = envResult.files;
     const resolved = userConfig.env?.required ?? [];
     const missing = missingEnvVars(resolved);
     if (missing.length > 0) {
@@ -51,7 +56,7 @@ async function main() {
 
   switch (command) {
     case "dev":
-      await devCommand({ port, host, config: userConfig, configFile });
+      await devCommand({ port, host, config: userConfig, configFile, envFiles });
       break;
 
     case "build":
@@ -59,15 +64,16 @@ async function main() {
         config: userConfig,
         analyze: args.includes("--analyze"),
         strict: args.includes("--strict"),
+        envFiles,
       });
       break;
 
     case "start":
-      await startCommand({ port, host, config: userConfig });
+      await startCommand({ port, host, config: userConfig, envFiles });
       break;
 
     case "routes":
-      await routesCommand(rootDir, userConfig);
+      await routesCommand(rootDir, userConfig, { envFiles });
       break;
 
     default:
@@ -86,12 +92,25 @@ Options:
   --config      Path to frost.config.{ts,js,mjs} (searched in project root by default)
   --analyze     (build) print per-route client bundle sizes
   --strict      (build) fail when budgets.clientJsKb is exceeded
+  --no-color    Disable ANSI colors
+  --no-emoji    Disable emoji
+  --ascii       Use ASCII symbols instead of Unicode
+  --verbose     Print stack traces with errors (also FROST_DEBUG=1)
 `);
       break;
   }
 }
 
 main().catch((err) => {
-  console.error("\n❌ CLI Error:", err instanceof Error ? err.message : err);
+  const e = err instanceof Error ? err : new Error(String(err));
+  printErrorBlock(
+    {
+      name: e.name || "Error",
+      message: e.message,
+      stack: e.stack,
+      severity: "error",
+    },
+    { verbose: process.argv.includes("--verbose") },
+  );
   process.exit(1);
 });

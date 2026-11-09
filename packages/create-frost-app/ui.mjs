@@ -182,7 +182,7 @@ function bgPaint(name, text) {
 }
 export const mint = (t) => paint("mint", t);
 export const teal = (t) => paint("teal", t);
-export const sky = (t) => paint("sky", t, "\x1b[4m");
+export const url = (t) => paint("sky", t, "\x1b[4m");
 export const white = (t) => paint("white", t, "\x1b[1m");
 export const bold = (t) => paint("white", t, "\x1b[1m");
 export const dim = (t) => paint("dim", t);
@@ -660,15 +660,16 @@ export function formatErrorBlock(report, opts = {}) {
             }
         }
     }
-    const out = ["", ...lines, ""].join("\n");
-    if ((opts.verbose || envFlag("FROST_DEBUG")) && report.stack) {
-        const stackLines = report.stack
+    const stackLines = (opts.verbose || envFlag("FROST_DEBUG") || process.argv.includes("--verbose")) &&
+        report.stack
+        ? report.stack
             .split("\n")
             .slice(1) // skip the "Name: message" first line — already shown
-            .map((l) => dim(l));
-        return out + "\n" + stackLines.join("\n") + "\n";
-    }
-    return out + "\n";
+            .map((l) => dim(l))
+        : [];
+    const all = stackLines.length ? [...lines, "", ...stackLines] : lines;
+    // Leading blank line before the block, one blank line after it.
+    return "\n" + all.join("\n") + "\n\n";
 }
 export function printErrorBlock(report, opts = {}) {
     process.stderr.write(formatErrorBlock(report, opts));

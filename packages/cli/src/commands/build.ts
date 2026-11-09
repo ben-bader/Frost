@@ -10,6 +10,14 @@ import {
   type FrostConfig,
 } from "@frost.js/core";
 import { discoverRoutes } from "@frost.js/router";
+import { dim, mint, sym, warnLine } from "@frost.js/core/cli-ui";
+import {
+  cliVersion,
+  envFileList,
+  projectName,
+  routeCounts,
+  printCliHeader,
+} from "../ui.js";
 
 export interface BuildCommandOptions {
   rootDir?: string;
@@ -19,6 +27,8 @@ export interface BuildCommandOptions {
   analyze?: boolean;
   /** Fail the build when budgets.clientJsKb is exceeded. */
   strict?: boolean;
+  /** .env files actually loaded by the CLI entry (absolute paths). */
+  envFiles?: string[];
 }
 
 interface ViteManifestEntry {
@@ -51,8 +61,6 @@ export async function buildCommand(options: BuildCommandOptions = {}): Promise<v
   fs.mkdirSync(cacheRoot, { recursive: true });
   const clientEntriesDir = fs.mkdtempSync(path.join(cacheRoot, "client-entries-"));
 
-  console.log("❄️  Building Frost application for production...");
-
   try {
     // 1. Discover routes
     const routes = discoverRoutes({
@@ -61,6 +69,21 @@ export async function buildCommand(options: BuildCommandOptions = {}): Promise<v
       rootDir,
     });
     const pageRoutes = routes.filter((r) => r.kind === "page");
+    const counts = routeCounts(routes);
+
+    printCliHeader({
+      version: cliVersion(),
+      appName: projectName(rootDir),
+      rows: {
+        pages: counts.pages,
+        api: counts.api,
+        envFiles: options.envFiles?.length
+          ? envFileList(options.envFiles, rootDir)
+          : undefined,
+      },
+    });
+    console.log();
+    console.log(dim("Building Frost application for production..."));
 
     // Generated route types for typed Link hrefs (.frost/types/routes.d.ts).
     try {
@@ -144,7 +167,7 @@ export default handler;
     //    build-time artifacts anymore.
     const clientBuild = async () => {
       if (pageRoutes.length === 0) return;
-      console.log("📦 Compiling client bundle...");
+      console.log(dim("Compiling client bundle..."));
       await viteBuild({
         root: rootDir,
         plugins: [frost(config)],
@@ -161,7 +184,7 @@ export default handler;
     };
 
     const serverBuild = async () => {
-      console.log("📦 Compiling server bundle...");
+      console.log(dim("Compiling server bundle..."));
       await viteBuild({
         root: rootDir,
         plugins: [frost(config)],
@@ -187,7 +210,7 @@ export default handler;
     // 5. Pre-compress text assets (.br + .gz) for the production adapter.
     const compressed = precompressDir(clientOutDir);
     if (compressed > 0) {
-      console.log(`🗜️  Pre-compressed ${compressed} asset(s) (br + gzip)`);
+      console.log(dim(`Pre-compressed ${compressed} asset(s) (br + gzip)`));
     }
 
     // 6. Generate Production Manifest
@@ -210,7 +233,7 @@ export default handler;
     if (config.seo.sitemap || config.seo.robots) {
       if (!config.seo.baseUrl) {
         console.warn(
-          "⚠️  seo.sitemap/seo.robots enabled but seo.baseUrl is not set — skipping generation.",
+          warnLine("seo.sitemap/seo.robots enabled but seo.baseUrl is not set — skipping generation."),
         );
       } else {
         const base = config.seo.baseUrl.replace(/\/+$/, "");
@@ -237,9 +260,7 @@ export default handler;
           );
         }
         const skipped = pageRoutes.length - staticPaths.length;
-        console.log(
-          `🗺️  Generated ${config.seo.sitemap ? "sitemap.xml" : ""}${config.seo.sitemap && config.seo.robots ? " + " : ""}${config.seo.robots ? "robots.txt" : ""} (${staticPaths.length} static route(s)${skipped > 0 ? `, ${skipped} dynamic skipped` : ""})`,
-        );
+        console.log(dim(`Generated ${config.seo.sitemap ? "sitemap.xml" : ""}${config.seo.sitemap && config.seo.robots ? " + " : ""}${config.seo.robots ? "robots.txt" : ""} (${staticPaths.length} static route(s)${skipped > 0 ? `, ${skipped} dynamic skipped` : ""})`));
       }
     }
 
@@ -256,7 +277,7 @@ export default handler;
       );
     }
 
-    console.log(`\n✅ Production build complete! Output in ${config.build.outDir}\n`);
+    console.log(`\n${mint(sym("diamond"))}  ${mint(`Production build complete! Output in ${config.build.outDir}`)}\n`);
   } finally {
     fs.rmSync(clientEntriesDir, { recursive: true, force: true });
   }
@@ -328,7 +349,7 @@ function printBundleReport(
   try {
     manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8")) as ViteManifest;
   } catch {
-    console.log("⚠️  No client manifest found — skipping bundle report.");
+    console.log(warnLine("No client manifest found — skipping bundle report."));
     return;
   }
 
@@ -378,7 +399,7 @@ function printBundleReport(
   }
 
   if (opts.analyze || rows.length > 0) {
-    console.log("\n📊 Client bundle report");
+    console.log("\n" + dim("Client bundle report"));
     console.log("-".repeat(80));
     for (const row of rows) console.log(row);
     console.log("-".repeat(80));
@@ -390,9 +411,9 @@ function printBundleReport(
       if (opts.strict) {
         throw new Error(`[frost] ${msg} Build failed (--strict).`);
       }
-      console.warn(`⚠️  ${msg} (warning only — set budgets.strict or pass --strict to fail)`);
+      console.warn(warnLine(`${msg} (warning only — set budgets.strict or pass --strict to fail)`));
     } else {
-      console.log(`✅ Client JS budget (${opts.budgetKb} KB) respected.`);
+      console.log(mint(`Client JS budget (${opts.budgetKb} KB) respected.`));
     }
   }
 }

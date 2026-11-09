@@ -1,6 +1,19 @@
 import * as fs from "node:fs";
 import { discoverRoutes } from "@frost.js/router";
 import { resolveConfig, type FrostConfig } from "@frost.js/core";
+import { dim, mint, sym, white } from "@frost.js/core/cli-ui";
+import {
+  cliVersion,
+  envFileList,
+  projectName,
+  routeCounts,
+  printCliHeader,
+} from "../ui.js";
+
+export interface RoutesCommandOptions {
+  /** .env files actually loaded by the CLI entry (absolute paths). */
+  envFiles?: string[];
+}
 
 /** Static scan of a route module's exports (loader/action/contract/...). */
 function scanExports(filePath: string): Set<string> {
@@ -29,37 +42,58 @@ function scanExports(filePath: string): Set<string> {
   return found;
 }
 
-export async function routesCommand(rootDir = process.cwd(), config?: FrostConfig): Promise<void> {
+export async function routesCommand(
+  rootDir = process.cwd(),
+  config?: FrostConfig,
+  options: RoutesCommandOptions = {},
+): Promise<void> {
   const resolved = resolveConfig(config);
   const routes = discoverRoutes({
     appDirectory: resolved.appDirectory,
     apiDirectory: resolved.apiDirectory,
     rootDir,
   });
+  const counts = routeCounts(routes);
 
-  console.log("\n📦 Frost Discovered Routes:\n");
-  console.log(
-    "Pattern".padEnd(25) +
-      "Kind".padEnd(10) +
-      "Loader".padEnd(8) +
-      "Action".padEnd(8) +
-      "Contract".padEnd(10) +
-      "File Path",
-  );
-  console.log("-".repeat(95));
+  printCliHeader({
+    version: cliVersion(),
+    appName: projectName(rootDir),
+    rows: {
+      pages: counts.pages,
+      api: counts.api,
+      envFiles: options.envFiles?.length
+        ? envFileList(options.envFiles, rootDir)
+        : undefined,
+    },
+  });
+  console.log();
+  console.log(`${dim("Discovered routes")}\n`);
+
+  const header =
+    dim("Pattern".padEnd(28)) +
+    dim("Kind".padEnd(10)) +
+    dim("Loader".padEnd(8)) +
+    dim("Action".padEnd(8)) +
+    dim("Contract".padEnd(10)) +
+    dim("File Path");
+  console.log(header);
+  console.log(dim("-".repeat(95)));
 
   for (const r of routes) {
-    const relFile = r.filePath.replace(rootDir, "").replace(/^[\\\/]/, "");
+    const relFile = r.filePath
+      .replace(rootDir, "")
+      .replace(/^[\\\/]/, "")
+      .replace(/\\/g, "/");
     const exports = scanExports(r.filePath);
-    const has = (name: string) => (exports.has(name) ? "yes" : "—");
+    const has = (name: string) => (exports.has(name) ? mint("yes") : dim("—"));
     console.log(
-      r.pattern.padEnd(25) +
-        r.kind.padEnd(10) +
+      white(r.pattern.padEnd(28)) +
+        dim(r.kind.padEnd(10)) +
         has("loader").padEnd(8) +
         has("action").padEnd(8) +
         has("contract").padEnd(10) +
-        relFile,
+        dim(relFile),
     );
   }
-  console.log(`\nTotal: ${routes.length} route(s)\n`);
+  console.log(`\n${mint(sym("diamond"))}  ${dim(`Total: ${routes.length} route(s)`)}\n`);
 }

@@ -39,6 +39,8 @@ export interface FrostPluginOptions {
   configFile?: string;
   /** CLI flag overrides re-applied on top of the config file after a restart. */
   cliOverrides?: FrostConfig;
+  /** Dev hook: one entry per completed request (CLI request lines). */
+  onRequest?: (entry: { method: string; path: string; status: number; ms: number }) => void;
 }
 
 const CONFIG_FILE_RE = /^frost\.config\.(ts|js|mts|mjs|cts|cjs)$/i;
@@ -452,7 +454,10 @@ export function frost(
               ssrStreaming: config.ssr.streaming,
               lang: config.app.lang,
               logger: createLogger(config.logging),
-              logRequests: config.logging.requestLogs,
+              // When the CLI supplies onRequest it renders the request line
+              // itself — don't double-log through the leveled logger.
+              logRequests: pluginOptions.onRequest ? false : config.logging.requestLogs,
+              onRequest: pluginOptions.onRequest,
               loadModule: async (route) => {
                 return (await server.ssrLoadModule(route.filePath)) as any;
               },

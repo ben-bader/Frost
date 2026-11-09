@@ -214,7 +214,7 @@ function bgPaint(name: string, text: string): string {
 
 export const mint = (t: string) => paint("mint", t);
 export const teal = (t: string) => paint("teal", t);
-export const sky = (t: string) => paint("sky", t, "\x1b[4m");
+export const url = (t: string) => paint("sky", t, "\x1b[4m");
 export const white = (t: string) => paint("white", t, "\x1b[1m");
 export const bold = (t: string) => paint("white", t, "\x1b[1m");
 export const dim = (t: string) => paint("dim", t);
@@ -780,15 +780,17 @@ export function formatErrorBlock(report: ErrorReportLike, opts: ErrorBlockOption
     }
   }
 
-  const out = ["", ...lines, ""].join("\n");
-  if ((opts.verbose || envFlag("FROST_DEBUG")) && report.stack) {
-    const stackLines = report.stack
-      .split("\n")
-      .slice(1) // skip the "Name: message" first line — already shown
-      .map((l) => dim(l));
-    return out + "\n" + stackLines.join("\n") + "\n";
-  }
-  return out + "\n";
+  const stackLines =
+    (opts.verbose || envFlag("FROST_DEBUG") || process.argv.includes("--verbose")) &&
+    report.stack
+      ? report.stack
+          .split("\n")
+          .slice(1) // skip the "Name: message" first line — already shown
+          .map((l) => dim(l))
+      : [];
+  const all = stackLines.length ? [...lines, "", ...stackLines] : lines;
+  // Leading blank line before the block, one blank line after it.
+  return "\n" + all.join("\n") + "\n\n";
 }
 
 export function printErrorBlock(report: ErrorReportLike, opts: ErrorBlockOptions = {}): void {
