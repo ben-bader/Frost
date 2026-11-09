@@ -1,9 +1,8 @@
 # @frost.js/server
 
-Request lifecycle, HTTP responses, API routing, SSR pipeline, and adapters for Frost.
+The Frost request pipeline for [Frost](https://github.com/ben-bader/Frost): `createRequestHandler`, streaming SSR, security headers, API dispatch, and `createFetchAdapter` for edge runtimes.
 
-Part of the [Frost](https://frostjs.dev) framework monorepo
-([github.com/ben-bader/Frost](https://github.com/ben-bader/Frost)).
+Used by `@frost.js/adapter-node` and `@frost.js/test`. Import directly to build a custom server or a fetch-style handler for Cloudflare Workers, Deno, Bun, or serverless platforms.
 
 ## Install
 
@@ -11,5 +10,18 @@ Part of the [Frost](https://frostjs.dev) framework monorepo
 npm install @frost.js/server
 ```
 
-See the repository docs for routing, data loading, contracts, middleware,
-deployment, and the full API surface.
+## Example
+
+```ts
+import { createFetchAdapter } from "@frost.js/server";
+
+export default createFetchAdapter({
+  routes,
+  loadModule,
+  // ...RequestHandlerOptions
+});
+```
+
+## Docs
+
+[docs/api/server.md](https://github.com/ben-bader/Frost/blob/main/docs/api/server.md) · [Deployment](https://github.com/ben-bader/Frost/blob/main/docs/guides/deployment.md)

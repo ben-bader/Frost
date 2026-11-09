@@ -204,7 +204,7 @@ export default function HelloPage({ data }: Route.ComponentProps<HelloData>) {
 }
 ```
 
-One file declares the URL shape, the validation contract, the server loader, and the component. Layouts, metadata, headers, and middleware follow the same pattern — see [routing](docs/guides/routing.md), [contracts](docs/guides/contracts.md), and the [full code tour](docs/getting-started.md#what-the-scaffold-contains) in the docs.
+One file declares the URL shape, the validation contract, the server loader, and the component. Layouts, metadata, headers, and middleware follow the same pattern — see [routing](docs/guides/routing.md), [contracts](docs/guides/contracts-and-types.md), and the [full code tour](docs/getting-started.md#what-the-scaffold-contains) in the docs.
 
 <details>
 <summary>Layout and API route</summary>
@@ -297,7 +297,7 @@ On file save, the dev server classifies the change and does the minimum necessar
 - **Route added/removed** — route table rebuilt, then reload.
 - **`frost.config.ts`** — dev server restarts in-process and reloads when it's back on the same port.
 
-Server errors surface in the browser overlay and the terminal at the same time, sharing one structured `FrostErrorReport` with a stable `FROST_E_*` code. See [dev server](docs/guides/dev-server.md) and [error handling](docs/guides/errors.md).
+Server errors surface in the browser overlay and the terminal at the same time, sharing one structured `FrostErrorReport` with a stable `FROST_E_*` code. See [dev server](docs/guides/dev-server.md) and [error handling](docs/guides/error-handling.md).
 
 ## Performance
 
@@ -312,7 +312,7 @@ Concurrency on Windows localhost includes connection-setup noise; treat concurre
 
 ## Compare
 
-Verified against official documentation on 2026-11-09; full sources in [docs/comparison.md](docs/comparison.md).
+Verified against official documentation on 2026-11-09; full sources in [docs/project/comparison.md](docs/project/comparison.md).
 
 | | Frost | Next.js (App Router) | React Router (framework mode) | TanStack Start |
 |---|---|---|---|---|
@@ -328,11 +328,11 @@ Choose Frost if you want the server/client boundary enforced at build time, expl
 
 ## Roadmap
 
-- **Next:** static generation (SSG), more host adapters, `frost doctor` diagnostics.
-- **Later:** incremental static regeneration, image pipeline, i18n routing.
-- **Exploring:** partial prerendering, view transitions, edge-runtime adapter parity.
+- **Next:** 1.0 stabilization, more host adapters (Vercel/Netlify-style).
+- **Later:** static generation (SSG/ISR), evaluation of RSC semantics.
+- **Exploring:** image optimization, i18n routing, partial prerendering, view transitions.
 
-See [docs/roadmap.md](docs/roadmap.md) for detail and status.
+See [docs/project/roadmap.md](docs/project/roadmap.md) for detail and status.
 
 ## Documentation
 
@@ -340,12 +340,12 @@ See [docs/roadmap.md](docs/roadmap.md) for detail and status.
 |---|---|
 | [Getting started](docs/getting-started.md) | [Configuration](docs/reference/configuration.md) |
 | [Concepts](docs/concepts.md) | [CLI](docs/reference/cli.md) |
-| [Architecture](docs/architecture.md) | [API reference](docs/reference/api/core.md) |
+| [Architecture](docs/architecture.md) | [API reference](docs/api/core.md) |
 | [Routing](docs/guides/routing.md) | [Error codes](docs/reference/error-codes.md) |
 | [Data loading](docs/guides/data-loading.md) | [File conventions](docs/reference/file-conventions.md) |
-| [Contracts & types](docs/guides/contracts.md) | [create-frost-app](docs/reference/create-frost-app.md) |
-| [Middleware](docs/guides/middleware.md) | [Comparison](docs/comparison.md) |
-| [Security](docs/guides/security.md) | [Troubleshooting](docs/troubleshooting.md) |
+| [Contracts & types](docs/guides/contracts-and-types.md) | [create-frost-app](docs/reference/create-frost-app.md) |
+| [Middleware](docs/guides/middleware.md) | [Comparison](docs/project/comparison.md) |
+| [Security](docs/guides/security.md) | [Troubleshooting](docs/project/troubleshooting.md) |
 | [Deployment](docs/guides/deployment.md) | [Contributing](CONTRIBUTING.md) |
 
 ## Contributing
@@ -354,5 +354,5 @@ Issues and PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Security repo
 
 <p align="center">
   <img src="docs/assets/icon-routing.svg" width="20" alt="">
-  <sub>MIT · <a href="docs/README.md">docs.frostjs.dev</a></sub>
+  <sub>MIT · <a href="docs/README.md">Documentation</a></sub>
 </p>

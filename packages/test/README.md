@@ -1,15 +1,36 @@
 # @frost.js/test
 
-Test utilities for Frost: mock-request handlers, route rendering, loader/action callers.
-
-Part of the [Frost](https://frostjs.dev) framework monorepo
-([github.com/ben-bader/Frost](https://github.com/ben-bader/Frost)).
+Test utilities for [Frost](https://github.com/ben-bader/Frost): run the real request pipeline against in-memory route modules — no filesystem, Vite, or browser required.
 
 ## Install
 
 ```bash
-npm install @frost.js/test
+npm install -D @frost.js/test
 ```
 
-See the repository docs for routing, data loading, contracts, middleware,
-deployment, and the full API surface.
+## Example
+
+```ts
+import { describe, it, expect } from "vitest";
+import { createTestHandler, callLoader } from "@frost.js/test";
+import { discoverRoutes } from "@frost.js/router";
+import * as page from "../src/app/page.js";
+
+const handler = createTestHandler({
+  routes: await discoverRoutes("src/app"),
+  modules: { "src/app/page.tsx": page },
+});
+
+describe("GET /", () => {
+  it("returns html", async () => {
+    const res = await handler(new Request("http://localhost/"));
+    expect(res.status).toBe(200);
+  });
+});
+```
+
+Also exports `renderRoute`, `callAction`, and `RenderRouteOptions`.
+
+## Docs
+
+[docs/api/test.md](https://github.com/ben-bader/Frost/blob/main/docs/api/test.md) · [Testing guide](https://github.com/ben-bader/Frost/blob/main/docs/guides/testing.md)

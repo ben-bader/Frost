@@ -1,9 +1,8 @@
 # @frost.js/vite
 
-Vite plugin for Frost: dev SSR middleware, route CSS, client boundary checks, virtual modules.
+The Vite plugin for [Frost](https://github.com/ben-bader/Frost): dev server with the `frost:*` reload protocol, Fast Refresh, the server/client boundary transform, per-route CSS, and the production build pipeline.
 
-Part of the [Frost](https://frostjs.dev) framework monorepo
-([github.com/ben-bader/Frost](https://github.com/ben-bader/Frost)).
+Every Frost app uses it through `frost.config.ts` and the `frost` CLI — import `frost`/`defineConfig` directly only for custom Vite setups.
 
 ## Install
 
@@ -11,5 +10,18 @@ Part of the [Frost](https://frostjs.dev) framework monorepo
 npm install @frost.js/vite
 ```
 
-See the repository docs for routing, data loading, contracts, middleware,
-deployment, and the full API surface.
+## Example
+
+```ts
+// frost.config.ts
+import { defineConfig } from "@frost.js/vite";
+
+export default defineConfig({
+  server: { port: 3000 },
+  security: { cspMode: "enforce" },
+});
+```
+
+## Docs
+
+[docs/api/vite.md](https://github.com/ben-bader/Frost/blob/main/docs/api/vite.md) · [Dev server](https://github.com/ben-bader/Frost/blob/main/docs/guides/dev-server.md) · [Configuration](https://github.com/ben-bader/Frost/blob/main/docs/reference/configuration.md)

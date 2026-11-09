@@ -1,9 +1,8 @@
 # @frost.js/router
 
-Filesystem route discovery, pattern compilation, and matching for Frost.
+File-system route discovery, pattern compilation, and matching for [Frost](https://github.com/ben-bader/Frost).
 
-Part of the [Frost](https://frostjs.dev) framework monorepo
-([github.com/ben-bader/Frost](https://github.com/ben-bader/Frost)).
+The `frost` CLI and dev server use this internally. Import it directly to enumerate routes (`discoverRoutes`), match pathnames (`matchRoutes`), or generate route types in custom tooling.
 
 ## Install
 
@@ -11,5 +10,16 @@ Part of the [Frost](https://frostjs.dev) framework monorepo
 npm install @frost.js/router
 ```
 
-See the repository docs for routing, data loading, contracts, middleware,
-deployment, and the full API surface.
+## Example
+
+```ts
+import { discoverRoutes, matchRoutes } from "@frost.js/router";
+
+const routes = await discoverRoutes("src/app", "src/api");
+const match = matchRoutes(routes, "/hello/world");
+// match?.route.params → { name: "world" }
+```
+
+## Docs
+
+[docs/api/router.md](https://github.com/ben-bader/Frost/blob/main/docs/api/router.md) · [Routing guide](https://github.com/ben-bader/Frost/blob/main/docs/guides/routing.md)

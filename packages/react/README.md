@@ -1,9 +1,8 @@
 # @frost.js/react
 
-React bindings for Frost: hydration, context, hooks, Link, document, error boundary, client router.
+React bindings for [Frost](https://github.com/ben-bader/Frost): document shell, hydration, `<Link>`, and error boundaries.
 
-Part of the [Frost](https://frostjs.dev) framework monorepo
-([github.com/ben-bader/Frost](https://github.com/ben-bader/Frost)).
+The Vite plugin wires hydration automatically — import this for a custom `Document`, the `Link` component, `ErrorBoundary`, or the request context in client components.
 
 ## Install
 
@@ -11,5 +10,16 @@ Part of the [Frost](https://frostjs.dev) framework monorepo
 npm install @frost.js/react
 ```
 
-See the repository docs for routing, data loading, contracts, middleware,
-deployment, and the full API surface.
+## Example
+
+```tsx
+import { Link } from "@frost.js/react";
+
+export function Nav() {
+  return <Link href="/about">About</Link>;
+}
+```
+
+## Docs
+
+[docs/api/react.md](https://github.com/ben-bader/Frost/blob/main/docs/api/react.md) · [Rendering](https://github.com/ben-bader/Frost/blob/main/docs/rendering.md)

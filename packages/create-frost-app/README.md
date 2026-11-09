@@ -1,6 +1,6 @@
 # create-frost-app
 
-Scaffolds a new [Frost](https://frostjs.dev) application.
+Scaffolds a new [Frost](https://github.com/ben-bader/Frost) application.
 
 ```bash
 npm create frost-app@latest my-app
@@ -14,3 +14,7 @@ Templates:
 
 Other flags: `--no-install`, `--no-git`, `--pm <pnpm|npm|yarn|bun>`,
 `--help`, `--version`.
+
+## Docs
+
+[create-frost-app reference](https://github.com/ben-bader/Frost/blob/main/docs/reference/create-frost-app.md) · [Getting started](https://github.com/ben-bader/Frost/blob/main/docs/getting-started.md)

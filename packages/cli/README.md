@@ -1,15 +1,26 @@
 # @frost.js/cli
 
-frost CLI: dev, build, start, and routes commands.
-
-Part of the [Frost](https://frostjs.dev) framework monorepo
-([github.com/ben-bader/Frost](https://github.com/ben-bader/Frost)).
+The `frost` command-line tool for [Frost](https://github.com/ben-bader/Frost): `dev`, `build`, `start`, and `routes`.
 
 ## Install
 
 ```bash
-npm install @frost.js/cli
+npm install -D @frost.js/cli
 ```
 
-See the repository docs for routing, data loading, contracts, middleware,
-deployment, and the full API surface.
+The scaffold wires `dev`/`build`/`start` scripts into `package.json`.
+
+## Usage
+
+```bash
+frost dev --port 4000
+frost build --analyze --strict
+frost start
+frost routes
+```
+
+Flags: `--port`/`-p`, `--host`/`-h`, `--config`, `--analyze`, `--strict`.
+
+## Docs
+
+[CLI reference](https://github.com/ben-bader/Frost/blob/main/docs/reference/cli.md) · [docs/api/cli.md](https://github.com/ben-bader/Frost/blob/main/docs/api/cli.md)

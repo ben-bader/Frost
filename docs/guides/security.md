@@ -1,29 +1,47 @@
 # Security
 
-## CSP
+> CSP nonces, security headers, CSRF, body limits, static-file containment, and the client env boundary.
 
-`security.csp` (enabled by default, **report-only** mode) emits a
-per-request nonce into the hydration script and any inline script Frost
-produces. Policy template supports `{nonce}`; set
-`security.cspMode: "enforce"` to switch to `Content-Security-Policy`.
+**Last verified against v0.1.1.**
 
-Always-on headers: `X-Content-Type-Options`, `X-Frame-Options`,
-`Referrer-Policy`, `Permissions-Policy`. `security.hsts` is opt-in.
-HTML responses are `Cache-Control: no-cache`.
+## Content Security Policy
 
-`meta.scripts[].content` inline scripts are `</script`/`<!--`-escaped
-and require the nonce under CSP — see `layouts-metadata.md`.
+`security.csp` is enabled by default in **report-only** mode. The policy template supports a `{nonce}` placeholder replaced with a per-request nonce:
+
+```
+default-src 'self'; script-src 'self' 'nonce-{nonce}';
+style-src 'self' 'unsafe-inline'; img-src 'self' data:;
+font-src 'self' data:; connect-src 'self';
+frame-ancestors 'self'; base-uri 'self'; form-action 'self'
+```
+
+- `security.csp: false` disables CSP; a string sets it verbatim.
+- `security.cspMode: "enforce"` switches `Content-Security-Policy-Report-Only` to `Content-Security-Policy`.
+- Inline scripts Frost emits (hydration payload, metadata `scripts[].content`) get the nonce automatically; `meta.scripts[].content` is `</script`/`<!--`-escaped.
+
+## Always-on headers
+
+`X-Content-Type-Options: nosniff`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` (default denies camera/microphone/geolocation). HTML responses are `Cache-Control: no-cache`.
+
+- `security.hsts` — opt-in: `true` for defaults (maxAge 1y, includeSubDomains) or an object `{ maxAge, includeSubDomains, preload }`.
+- `security.permissionsPolicy` — string verbatim, `false` to disable, or `Record<feature, allowlist>`.
 
 ## Request safety
 
-- **Static containment**: real `path.resolve` + `realpath` checks block
-  traversal, `%2e%2e`, backslash, symlink, and UNC escapes.
-- **Body limits**: `limits.formBytes` (default 1 MB) counts bytes while
-  streaming → 413.
-- **CSRF**: POST actions and server-function RPC validate origin.
-- **Client boundary**: client code reading non-`FROST_PUBLIC_*`
-  `process.env.*` fails the build; server-only imports are enforced
-  transitively.
-- **Env allowlist**: only `FROST_PUBLIC_*` reaches the client.
+- **Static containment** — real `path.resolve` + `realpath` checks block traversal, `%2e%2e`, backslash, symlink, and UNC escapes when serving `public/`.
+- **Body limits** — `limits.formBytes`/`limits.jsonBytes` (default 1 MiB) count bytes while streaming → 413 `FROST_E_BODY`.
+- **CSRF** — POST actions and server-function RPC validate origin (`validateCsrf` in `@frost.js/data`).
+- **Client boundary** — client code reading non-`FROST_PUBLIC_*` `process.env.*` fails the build (`FROST_E_BOUNDARY`); server-only imports are enforced transitively.
+- **Env allowlist** — only `FROST_PUBLIC_*` reaches the client bundle.
 
-See `docs/architecture/threat-model.md` for the full model.
+## What Frost does not do
+
+- No built-in auth, sessions, or rate limiting — implement in middleware or loaders.
+- No automatic HTTPS — terminate TLS at your proxy/host; enable `security.hsts` only behind TLS.
+- CSP is report-only by default — review reports, then switch to `enforce` deliberately.
+
+See `docs/architecture/threat-model.md` and `docs/decisions/002-csp-nonce.md`, `003-static-containment.md`, `004-env-allowlist.md`, `005-body-limits.md` for the reasoning.
+
+## Related
+
+- [Environment variables](environment-variables.md) · [Middleware](middleware.md)
