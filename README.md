@@ -1,208 +1,358 @@
-# Frost
+<div align="center">
 
-Frost is a React-first full-stack framework built around explicit execution, server/client separation, and a predictable runtime model. It aims to make SSR, hydration, routing, and data loading understandable without hidden framework magic.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.svg">
+  <img alt="Frost: React rendering. Web-native runtime." src="docs/assets/banner-light.svg" width="100%">
+</picture>
 
-## What Frost is
+<br>
 
-Frost is designed for apps where developers should be able to answer these questions quickly:
+Frost is a React full-stack framework built around explicit execution: server loaders, client hydration, route contracts, and runtime boundaries stay visible, testable, and predictable.
 
-- Where does this code run?
-- When is this route rendered?
-- Which data came from the server versus the browser?
-- How does hydration reconnect state?
-- What is the runtime boundary between client and server code?
+<p>
+  <a href="https://www.npmjs.com/package/create-frost-app"><img alt="create-frost-app npm" src="https://img.shields.io/npm/v/create-frost-app?label=create-frost-app&color=0a1c1e&labelColor=0a1c1e"></a>
+  <a href="https://www.npmjs.com/package/@frost.js/core"><img alt="@frost.js/core npm" src="https://img.shields.io/npm/v/@frost.js/core?label=%40frost.js%2Fcore&color=0a1c1e&labelColor=0a1c1e"></a>
+  <a href="https://github.com/ben-bader/Frost/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/ben-bader/Frost/ci.yml?label=CI&color=0a1c1e&labelColor=0a1c1e"></a>
+  <img alt="MIT license" src="https://img.shields.io/badge/license-MIT-10e8c8?labelColor=0a1c1e">
+  <img alt="Node >= 20" src="https://img.shields.io/badge/node-%3E%3D20-10e8c8?labelColor=0a1c1e">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-native-10e8c8?labelColor=0a1c1e">
+</p>
 
-The framework is intentionally small and explicit, using standard React concepts layered on top of a server runtime, route contracts, and package-level boundaries.
+<p>
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#compare">Compare</a> ·
+  <a href="docs/README.md">Docs</a>
+</p>
 
-## Design philosophy
+</div>
 
-- Explicit execution: server, client, and shared modules are treated as distinct scopes.
-- Visible data flow: loaders and route data are part of the app contract instead of implicit framework behavior.
-- React compatibility: the framework works with standard React SSR and client hydration patterns.
-- Host independence: the core runtime is not tied to a single deployment target.
-- Clear debugging: route errors, source traces, and hydration mismatches are surfaced in a useful way.
+## The pitch
 
-## Architecture
+Most full-stack React frameworks hide the boundary between server and client behind conventions you have to memorize. Frost keeps it in the code. A route is a module with named exports — `loader`, `action`, `metadata`, `contract` — and each one runs in exactly one place. There is no implicit cache, no magic serialization, and no "it depends" when you ask where a piece of code executes.
 
-The repository is organized as a monorepo of framework packages and example apps.
+That buys you three things in practice:
 
-```text
-frost/
-├── apps/
-├── docs/
-├── examples/
-│   └── starter/
-├── packages/
-│   ├── adapter-node/
-│   ├── cli/
-│   ├── core/
-│   ├── data/
-│   ├── react/
-│   ├── router/
-│   ├── server/
-│   └── vite/
-├── package.json
-├── pnpm-lock.yaml
-├── pnpm-workspace.yaml
-└── README.md
-```
+- **Predictable rendering.** Every page is server-rendered and streamed; hydration reconnects to serialized route data instead of re-running server logic.
+- **Contracts you can test.** Params, search params, loader returns, and action input validate against Standard Schema validators (zod, valibot, arktype, or your own).
+- **Errors you can read.** Server failures produce a styled browser overlay and a structured terminal block with a stable `FROST_E_*` code — not a wall of stack frames.
 
-The main building blocks are:
+## Quick start
 
-- `@frost.js/core`: shared framework contracts and runtime primitives.
-- `@frost.js/router`: route discovery and matching.
-- `@frost.js/server`: server request lifecycle and response generation.
-- `@frost.js/react`: React SSR and hydration helpers.
-- `@frost.js/data`: data loaders/actions and request-level execution.
-- `@frost.js/vite`: Vite integration and framework runtime behavior.
-- `@frost.js/adapter-node`: Node.js hosting adapter.
-
-## Installation
-
-Create a new app (requires Node.js >= 20):
+Requires Node.js >= 20.
 
 ```bash
 npm create frost-app@latest my-app
 cd my-app
 npm install
+npm run dev
 ```
 
-This scaffolds a minimal Frost application (add `--template tailwind` for
-Tailwind CSS). Published packages live under the `@frost.js` scope
-(`@frost.js/core`, `@frost.js/react`, `@frost.js/server`, and friends).
+Then open `http://localhost:3000`. You get the full starter: a landing page, a `/playground` route with client state, a contract-validated `/hello/[name]` route, app middleware, error and not-found pages, and Tailwind CSS already wired.
 
-To hack on the framework itself, this repo uses pnpm workspaces:
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/terminal-dark.svg">
+  <img alt="Terminal session: npm create frost-app, npm install, npm run dev, then a styled Frost error with code FROST_E_LOADER and a WARN block" src="docs/assets/terminal-light.svg" width="100%">
+</picture>
+
+<details>
+<summary>pnpm, yarn, or bun</summary>
 
 ```bash
-git clone <repo-url>
-cd frost
-pnpm install
+pnpm create frost-app my-app   # or: yarn create frost-app / bun create frost-app
+cd my-app
+pnpm install && pnpm dev       # yarn/bun equivalents
 ```
 
-## Quick start
+</details>
 
-Run the starter app:
+## Status
 
-```bash
-pnpm --dir examples/starter dev
-```
+> [!NOTE]
+> Frost is at **0.1.1**. The API may change before 1.0. Treat it as early but usable: routing, loaders, actions, contracts, middleware, streaming SSR, the dev server, and the Node adapter are covered by the test suite and exercised by the starter. The opt-in client router is experimental; static generation (SSG/ISR) is planned, not implemented.
 
-Then open:
+## Features
 
-```text
-http://localhost:3000
-```
+<table>
+<tr>
+<td width="50%" valign="top">
 
-## Development commands
+**File-based routing**
+`page.tsx` and `layout.tsx` files map to URLs, with `[param]` and `[...catchAll]` segments.
 
-From the repo root:
+</td>
+<td width="50%" valign="top">
 
-```bash
-pnpm test
-pnpm typecheck
-pnpm build
-```
+**Loaders & actions**
+Server data loading with parallel layout/page loaders, POST actions, and progressive-enhancement forms.
 
-Starter-specific commands:
+</td>
+</tr>
+<tr>
+<td valign="top">
 
-```bash
-pnpm --dir examples/starter dev
-pnpm --dir examples/starter build
-pnpm --dir examples/starter start
-```
+**Route contracts**
+Validate params, search, loader returns, and action input with any Standard Schema validator.
 
-## Production build and deployment
+</td>
+<td valign="top">
 
-The framework packages can be built with the workspace build script:
+**Typed end to end**
+`defineRoute()` infers loader/params types; generated types give typed `Link` hrefs.
 
-```bash
-pnpm build
-```
+</td>
+</tr>
+<tr>
+<td valign="top">
 
-The starter app can also be production-built and started with its local scripts.
+**Visible boundaries**
+Client code reading non-public `process.env` fails the build; server-only imports are enforced transitively.
 
-```bash
-pnpm --dir examples/starter build
-pnpm --dir examples/starter start
-```
+</td>
+<td valign="top">
 
-## Routes
+**Streaming SSR**
+`renderToReadableStream` flushes the shell early; Suspense boundaries stream in.
 
-The starter app ships two routes:
+</td>
+</tr>
+<tr>
+<td valign="top">
 
-- `/` — Demo: a hero-only landing page (headline, CTAs, dot cue) with the shared header.
-- `/playground` — Playground: a bento grid with a client counter, a fake terminal that types an error sequence, and a faux browser window showing the error dialog.
+**Honest dev errors**
+Browser overlay plus a terminal `ERROR`/`WARN` block with code, file:line:column, and a code frame.
 
-### What's in this starter
+</td>
+<td valign="top">
 
-- `/` demo page and `/playground` playground — route components live in `src/app/page.tsx` and `src/app/playground/page.tsx`; add a `loader` export in a route file when a page needs server data.
-- Shared chrome and client islands: `src/components/` (`Header`, `Button`, `bento/` tiles) — anything using `useState`/`useEffect` hydrates on the client.
-- Design tokens live in the Tailwind `@theme` block and the only stylesheet is `src/styles/app.css` (processed by `@tailwindcss/postcss` via `postcss.config.mjs`).
-- Framework config: `frost.config.ts`; scripts in `package.json` (`dev`, `build`, `start`, `test`).
+**Fast Refresh dev**
+CSS hot-updates without reload, component state survives edits, loaders trigger reload, config restarts the server.
 
-## CSS and font loading
+</td>
+</tr>
+<tr>
+<td valign="top">
 
-Stylesheets are discovered per route and emitted as real `<link rel="stylesheet">` tags in the server-rendered `<head>` — before first paint and independent of hydration.
+**Server functions**
+`createServerFn` exposes typed RPC over `POST /_frost/fn` with CSRF and origin checks.
 
-- **Development:** the Vite plugin walks each route's module graph (page + layout chain) for CSS imports and serves the compiled CSS through `/@frost/css?url=...`. Vite HMR continues to work normally.
-- **Production:** `frost build` produces a client bundle per route plus a manifest. The server resolves each route's CSS and JS from the manifest and renders hashed asset URLs. Font files emitted by `@fontsource` are referenced from the stylesheet and the primary weights are preloaded with `crossorigin`.
+</td>
+<td valign="top">
 
-Because the stylesheet link is in the initial HTML, there is no flash of unstyled content and no layout shift from late-loading CSS.
+**Middleware**
+`app/_middleware.ts` runs before routing for pages and API routes, with a memoized `next()`.
 
-## SSR and hydration
+</td>
+</tr>
+<tr>
+<td valign="top">
 
-Frost supports SSR by rendering route content on the server and serializing route data for the browser. During hydration, the client reconnects to the same route payload instead of re-running server logic. The `/playground` counter demonstrates this: it renders `0` on the server and becomes interactive only after hydration.
+**Built-in hardening**
+CSP nonces, Permissions-Policy, br/gzip compression, body limits, static-file containment.
 
-## Routing and data loading
+</td>
+<td valign="top">
 
-Routes are discovered from the application source tree, and loaders provide route data before page rendering. The router and server packages cooperate to match URL patterns and execute the correct request lifecycle.
+**Client router** *(experimental)*
+Opt-in fetch navigation with prefetch, scroll restoration, and full-reload fallback.
 
-A typical route looks like this:
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+**Test utilities**
+`@frost.js/test` builds request handlers from in-memory route modules — no browser needed.
+
+</td>
+<td valign="top">
+
+**Small core**
+Nine focused packages; import only what you need. Node adapter plus a fetch adapter for edge runtimes.
+
+</td>
+</tr>
+</table>
+
+## A route, in full
 
 ```tsx
-export async function loader({ request }: Route.LoaderArgs) {
-  return { message: "hello from the server" };
-}
+// src/app/hello/[name]/page.tsx — from the starter
+import type { Route, StandardSchemaV1 } from "@frost.js/core";
 
-export default function Page({ data }: Route.ComponentProps<{ message: string }>) {
-  return <div>{data.message}</div>;
+const nameSchema: StandardSchemaV1<string> = {
+  "~standard": {
+    version: 1,
+    vendor: "starter",
+    validate: (v) =>
+      typeof v?.name === "string" && /^[a-zA-Z][\w-]{0,31}$/.test(v.name)
+        ? { value: v.name }
+        : { issues: [{ message: "invalid name" }] },
+  },
+};
+
+export const contract = { params: nameSchema };
+
+export const loader = async ({ params }: Route.LoaderArgs<{ name: string }>) => ({
+  greeting: "Hello",
+  name: params.name,
+});
+
+export default function HelloPage({ data }: Route.ComponentProps<HelloData>) {
+  return <h1>{data.greeting}, {data.name}!</h1>;
 }
 ```
 
-## Server/client boundaries
+One file declares the URL shape, the validation contract, the server loader, and the component. Layouts, metadata, headers, and middleware follow the same pattern — see [routing](docs/guides/routing.md), [contracts](docs/guides/contracts.md), and the [full code tour](docs/getting-started.md#what-the-scaffold-contains) in the docs.
 
-One of Frost's central guarantees is that server-only code stays server-only. The framework aims to keep modules with server-only behavior out of client bundles and make those boundaries explicit to developers.
+<details>
+<summary>Layout and API route</summary>
 
-## Error handling
+```tsx
+// src/app/layout.tsx — loader data reaches every page below it
+export const loader = async () => ({ nav: NAV_ITEMS });
 
-`@frost.js/react` ships a `FrostErrorBoundary` that captures render errors with route, phase, component stack, and source location when available. In development it renders a diagnostic dialog with the error type, message, source file/line, expandable stack traces, copy-message/copy-report actions, and dismiss/retry recovery. In production it falls back to a safe message without leaking filesystem paths or internals.
+export default function RootLayout({ children, data }: Route.ComponentProps<LayoutData>) {
+  return <Shell nav={data.nav}>{children}</Shell>;
+}
+```
 
-Note: React error boundaries catch render errors only — not event-handler or asynchronous errors.
+```ts
+// src/api/hello/route.ts — REST endpoints live outside src/app
+export function GET() {
+  return Response.json({ hello: "world" });
+}
+```
 
-## Current limits
+API modules export `GET`/`POST`/`PUT`/`DELETE`/`PATCH`/`HEAD`/`OPTIONS` handlers receiving `(request, context)`. See [api routes](docs/guides/api-routes.md).
 
-This repository is still evolving. Some areas are intentionally minimal or experimental, including the playground shell and developer diagnostics. The goal is to keep the framework behavior real and demonstrable without claiming unsupported production features.
+</details>
 
-## Contribution workflow
+## How it works
 
-1. Create a focused branch.
-2. Update or add tests alongside behavioral changes.
-3. Run the project test suite and type checks.
-4. Keep examples aligned with the actual framework runtime.
-5. Document any API or routing changes in the package or docs.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/lifecycle-dark.svg">
+  <img alt="Request lifecycle: Request, middleware, route match, parallel loaders, streaming render, HTML, hydrate — with the server/client boundary marked" src="docs/assets/lifecycle-light.svg" width="100%">
+</picture>
 
-## Tailwind CSS
+Every request flows through the same visible pipeline: app middleware, route matching, parallel loaders (page + layouts), streaming render, serialized HTML, then client hydration. Nothing runs twice and nothing is hidden.
 
-Tailwind is a valid fit for Frost applications, but the repo is intentionally keeping the framework integration lightweight and consistent with the existing Vite-based build pipeline. Use the framework's Vite integration and confirm SSR/hydration remain stable when adding CSS tooling.
+```mermaid
+flowchart TD
+  core["core — types, config, contracts, errors"]
+  router["router — discovery & matching"]
+  data["data — loaders support, CSRF, server fns"]
+  react["react — SSR, hydration, Link, boundary"]
+  server["server — request handler, SSR, security"]
+  adapter["adapter-node — http server, static, compression"]
+  vite["vite — dev server, build, boundaries"]
+  cli["cli — dev/build/start/routes"]
+  test["test — in-memory handlers"]
+  cfa["create-frost-app — scaffolder"]
 
-## Docs and references
+  router --> core
+  data --> core
+  react --> core
+  server --> core
+  server --> router
+  server --> data
+  server --> react
+  adapter --> server
+  vite --> core
+  vite --> router
+  cli --> vite
+  cli --> adapter
+  test --> server
+  cfa -.->|scaffolds apps using| cli
+```
 
-Guides live in `docs/guides/`: routing, data loading, layouts/metadata,
-contracts, middleware, environment, error codes, auto reload, the
-opt-in client router, performance, security (CSP), and deployment.
-Decisions are recorded in `docs/decisions/`.
+| Package | Purpose | Import directly when |
+|---|---|---|
+| `@frost.js/core` | Config, types, contracts, errors, env | Defining `frost.config.ts` or route module types |
+| `@frost.js/router` | Route discovery and matching | Custom tooling or tests |
+| `@frost.js/data` | `dedupe`, CSRF, body parsing, `createServerFn` | Server functions outside routes |
+| `@frost.js/react` | SSR document, hydration, `Link`, error boundary | Custom client entry or tests |
+| `@frost.js/server` | Request handler, SSR, security headers, fetch adapter | Non-Vite hosts or tests |
+| `@frost.js/adapter-node` | `node:http` server, static files, compression | Custom Node servers |
+| `@frost.js/vite` | Vite plugin, dev protocol, build pipeline | — (used via `frost.config.ts`) |
+| `@frost.js/cli` | `frost` binary | — |
+| `@frost.js/test` | In-memory route handlers for tests | Writing route tests |
+| `create-frost-app` | Scaffolder (`npm create frost-app`) | — |
 
-- `examples/starter/` — live starter/playground app
-- `packages/` — framework implementation
-- `docs/` — design and architecture notes
+The runtime boundary is a build-time guarantee: modules that touch server-only APIs are kept out of client bundles, and client code that reads non-`FROST_PUBLIC_*` environment variables fails the build.
 
+## Developer experience
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/overlay-dark.svg">
+  <img alt="Frost dev error overlay: red alertdialog with error name, message, code FROST_E_LOADER, source location, code frame, meta grid, and suggested fix" src="docs/assets/overlay-light.svg" width="100%">
+</picture>
+
+On file save, the dev server classifies the change and does the minimum necessary work:
+
+- **CSS** — hot-updates the stylesheet, no reload.
+- **Component** — Fast Refresh preserves React state.
+- **Loader, action, or API module** — full reload (data changed).
+- **Route added/removed** — route table rebuilt, then reload.
+- **`frost.config.ts`** — dev server restarts in-process and reloads when it's back on the same port.
+
+Server errors surface in the browser overlay and the terminal at the same time, sharing one structured `FrostErrorReport` with a stable `FROST_E_*` code. See [dev server](docs/guides/dev-server.md) and [error handling](docs/guides/errors.md).
+
+## Performance
+
+Measured on this machine (Windows, Node v24.15.0, production `frost start`, starter app, `node audit-output/bench.mjs`, 2026-11-09). These are single-machine localhost numbers — useful for spotting regressions, not a comparison benchmark.
+
+| Route | Sequential p50 | Sequential p95 | Concurrent p50 (10-wide) |
+|---|---|---|---|
+| `/` | 28.5 ms | 37.5 ms | 285 ms |
+| `/playground` | 21.8 ms | 38.4 ms | 178 ms |
+
+Concurrency on Windows localhost includes connection-setup noise; treat concurrent figures as an upper bound. Method and variance notes: [docs/performance.md](docs/guides/performance.md).
+
+## Compare
+
+Verified against official documentation on 2026-11-09; full sources in [docs/comparison.md](docs/comparison.md).
+
+| | Frost | Next.js (App Router) | React Router (framework mode) | TanStack Start |
+|---|---|---|---|---|
+| Rendering | SSR + streaming, opt-out per deployment | SSR/SSG/ISR, React Server Components | SSR + optional SPA mode | SSR + selective SSR |
+| Data loading | Explicit `loader`/`action` exports, parallel | `fetch` in Server Components, `use cache` | `loader`/`action`, client loaders | Router loaders + server functions |
+| Route typing | Generated `routes.d.ts`, typed `Link`, `defineRoute` | `typedRoutes` (stable) | Generated `+types` per route | TanStack Router typegen |
+| Runtime contracts | Standard Schema validation of params/search/data | None built in | None built in | Search-param schemas (router) |
+| Client/server boundary | Build-enforced (`FROST_E_BOUNDARY`, env allowlist) | `"use client"` directive | Server actions removed from bundle | Server functions serialized |
+| Deployment | Node adapter + fetch adapter | Vercel-first, Node output | Any Node host | Many targets (Nitro, CF, etc.) |
+| Maturity | 0.1.x, one maintainer | Large ecosystem, industry standard | Remix-derived, broad adoption | Newer, growing |
+
+Choose Frost if you want the server/client boundary enforced at build time, explicit loader contracts, and readable dev errors — and you are comfortable with a young framework. Choose Next.js for the largest ecosystem and Vercel integration, React Router if you want Remix-style conventions with the biggest community, or TanStack Start for type-safe routing on many deploy targets.
+
+## Roadmap
+
+- **Next:** static generation (SSG), more host adapters, `frost doctor` diagnostics.
+- **Later:** incremental static regeneration, image pipeline, i18n routing.
+- **Exploring:** partial prerendering, view transitions, edge-runtime adapter parity.
+
+See [docs/roadmap.md](docs/roadmap.md) for detail and status.
+
+## Documentation
+
+| Start here | Reference |
+|---|---|
+| [Getting started](docs/getting-started.md) | [Configuration](docs/reference/configuration.md) |
+| [Concepts](docs/concepts.md) | [CLI](docs/reference/cli.md) |
+| [Architecture](docs/architecture.md) | [API reference](docs/reference/api/core.md) |
+| [Routing](docs/guides/routing.md) | [Error codes](docs/reference/error-codes.md) |
+| [Data loading](docs/guides/data-loading.md) | [File conventions](docs/reference/file-conventions.md) |
+| [Contracts & types](docs/guides/contracts.md) | [create-frost-app](docs/reference/create-frost-app.md) |
+| [Middleware](docs/guides/middleware.md) | [Comparison](docs/comparison.md) |
+| [Security](docs/guides/security.md) | [Troubleshooting](docs/troubleshooting.md) |
+| [Deployment](docs/guides/deployment.md) | [Contributing](CONTRIBUTING.md) |
+
+## Contributing
+
+Issues and PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Security reports: [SECURITY.md](SECURITY.md). Licensed [MIT](LICENSE).
+
+<p align="center">
+  <img src="docs/assets/icon-routing.svg" width="20" alt="">
+  <sub>MIT · <a href="docs/README.md">docs.frostjs.dev</a></sub>
+</p>
