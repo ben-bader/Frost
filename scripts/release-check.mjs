@@ -15,6 +15,8 @@ const steps = [
   ["pack --dry-run", "pnpm", ["-r", "pack", "--dry-run"]],
   ["lint-packages (publint + attw)", node, ["scripts/lint-packages.mjs"]],
   ["check:template", node, ["scripts/check-template.mjs"]],
+  ["docs:check", node, ["scripts/check-docs.mjs"]],
+  ["docs:check-assets", node, ["scripts/check-assets.mjs"]],
   ["e2e-pack", node, ["scripts/e2e-pack.mjs", "--skip-build"]],
 ];
 

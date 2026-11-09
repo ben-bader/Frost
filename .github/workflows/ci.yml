@@ -26,6 +26,8 @@ jobs:
       - run: pnpm test
       - run: pnpm build
       - run: pnpm check:template
+      - run: pnpm docs:check
+      - run: pnpm docs:check-assets
       - run: node scripts/e2e-pack.mjs
       - name: Audit (non-blocking)
         run: pnpm audit || true
