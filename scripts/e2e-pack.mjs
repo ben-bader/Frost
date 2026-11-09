@@ -40,6 +40,9 @@ const PACKAGES = [
 
 const results = [];
 let serverProc = null;
+let devProc = null;
+const ANSI_RE = /\[[0-9;]*m/g;
+const stripAnsi = (s) => s.replace(ANSI_RE, "");
 function check(name, ok, detail = "") {
   results.push({ name, ok, detail });
   console.log(`  ${ok ? "PASS" : "FAIL"}  ${name}${detail ? ` — ${detail}` : ""}`);
@@ -170,14 +173,55 @@ try {
   runOrFail("tar", ["--force-local", "-xzf", tgz["create-frost-app"].split(path.sep).join("/"), "-C", cfaDest.split(path.sep).join("/")], "extract create-frost-app");
   const binPath = path.join(cfaDest, "package", "bin.js");
   check("packed bin.js exists + LF", fs.existsSync(binPath) && !fs.readFileSync(binPath).includes("\r"));
+  const cfaVersion = JSON.parse(
+    fs.readFileSync(path.join(cfaDest, "package", "package.json"), "utf8"),
+  ).version;
 
-  const scaffold = runOrFail(
+  const scaffold = run(
     process.execPath,
     [binPath, "e2e-app", "--no-install", "--no-git"],
-    "scaffold",
     { cwd: workBase },
   );
-  check("scaffold exit 0", scaffold.status === 0);
+  const scaffoldOut = stripAnsi(scaffold.stdout || "");
+  check("scaffold exit 0", scaffold.status === 0, scaffold.status === 0 ? "" : (scaffold.stderr || "").slice(-400));
+  check(
+    "scaffold header shows real create-frost-app version",
+    scaffoldOut.includes(`create-frost-app ${cfaVersion}`),
+    `expected ${cfaVersion}`,
+  );
+  check(
+    "scaffold Project name row",
+    /Project name\s+e2e-app/.test(scaffoldOut),
+  );
+  {
+    // Next steps box: title row and bottom border must be present and the
+    // box's top/bottom borders must have equal display width. The bottom
+    // border is the last non-empty line of the output.
+    const lines = scaffoldOut.split(/\r?\n/).filter((l) => l.trim().length > 0);
+    const top = lines.find((l) => /Next steps/.test(l));
+    const bottom = lines[lines.length - 1];
+    check("scaffold Next steps box present", Boolean(top && bottom && /[╮+]/.test(top) && /[╯+]$/.test(bottom)), top ?? "missing");
+    if (top && bottom) {
+      check(
+        "Next steps borders aligned",
+        [...top].length === [...bottom].length,
+        `top=${[...top].length} bottom=${[...bottom].length}`,
+      );
+    }
+  }
+
+  // NO_COLOR=1 run: no ANSI escapes at all, exit 0.
+  const scaffoldNc = run(
+    process.execPath,
+    [binPath, "e2e-app-nocolor", "--no-install", "--no-git"],
+    { cwd: workBase, env: { ...process.env, NO_COLOR: "1" } },
+  );
+  const ncOut = scaffoldNc.stdout || "";
+  check(
+    "scaffold NO_COLOR=1: exit 0, no ANSI",
+    scaffoldNc.status === 0 && !/\[/.test(ncOut),
+    scaffoldNc.status === 0 ? "" : `exit ${scaffoldNc.status}`,
+  );
   check(
     "scaffold output (starter template)",
     fs.existsSync(path.join(appDir, "package.json")) &&
@@ -316,6 +360,82 @@ try {
   );
   if (install.status !== 0) throw new Error("npm install failed");
 
+  // 5b. frost dev header — real CLI output from the packed packages.
+  console.log("== frost dev ==");
+  const cliBin = path.join(appDir, "node_modules", "@frost.js", "cli", "dist", "bin.js");
+  const installedCliVersion = JSON.parse(
+    fs.readFileSync(path.join(appDir, "node_modules", "@frost.js", "cli", "package.json"), "utf8"),
+  ).version;
+  const devPort = await new Promise((resolve) => {
+    const s = net.createServer().listen(0, "127.0.0.1", () => {
+      const p = s.address().port;
+      s.close(() => resolve(p));
+    });
+  });
+  devProc = spawn(
+    process.execPath,
+    [cliBin, "dev", "--port", String(devPort)],
+    {
+      cwd: appDir,
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
+      env: { ...process.env, NO_COLOR: "1" },
+    },
+  );
+  const dev = devProc;
+  let devLog = "";
+  dev.stdout.on("data", (d) => (devLog += d));
+  dev.stderr.on("data", (d) => (devLog += d));
+
+  const devBase = `http://localhost:${devPort}`;
+  let devReady = false;
+  for (let i = 0; i < 180 && !devReady; i++) {
+    if (devLog.includes("Ready in")) devReady = true;
+    else await new Promise((r) => setTimeout(r, 500));
+  }
+  const devOut = stripAnsi(devLog);
+  check("dev server prints Ready in", devReady, devReady ? "" : devLog.slice(-400));
+  check(
+    "dev header shows real @frost.js/cli version",
+    devOut.includes(`Frost ${installedCliVersion}`),
+    `expected ${installedCliVersion}`,
+  );
+  check("dev header shows app name", /\be2e-app\b/.test(devOut));
+  check(
+    "dev Local URL is the real listening address",
+    devOut.includes(`${devBase}/`),
+    `expected ${devBase}/`,
+  );
+  if (devReady) {
+    try {
+      const r = await fetch(`${devBase}/`);
+      check("dev server responds 200", r.status === 200, `got ${r.status}`);
+      await r.arrayBuffer();
+    } catch (e) {
+      check("dev server responds 200", false, String(e));
+    }
+  }
+  // stop the dev server and its whole process tree
+  try {
+    if (process.platform === "win32") {
+      spawnSync("taskkill", ["/PID", String(dev.pid), "/T", "/F"], {
+        stdio: "ignore",
+        windowsHide: true,
+      });
+    } else {
+      dev.kill("SIGTERM");
+    }
+  } catch {
+    /* ignore */
+  }
+  await new Promise((r) => setTimeout(r, 1000));
+  check(
+    "dev server process tree stopped",
+    dev.exitCode !== null || dev.signalCode !== null,
+    `exitCode=${dev.exitCode} signal=${dev.signalCode}`,
+  );
+  devProc = null;
+
   // sanity: no registry deps left unresolved — every node_modules entry
   // should trace to file: (skip deep check; install success is the gate)
 
@@ -375,6 +495,13 @@ try {
     }
   }
   check("server started", ready, ready ? "" : serverLog.slice(-400));
+  {
+    const prodOut = stripAnsi(serverLog);
+    check(
+      "prod header shows cli version + app name",
+      prodOut.includes(`Frost ${installedCliVersion}`) && /\be2e-app\b/.test(prodOut),
+    );
+  }
 
   if (ready) {
     const get = async (p) => {
@@ -426,16 +553,17 @@ try {
 } catch (err) {
   check("e2e completed", false, err instanceof Error ? err.message : String(err));
 } finally {
-  // stop the prod server and its whole process tree
-  if (serverProc) {
+  // stop the dev + prod servers and their whole process trees
+  for (const proc of [devProc, serverProc]) {
+    if (!proc) continue;
     try {
       if (process.platform === "win32") {
-        spawnSync("taskkill", ["/PID", String(serverProc.pid), "/T", "/F"], {
+        spawnSync("taskkill", ["/PID", String(proc.pid), "/T", "/F"], {
           stdio: "ignore",
           windowsHide: true,
         });
       } else {
-        serverProc.kill("SIGTERM");
+        proc.kill("SIGTERM");
       }
     } catch {
       /* ignore */

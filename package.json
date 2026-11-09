@@ -18,7 +18,8 @@
     "e2e:pack": "node scripts/e2e-pack.mjs",
     "docs:assets": "node scripts/build-readme-assets.mjs",
     "docs:check-assets": "node scripts/check-assets.mjs",
-    "docs:check": "node scripts/check-docs.mjs"
+    "docs:check": "node scripts/check-docs.mjs",
+    "cli:preview": "node scripts/preview-cli-ui.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.3",
