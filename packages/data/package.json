@@ -1,6 +1,6 @@
 {
   "name": "@frost.js/data",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "CSRF, form parsing, request memoization, and server functions for Frost",
   "type": "module",
   "main": "./dist/index.js",

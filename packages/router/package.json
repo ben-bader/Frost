@@ -1,6 +1,6 @@
 {
   "name": "@frost.js/router",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Filesystem route discovery, pattern compilation, and matching for Frost",
   "type": "module",
   "main": "./dist/index.js",

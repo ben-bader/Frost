@@ -1,5 +1,14 @@
 # @frost.js/adapter-node
 
+## 0.1.2
+
+### Patch Changes
+
+- @frost.js/core@0.1.2
+  - @frost.js/react@0.1.2
+  - @frost.js/router@0.1.2
+  - @frost.js/server@0.1.2
+
 ## 0.1.1
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@frost.js/adapter-node",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Node.js http adapter for Frost: request bridge, static file serving, compression",
   "type": "module",
   "main": "./dist/index.js",
